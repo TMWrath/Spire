@@ -175,7 +175,13 @@ test('long pressing a folder can move its notes to automatic Unsorted',async({br
  const folder=page.locator('summary',{hasText:'Delete me'});await folder.dispatchEvent('pointerdown',{pointerType:'touch',button:0});await page.waitForTimeout(650);await folder.dispatchEvent('pointerup',{pointerType:'touch',button:0});
  await expect(page.getByRole('dialog',{name:'Delete folder'})).toBeVisible();
  await page.getByRole('button',{name:'Keep notes'}).click();
- await expect(page.getByRole('dialog',{name:'Reassign folder notes'})).toBeVisible();
+ await expect(page.getByRole('dialog',{name:'Reassign folder notes'})).toContainText('Do you want to move these notes to another folder?');
+ await page.getByRole('button',{name:'No, keep folder'}).click();
+ await expect(page.getByRole('dialog')).toHaveCount(0);await expect(page.locator('nav')).toContainText('Delete me');
+ await folder.dispatchEvent('pointerdown',{pointerType:'touch',button:0});await page.waitForTimeout(650);await folder.dispatchEvent('pointerup',{pointerType:'touch',button:0});
+ await page.getByRole('button',{name:'Keep notes'}).click();
+ await page.getByRole('button',{name:'Reassign notes'}).click();
+ await expect(page.getByLabel('Destination folder')).toBeVisible();
  await page.getByLabel('Destination folder').selectOption('__unsorted__');
  await page.getByRole('button',{name:'Move notes and delete folder'}).click();
  await expect(page.locator('nav')).not.toContainText('Delete me');await expect(page.locator('nav')).toContainText('Unsorted');
