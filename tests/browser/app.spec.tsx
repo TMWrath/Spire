@@ -1,0 +1,183 @@
+import {test,expect,type Page} from '@playwright/test';
+const credentials={username:'tester',password:'disposable-test-password',device:'Desktop'};
+async function login(page:Page,setup=false){await page.goto('/');await page.getByLabel('Username',{exact:true}).fill(credentials.username);await page.getByLabel('Password',{exact:true}).fill(credentials.password);const first=setup||await page.getByRole('button',{name:'Create Reliquary',exact:true}).isVisible();await page.getByRole('button',{name:first?'Create Reliquary':'Sign in',exact:true}).click();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();}
+test('Reliquary location can be moved from settings without losing a note',async({page})=>{await login(page,true);await create(page,'Writing/Keep.md','# Keep');await synced(page);await page.getByRole('button',{name:'Settings',exact:true}).click();await expect(page.getByText('reliquaries/My Reliquary',{exact:false})).toBeVisible();await page.getByLabel('New Reliquary directory name').fill('Second Reliquary');page.once('dialog',dialog=>void dialog.accept());await page.getByRole('button',{name:'Move Reliquary'}).click();await expect(page.getByText('reliquaries/Second Reliquary',{exact:false})).toBeVisible();await page.reload();await page.getByRole('button',{name:'Settings',exact:true}).click();await expect(page.getByText('reliquaries/Second Reliquary',{exact:false})).toBeVisible();await page.getByRole('button',{name:'Back to writing'}).click();await openNote(page,'Keep');await expect(page.getByLabel('Markdown source')).toHaveValue('# Keep');});
+async function create(page:Page,path:string,content:string){if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();await page.getByRole('button',{name:'Create',exact:true}).click();await page.getByRole('menuitem',{name:'New file'}).click();await page.getByLabel('File name',{exact:true}).fill(path.split('/').at(-1)!.replace(/\.md$/,''));const folder=path.includes('/')?path.slice(0,path.lastIndexOf('/')):'General';if(await page.getByLabel('Save in folder').locator(`option[value="${folder}"]`).count())await page.getByLabel('Save in folder').selectOption(folder);else{await page.getByLabel('Save in folder').selectOption('__new__');await page.getByLabel('New folder path').fill(folder);}await page.getByRole('button',{name:'Create note',exact:true}).click();await expect(page.getByLabel('Note path',{exact:true})).toHaveValue(`${folder}/${path.split('/').at(-1)!.replace(/\.md$/,'')}.md`);await expect(page.locator('footer')).not.toContainText('Saving locally');await page.getByLabel('Markdown source').fill(content);await page.getByRole('button',{name:'Save note',exact:true}).click();await expect(page.locator('footer')).not.toContainText('Saving locally');}
+async function openNote(page:Page,name:string){if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();await page.locator('nav').getByRole('button',{name,exact:true}).click();}
+async function synced(page:Page){await page.getByRole('button',{name:'Sync now',exact:true}).click();await expect(page.getByRole('status')).toHaveText('Synchronized');}
+test('mobile create menu offers file and persistent empty folder',async({browser})=>{const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await login(page);await page.getByRole('button',{name:'Toggle folders'}).click();await page.getByRole('button',{name:'Create',exact:true}).click();await expect(page.getByRole('menuitem',{name:'New file'})).toBeVisible();await page.getByRole('menuitem',{name:'New folder'}).click();await expect(page.getByLabel('New note path')).toHaveCount(0);await page.getByLabel('New folder path').fill('Writing');await page.getByRole('button',{name:'Create folder'}).click();if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();await expect(page.locator('nav').getByText('Writing')).toBeVisible();await page.reload();await page.getByRole('button',{name:'Toggle folders'}).click();await expect(page.locator('nav').getByText('Writing')).toBeVisible();await page.getByRole('button',{name:'Create',exact:true}).click();await page.getByRole('menuitem',{name:'New file'}).click();await expect(page.getByRole('dialog',{name:'Create file'})).toBeVisible();await page.getByLabel('Save in folder').selectOption('Writing');await page.getByLabel('File name').fill('First');await page.getByRole('button',{name:'Create note'}).click();await expect(page.getByLabel('Note path',{exact:true})).toHaveValue('Writing/First.md');await context.close();});
+test('empty workspace invites the user to define a folder structure instead of prescribing notes',async({page})=>{
+ await login(page);
+ await expect(page.getByRole('heading',{name:'Shape your Reliquary.'})).toBeVisible();
+ await expect(page.getByText('Create your first folder and decide what belongs inside.')).toBeVisible();
+ await expect(page.getByRole('button',{name:'Create your first folder'})).toBeVisible();
+ await expect(page.getByText('Room to think.')).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Create your first note'})).toHaveCount(0);
+ await page.getByRole('button',{name:'Create your first folder'}).click();
+ await expect(page.getByLabel('New folder path')).toBeVisible();
+ await page.getByLabel('New folder path').fill('My Direction');
+ await page.getByRole('button',{name:'Create folder'}).click();
+ if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();
+ await page.getByRole('button',{name:'Create',exact:true}).click();
+ await page.getByRole('menuitem',{name:'New file'}).click();
+ const destination=page.getByLabel('Save in folder');
+ await expect(destination.locator('option',{hasText:'Notes'})).toHaveCount(0);
+ await expect(destination.locator('option[value=""]')).toHaveText('Choose a folder…');
+ await expect(destination.locator('option[value=""]')).toHaveAttribute('disabled','');
+});
+test('production desktop: owner setup, links, sanitized preview, revisions, offline two-client conflict and logout isolation',async({browser,page})=>{
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await login(page);await expect(page.getByText('Shape your Reliquary.')).toBeVisible();await create(page,'Projects/First.md','---\naliases: [Beginning]\ntags: [writing]\nstatus: draft\n---\n# First\n## Details\nOriginal private words.');await synced(page);
+ await create(page,'Projects/Index.md','[[First#Details|Read details]]\n\n<script>window.pwned=true</script>\n<img src=x onerror="window.pwned=true">');await synced(page);await page.getByRole('button',{name:'Preview',exact:true}).click();await expect(page.locator('.preview script')).toHaveCount(0);await expect(page.locator('.preview [onerror]')).toHaveCount(0);await page.locator('.preview').getByRole('link',{name:'Read details'}).click();await expect(page.getByLabel('Note path',{exact:true})).toHaveValue('Projects/First.md');await expect(page.locator('.preview h2')).toHaveText('Details');
+ await page.getByLabel('Note path',{exact:true}).fill('Writing/Renamed.md');await page.getByRole('button',{name:'Save note',exact:true}).click();await synced(page);await openNote(page,'Index');await page.getByRole('button',{name:'Source',exact:true}).click();await expect(page.getByLabel('Markdown source')).toContainText('[[Writing/Renamed#Details|Read details]]');
+ await openNote(page,'Renamed');await page.screenshot({path:'artifacts/spire-desktop.png',fullPage:true});await page.evaluate(()=>navigator.serviceWorker.ready);await expect.poll(()=>page.evaluate(()=>!!navigator.serviceWorker.controller)).toBe(true);
+ const second=await browser.newContext({viewport:{width:1365,height:900}});const b=await second.newPage();await login(b);await openNote(b,'Renamed');
+ await page.getByRole('button',{name:'Create',exact:true}).click();await page.getByRole('menuitem',{name:'New folder'}).click();await page.getByLabel('New folder path').fill('Offline');await page.getByRole('button',{name:'Create folder'}).click();await expect(page.locator('nav')).toContainText('Offline');
+ await page.context().setOffline(true);await page.getByLabel('Markdown source').fill('# Offline edit\nPreserve these offline words.');await expect(page.locator('footer')).toContainText('Saved locally');await expect(page.getByLabel('Markdown source')).toContainText('Preserve these offline words.');
+ await create(page,'Offline/New.md','# Created without internet');await expect(page.getByRole('status')).toContainText('Offline');
+ await b.getByLabel('Markdown source').fill('# Remote edit\nWritten by the second client.');await b.getByRole('button',{name:'Save note',exact:true}).click();await synced(b);
+ await page.context().setOffline(false);await expect(page.getByRole('status')).toContainText('Conflicts need attention');await page.getByRole('button',{name:'Toggle context',exact:true}).click();await expect(page.locator('.conflict')).toContainText('Writing/Renamed.md');await page.locator('.conflict').getByText('Preserved local edit',{exact:true}).click();await expect(page.locator('.conflict pre').first()).toContainText('Preserve these offline words.');await page.getByRole('button',{name:'Recover as new note',exact:true}).click();await expect(page.getByRole('status')).toHaveText('Synchronized');await expect(page.getByLabel('Markdown source')).toContainText('Preserve these offline words.');
+ await synced(b);await expect(b.locator('nav')).toContainText('New');await openNote(b,'Renamed');await expect(b.getByLabel('Markdown source')).toContainText('Written by the second client.');
+ await page.getByRole('button',{name:'Settings',exact:true}).click();await page.getByRole('button',{name:'Sign out and clear local notes',exact:true}).click();await expect(page.getByRole('button',{name:'Sign in',exact:true})).toBeVisible();await page.reload();await expect(page.locator('nav')).toHaveCount(0);expect((await page.request.get('/api/snapshot')).status()).toBe(401);expect(errors).toEqual([]);await second.close();
+});
+test('production mobile: responsive folders, source/preview, delete and restore',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await login(page);await expect(page.locator('.sidebar')).toHaveCount(0);await page.getByRole('button',{name:'Toggle folders'}).click();await create(page,'Mobile.md','# Mobile writing\nA clear, quiet canvas.');await synced(page);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.getByRole('button',{name:'Preview',exact:true}).click();await expect(page.locator('.preview h1')).toHaveText('Mobile writing');await page.screenshot({path:'artifacts/spire-mobile.png',fullPage:true});page.on('dialog',d=>d.accept());await page.getByRole('button',{name:'Delete note',exact:true}).click();await expect(page.getByText('This note is in trash. Restore it to edit.')).toBeVisible();await page.getByRole('button',{name:'Restore note',exact:true}).click();await expect(page.getByText('This note is in trash. Restore it to edit.')).toHaveCount(0);await context.close();
+});
+test('settings hides workspace header actions and panels until returning to writing',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await login(page);await page.getByRole('button',{name:'Toggle folders'}).click();await page.getByRole('button',{name:'Settings',exact:true}).click();for(const name of ['Toggle folders','Toggle context','Sync now','Settings'])await expect(page.getByRole('button',{name,exact:true})).toHaveCount(0);await expect(page.locator('.sidebar,.context')).toHaveCount(0);await expect(page.getByRole('button',{name:'Back to writing'})).toBeVisible();await page.getByRole('button',{name:'Back to writing'}).click();await expect(page.getByRole('button',{name:'Toggle folders'})).toBeVisible();await context.close();
+});
+test('star icon persists in portable note content and survives reload',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await login(page);await create(page,'Important.md','# Keep this');await page.getByRole('button',{name:'Star note'}).click();await expect(page.getByRole('button',{name:'Unstar note'})).toHaveAttribute('aria-pressed','true');await synced(page);await page.reload();await openNote(page,'Important');await expect(page.getByRole('button',{name:'Unstar note'})).toBeVisible();await page.getByRole('button',{name:'Unstar note'}).click();await synced(page);await expect(page.getByRole('button',{name:'Star note'})).toHaveAttribute('aria-pressed','false');await context.close();
+});
+test('mobile editor inserts note links, external links and tags with icon controls',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await login(page);await create(page,'Links-and-tags.md','Ideas for today');
+ const source=page.getByLabel('Markdown source');await source.evaluate((el:HTMLTextAreaElement)=>el.setSelectionRange(0,5));
+ await page.getByRole('button',{name:'Add link'}).click();await page.getByLabel('Link target').fill('Index.md');await expect(page.getByLabel('Link text')).toHaveValue('Ideas');await page.getByRole('button',{name:'Insert link'}).click();await expect(source).toHaveValue('[[Index.md|Ideas]] for today');
+ await source.evaluate((el:HTMLTextAreaElement)=>el.setSelectionRange(el.value.length,el.value.length));await page.getByRole('button',{name:'Add tag'}).click();await page.getByLabel('Tag name').fill('writing/ideas');await page.getByRole('button',{name:'Insert tag'}).click();await expect(source).toHaveValue('[[Index.md|Ideas]] for today #writing/ideas');
+ await page.getByRole('button',{name:'Add link'}).click();await page.getByLabel('Link target').fill('https://example.com');await page.getByLabel('Link text').fill('Reference');await page.getByRole('button',{name:'Insert link'}).click();await expect(source).toContainText('[Reference](https://example.com)');await synced(page);
+ await page.getByRole('button',{name:'Toggle context'}).click();await expect(page.locator('.tags')).toContainText('#writing/ideas');await expect(page.locator('.context')).toContainText('Ideas');await page.getByRole('button',{name:'Toggle context'}).click();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await context.close();
+});
+test('context card mirrors note details with real counts and working note actions',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await login(page);await create(page,'Ferryman.md','---\ntags: [character, lore]\ndescription: An ancient being who ferries souls.\n---\n# Ferryman\nPassage between worlds.');await synced(page);await create(page,'The Lantern.md','[[Ferryman]]');await synced(page);await openNote(page,'Ferryman');await page.getByRole('button',{name:'Toggle context'}).click();const card=page.locator('.note-context-card');await expect(card.getByRole('heading',{name:'Ferryman'})).toBeVisible();await expect(card.locator('.context-cover')).toBeVisible();await expect(card.locator('.context-description')).toContainText('An ancient being');await expect(card.locator('.context-tags')).toContainText('#character');await expect(card.locator('.context-stats')).toContainText('Linked Notes');await expect(card.locator('.context-stats')).toContainText('Backlinks');await expect(card.locator('.context-linked summary')).toContainText('Linked Notes (1)');await expect(card.getByRole('button',{name:'The Lantern'})).toBeVisible();await card.getByRole('button',{name:'Add linked note'}).click();await expect(page.getByLabel('Link target')).toBeVisible();await page.getByRole('button',{name:'Toggle context'}).click();await card.getByRole('button',{name:'The Lantern'}).click();await expect(page.getByLabel('Note path')).toHaveValue('General/The Lantern.md');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await context.close();
+});
+test('template selector previews the current note and inserts only after explicit selection',async({page})=>{
+ await login(page);await create(page,'Writing/Selector-preview.md','---\ndescription: My own banner.\ntags: [story]\n---\nOriginal prose.');
+ await page.getByRole('button',{name:'Section templates'}).click();
+ const dialog=page.getByRole('dialog',{name:'Section templates'});
+ await expect(dialog).toBeVisible();
+ await expect(dialog).not.toContainText('Preview uses this note’s sidebar details where available.');
+ await expect(dialog).not.toContainText('Sample values are preview-only;');
+ await expect(dialog).toContainText('My own banner.');
+ await expect(dialog).toContainText('#story');
+ await expect(dialog).not.toContainText('A short description of this note goes here.');
+ await expect(dialog).not.toContainText('#writing');
+ await expect(dialog.getByRole('img',{name:'Example header image'})).toBeVisible();
+ await expect(page.getByLabel('Markdown source')).not.toContainText('spire:hero-section:start');
+ await dialog.getByRole('button',{name:'Close template selector'}).click();
+ await expect(dialog).not.toBeVisible();
+ await page.getByRole('button',{name:'Section templates'}).click();
+ await dialog.getByRole('button',{name:'Header & hero preview'}).click();
+ await expect(page.getByLabel('Markdown source')).toContainText('> My own banner.');
+ await expect(dialog).not.toBeVisible();
+});
+
+test('empty note selector shows a clearly marked visual example without inserting demo data',async({page})=>{
+ await login(page);await create(page,'Writing/Example-preview.md','Just my own prose.');
+ await page.getByRole('button',{name:'Section templates'}).click();
+ const dialog=page.getByRole('dialog',{name:'Section templates'});
+ await expect(dialog.getByText('Example preview · empty fields use sample content')).toHaveCount(0);
+ await expect(dialog.getByRole('img',{name:'Example header image'})).toBeVisible();
+ await expect(dialog).toContainText('A short description of this note goes here.');
+ await expect(dialog).toContainText('#writing');
+ await expect(dialog).toContainText('#ideas');
+ await dialog.getByRole('button',{name:'Header & hero preview'}).click();
+ const source=page.getByLabel('Markdown source');
+ await expect(source).toContainText('Just my own prose.');
+ await expect(source).not.toContainText('A short description of this note goes here.');
+ await expect(source).not.toContainText('#writing');
+ await expect(source).toContainText('Add a header image in the note sidebar');
+ await expect(dialog.getByRole('button',{name:'Insert header and hero'})).toHaveCount(0);
+ await page.getByRole('button',{name:'Toggle context'}).click();
+ const card=page.locator('.note-context-card');
+ await expect(card.getByRole('button',{name:'Edit description'})).toHaveText('Just my own prose.');
+ await card.getByRole('button',{name:'Edit description'}).click();
+ await expect(card.getByLabel('Note description')).toHaveValue('Just my own prose.');
+});
+
+test('template-only note does not turn generated Markdown into its description',async({page})=>{
+ await login(page);await create(page,'Writing/Template-only.md','');
+ await page.getByRole('button',{name:'Section templates'}).click();
+ const dialog=page.getByRole('dialog',{name:'Section templates'});
+ await expect(dialog.locator('.template-example-image')).toHaveCSS('height','78px');
+ await dialog.getByRole('button',{name:'Header & hero preview'}).click();
+ await page.getByRole('button',{name:'Toggle context'}).click();
+ const card=page.locator('.note-context-card');
+ await expect(card.getByRole('button',{name:'Edit description'})).toHaveText('Add a description…');
+ await card.getByRole('button',{name:'Edit description'}).click();
+ await expect(card.getByLabel('Note description')).toHaveValue('');
+});
+
+test('header section template inserts portable markdown and follows sidebar description',async({page})=>{
+ await login(page);await create(page,'Writing/Template.md','---\nhero: Attachments/heroes/cover.png\ndescription: First banner.\ntags: [story]\n---\nOriginal prose.');
+ await page.getByRole('button',{name:'Section templates'}).click();await page.getByRole('dialog',{name:'Section templates'}).getByRole('button',{name:'Header & hero preview'}).click();
+ await expect(page.getByLabel('Markdown source')).toContainText('![Header image](../Attachments/heroes/cover.png)');
+ await expect(page.getByLabel('Markdown source')).toContainText('> First banner.');
+ await page.getByRole('button',{name:'Toggle context'}).click();await page.getByRole('button',{name:'Edit description'}).click();await page.getByLabel('Note description').fill('Updated banner.');await page.getByRole('button',{name:'Save description'}).click();
+ await expect(page.getByLabel('Markdown source')).toContainText('> Updated banner.');await expect(page.getByLabel('Markdown source')).toContainText('Original prose.');
+});
+
+test('note detail edits title, hero, description and tags persist after reload',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await login(page);await create(page,'Story.md','---\nstatus: draft\n---\n# Opening\nOriginal prose.');await synced(page);await page.getByRole('button',{name:'Toggle context'}).click();const card=page.locator('.note-context-card');
+ await card.getByRole('button',{name:'Edit note title'}).click();await card.getByRole('textbox',{name:'Note title'}).fill('New Story');await card.getByRole('button',{name:'Save',exact:true}).click();await expect(page.getByLabel('Note path')).toHaveValue('General/New Story.md');
+ await card.getByRole('button',{name:'Edit description'}).click();await card.getByLabel('Note description').fill('A story of beginnings.');await card.getByRole('button',{name:'Save description'}).click();await expect(card.getByRole('button',{name:'Edit description'})).toContainText('A story of beginnings.');
+ await card.getByRole('button',{name:'Add note tag'}).click();await card.getByLabel('New note tag').fill('fiction');await card.getByRole('button',{name:'Add',exact:true}).click();await expect(card.locator('.context-tags')).toContainText('#fiction');await expect(page.locator('footer')).not.toContainText('Saving locally');
+ await card.getByLabel('Set hero image').setInputFiles({name:'hero.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL/nwAAAABJRU5ErkJggg==','base64')});await expect(card.getByRole('img',{name:'Note hero'})).toBeVisible();await expect.poll(()=>card.getByRole('img',{name:'Note hero'}).evaluate((img:HTMLImageElement)=>img.naturalWidth)).toBeGreaterThan(0);await page.reload();await openNote(page,'New Story');await page.getByRole('button',{name:'Toggle context'}).click();await expect(page.locator('.note-context-card')).toContainText('A story of beginnings.');await expect(page.locator('.context-tags')).toContainText('#fiction');await expect(page.locator('.note-context-card').getByRole('img',{name:'Note hero'})).toBeVisible();await page.getByRole('button',{name:'Source',exact:true}).click();await expect(page.getByLabel('Markdown source')).toContainText('status: draft');await expect(page.getByLabel('Markdown source')).toContainText('Original prose.');await context.close();
+});
+test('panels are exclusive and close outside; trash requires a second confirmed delete to purge',async({page})=>{
+ await login(page);
+ await expect(page.locator('.sidebar')).toBeVisible();
+ await expect(page.locator('.context')).toHaveCount(0);
+ await page.getByRole('button',{name:'Toggle context'}).click();
+ await expect(page.locator('.sidebar')).toHaveCount(0);
+ await expect(page.locator('.context')).toBeVisible();
+ await page.getByRole('button',{name:'Toggle folders'}).click();
+ await expect(page.locator('.context')).toHaveCount(0);
+ await expect(page.locator('.sidebar')).toBeVisible();
+ await page.locator('.main').click({position:{x:50,y:90}});
+ await expect(page.locator('.sidebar')).toHaveCount(0);
+ await page.getByRole('button',{name:'Toggle folders'}).click();
+ await create(page,'Purge.md','# disposable');await synced(page);
+ page.on('dialog',d=>d.accept());
+ await page.getByRole('button',{name:'Delete note',exact:true}).click();await synced(page);
+ if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();
+ await page.getByRole('button',{name:'Trash',exact:true}).click();
+ await expect(page.locator('nav')).toContainText('Purge');
+ await page.getByRole('button',{name:'Delete permanently',exact:true}).click();
+ if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();
+ await expect(page.locator('nav')).not.toContainText('Purge');
+ await expect(page.getByText('Shape your Reliquary.')).toBeVisible();
+ await expect.poll(async()=>{const r=await page.request.get('/api/snapshot');return (await r.json()).notes.some((n:{path:string})=>n.path==='General/Purge.md');}).toBe(false);
+});
+test('permanently deleting the open trashed note clears it and removes it from Trash immediately',async({page})=>{
+ await login(page);await create(page,'Open purge.md','# disposable');await synced(page);
+ page.on('dialog',dialog=>void dialog.accept());
+ await page.getByRole('button',{name:'Delete note',exact:true}).click();
+ await expect(page.getByText('This note is in trash. Restore it to edit.')).toBeVisible();
+ await page.getByRole('button',{name:'Delete permanently',exact:true}).click();
+ await expect(page.getByLabel('Note path',{exact:true})).toHaveCount(0);
+ if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();
+ await page.getByRole('button',{name:'Trash',exact:true}).click();
+ await expect(page.locator('nav')).not.toContainText('Open purge');
+});
+test('long pressing a folder can move its notes to automatic Unsorted',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await login(page);
+ await create(page,'Delete me/Reassigned note.md','# keep');await synced(page);
+ if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();
+ const folder=page.locator('summary',{hasText:'Delete me'});await folder.dispatchEvent('pointerdown',{pointerType:'touch',button:0});await page.waitForTimeout(650);await folder.dispatchEvent('pointerup',{pointerType:'touch',button:0});
+ await expect(page.getByRole('dialog',{name:'Delete folder'})).toBeVisible();
+ await page.getByRole('button',{name:'Keep notes'}).click();
+ await expect(page.getByRole('dialog',{name:'Reassign folder notes'})).toBeVisible();
+ await page.getByLabel('Destination folder').selectOption('__unsorted__');
+ await page.getByRole('button',{name:'Move notes and delete folder'}).click();
+ await expect(page.locator('nav')).not.toContainText('Delete me');await expect(page.locator('nav')).toContainText('Unsorted');
+ await openNote(page,'Reassigned note');await expect(page.getByLabel('Note path')).toHaveValue('Unsorted/Reassigned note.md');await context.close();
+});

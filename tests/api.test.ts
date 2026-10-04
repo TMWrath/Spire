@@ -1,0 +1,43 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {randomUUID} from 'node:crypto';
+import {zipSync,strToU8,unzipSync} from 'fflate';
+import {createApp} from '../server/app.ts';
+import {Store} from '../server/store.ts';
+import {createBackup,restoreBackup,verifyBackup} from '../server/backup.ts';
+import {unpack} from '../server/archive.ts';
+const root='.test-data/integration';
+test('authenticated API, isolation, device revocation, CSRF, archive round trip and restore',async()=>{
+ fs.rmSync(root,{recursive:true,force:true});const origin='http://127.0.0.1:4181';const{app,store}=createApp(root,origin);const server=app.listen(4181,'127.0.0.1');await new Promise<void>(r=>server.once('listening',r));
+ let cookie='',csrf='';const req=(p:string,method='GET',body?:unknown,headers:Record<string,string>={})=>fetch(origin+'/api'+p,{method,headers:{Origin:origin,Cookie:cookie,'X-CSRF-Token':csrf,...(body&&!Buffer.isBuffer(body)?{'Content-Type':'application/json'}:{}),...headers},body:Buffer.isBuffer(body)?new Uint8Array(body):body?JSON.stringify(body):undefined});
+ try{
+ assert.equal((await req('/snapshot')).status,401);assert.equal((await req('/export')).status,401);assert.equal((await req('/attachment?path=secret.png')).status,401);
+ assert.equal((await req('/setup','POST',{username:'owner',password:'test-password-long'},{Origin:'http://evil.example'})).status,403);
+ const setup=await req('/setup','POST',{username:'owner',password:'test-password-long',device:'A',reliquary:'My Reliquary'});assert.equal(setup.status,200);cookie=setup.headers.get('set-cookie')!.split(';')[0];assert.match(setup.headers.get('set-cookie')!,/HttpOnly/);assert.match(setup.headers.get('set-cookie')!,/SameSite=Strict/);csrf=(await setup.json()).csrf;
+ assert.equal((await req('/setup','POST',{username:'other',password:'test-password-long'})).status,409);
+ const m={op:randomUUID(),id:randomUUID(),base:0,path:'Notes/One.md',content:'---\naliases: [First]\ntags: [test]\n---\n# Heading\nPrivate text',deleted:false};
+ assert.equal((await req('/mutate','POST',m,{'X-CSRF-Token':'bad'})).status,403);
+ assert.equal((await req('/mutate','POST',{...m,path:'../secret.md'})).status,400);
+ assert.equal((await req('/mutate','POST',m)).status,200);
+ assert.equal((await req('/mutate','POST',{...m,op:randomUUID(),content:'second',base:1})).status,200);
+ assert.equal((await req('/mutate','POST',{...m,op:randomUUID(),content:'stale',base:1})).status,409);
+ assert.equal((await(await req('/snapshot')).json()).conflicts.length,1);
+ assert.equal((await req('/restore/'+m.id,'POST',{base:2,rev:1,op:randomUUID()})).status,200);
+ assert.equal((await(await req('/search?q=Private')).json()).length,1);
+ assert.equal((await req('/attachments?path=Attachments/test.txt','POST',Buffer.from('attachment'),{'Content-Type':'application/octet-stream'})).status,200);
+ assert.equal(await(await req('/attachment?path=Attachments/test.txt')).text(),'attachment');
+ const imported=Buffer.from(zipSync({'Folder/Imported.md':strToU8('[[One#Heading]]\n#nested/tag'),'.obsidian/plugins/unsafe.js':strToU8('not executed'),'Assets/item.bin':new Uint8Array([0,1,255])}));
+ const response=await req('/import','POST',imported,{'Content-Type':'application/zip'});assert.equal(response.status,200);assert.equal((await response.json()).added.length,2);
+ const before=store.state.seq;
+ assert.equal((await req('/import','POST',Buffer.from(zipSync({'safe.md':strToU8('safe'),'../bad.md':strToU8('bad')})),{'Content-Type':'application/zip'})).status,400);assert.equal(store.state.seq,before);
+ const exported=unzipSync(new Uint8Array(await(await req('/export')).arrayBuffer()));assert.equal(new TextDecoder().decode(exported[m.path]),m.content);assert.deepEqual([...exported['Assets/item.bin']],[0,1,255]);assert.equal(Object.keys(exported).some(p=>p.includes('auth')),false);
+ const b=await req('/login','POST',{username:'owner',password:'test-password-long',device:'B'});const cookieB=b.headers.get('set-cookie')!.split(';')[0];const identityB=await b.json();assert.equal((await req('/devices/'+identityB.device.id,'DELETE')).status,200);
+ assert.equal((await req('/snapshot','GET',undefined,{Cookie:cookieB})).status,401);
+ assert.equal((await req('/snapshot','GET',undefined,{Cookie:''})).status,401);
+ assert.equal((await req('/logout','POST')).status,200);assert.equal((await req('/snapshot')).status,401);
+ const backup=root+'/backup.json';createBackup(root,backup);assert.equal(verifyBackup(backup).state.notes[m.id].rev,3);const restored='.test-data/restored';fs.rmSync(restored,{recursive:true,force:true});restoreBackup(backup,restored);assert.equal(new Store(restored).state.notes[m.id].content,m.content);assert.deepEqual(JSON.parse(fs.readFileSync(restored+'/auth.json','utf8')).sessions,{});assert.throws(()=>restoreBackup(backup,restored),/empty/);
+ const corrupt=JSON.parse(fs.readFileSync(backup,'utf8'));corrupt.payload+=' ';fs.writeFileSync(root+'/corrupt.json',JSON.stringify(corrupt));assert.throws(()=>verifyBackup(root+'/corrupt.json'),/Checksum/);
+ }finally{await new Promise<void>((resolve,reject)=>server.close(e=>e?reject(e):resolve()));}
+});
+test('ZIP expanded size cap rejects compression bombs',()=>{assert.throws(()=>unpack(zipSync({'bomb.txt':new Uint8Array(10_000_001)})),/expanded limits/);});

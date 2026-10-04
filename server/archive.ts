@@ -1,0 +1,4 @@
+import { unzipSync, zipSync, strToU8 } from 'fflate';
+import { HttpError, type Store } from './store.ts';
+export function unpack(bytes:Uint8Array){if(bytes.length>25_000_000)throw new HttpError(413,'Archive exceeds 25 MB');let total=0,count=0;const files=unzipSync(bytes,{filter:e=>{total+=e.originalSize;if(++count>2000||e.originalSize>10_000_000||total>50_000_000)throw new HttpError(413,'Archive exceeds expanded limits (50 MB / 2000 entries / 10 MB each)');return true;}});return files;}
+export function exportVault(store:Store){store.verify();const files:Record<string,Uint8Array>={};for(const f of store.state.folders??[])files[f+'/']=new Uint8Array();for(const n of Object.values(store.state.notes))if(!n.deleted)files[n.path]=strToU8(n.content);for(const a of store.state.attachments)files[a.path]=Buffer.from(a.data,'base64');return zipSync(files);}
