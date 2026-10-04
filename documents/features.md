@@ -6,6 +6,10 @@
 
 **Confirmed structural invariant:** Every Markdown document must belong to a folder. Spire does not allow loose or "wild" Markdown files at the Reliquary root because they break the required organizational structure. Creating, importing, or moving a Markdown document must therefore include a destination folder.
 
+### First-folder onboarding lifecycle
+
+**State:** Implemented and browser-verified. The centered **Shape your Reliquary.** onboarding is shown only while the Reliquary has no folders. Creating the first folder dismisses that onboarding immediately; it is not reused as a generic “no note selected” screen.
+
 ## Folder deletion and reassignment
 
 **State:** Implemented locally; not yet deployed to the private preview. A long press (or desktop context-menu action) on a workspace folder opens a confirmation flow. The user may move all contained notes to Trash, or keep them and reassign them to another current folder. The reassignment picker also offers **Unsorted**, creating that folder automatically when it does not already exist. Nested relative folder structure is preserved during reassignment, destination collisions are rejected, linked-note references are refactored, and deleting a folder containing attachments is blocked until those attachments are moved safely.
