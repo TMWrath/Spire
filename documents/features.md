@@ -8,11 +8,11 @@
 
 ### First-folder onboarding lifecycle
 
-**State:** Implemented and browser-verified. The centered **Shape your Reliquary.** onboarding is shown only while the Reliquary has no folders. Creating the first folder dismisses that onboarding immediately; it is not reused as a generic “no note selected” screen.
+**State:** Implemented, browser-verified, and deployed to the Tailscale-only private preview. The centered **Shape your Reliquary.** onboarding is shown only while the Reliquary has no folders. Creating the first folder dismisses that onboarding immediately; it is not reused as a generic “no note selected” screen.
 
 ## Folder deletion and reassignment
 
-**State:** Implemented locally; not yet deployed to the private preview. A long press (or desktop context-menu action) on a workspace folder opens a confirmation flow. The user may move all contained notes to Trash, or keep them and reassign them to another current folder. The reassignment picker also offers **Unsorted**, creating that folder automatically when it does not already exist. Nested relative folder structure is preserved during reassignment, destination collisions are rejected, linked-note references are refactored, and deleting a folder containing attachments is blocked until those attachments are moved safely.
+**State:** Implemented and deployed to the Tailscale-only private preview. A long press (or desktop context-menu action) on a workspace folder opens a confirmation flow. The user may move all contained notes to Trash, or keep them and reassign them to another current folder. The reassignment picker also offers **Unsorted**, creating that folder automatically when it does not already exist. Nested relative folder structure is preserved during reassignment, destination collisions are rejected, linked-note references are refactored, and deleting a folder containing attachments is blocked until those attachments are moved safely.
 
 ## Reliquary location
 
