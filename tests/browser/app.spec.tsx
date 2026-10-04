@@ -22,6 +22,7 @@ test('empty workspace invites the user to define a folder structure instead of p
  await expect(destination.locator('option[value=""]')).toHaveText('Choose a folder…');
  await expect(destination.locator('option[value=""]')).toHaveAttribute('disabled','');
 });
+test('context-panel toggle is only available while a file is open',async({page})=>{await login(page);await expect(page.getByRole('button',{name:'Toggle context',exact:true})).toHaveCount(0);await create(page,'Context visibility.md','# Open file');await expect(page.getByRole('button',{name:'Toggle context',exact:true})).toBeVisible();await page.getByRole('button',{name:'Create',exact:true}).click();await page.getByRole('menuitem',{name:'New folder'}).click();await expect(page.getByRole('button',{name:'Toggle context',exact:true})).toBeVisible();});
 test('Reliquary location can be moved from settings without losing a note',async({page})=>{await login(page);await create(page,'Writing/Keep.md','# Keep');await synced(page);await page.getByRole('button',{name:'Settings',exact:true}).click();await expect(page.getByText('reliquaries/My Reliquary',{exact:false})).toBeVisible();await page.getByLabel('New Reliquary directory name').fill('Second Reliquary');page.once('dialog',dialog=>void dialog.accept());await page.getByRole('button',{name:'Move Reliquary'}).click();await expect(page.getByText('reliquaries/Second Reliquary',{exact:false})).toBeVisible();await page.reload();await page.getByRole('button',{name:'Settings',exact:true}).click();await expect(page.getByText('reliquaries/Second Reliquary',{exact:false})).toBeVisible();await page.getByRole('button',{name:'Back to writing'}).click();await openNote(page,'Keep');await expect(page.getByLabel('Markdown source')).toHaveValue('# Keep');});
 async function create(page:Page,path:string,content:string){if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();await page.getByRole('button',{name:'Create',exact:true}).click();await page.getByRole('menuitem',{name:'New file'}).click();await page.getByLabel('File name',{exact:true}).fill(path.split('/').at(-1)!.replace(/\.md$/,''));const folder=path.includes('/')?path.slice(0,path.lastIndexOf('/')):'General';if(await page.getByLabel('Save in folder').locator(`option[value="${folder}"]`).count())await page.getByLabel('Save in folder').selectOption(folder);else{await page.getByLabel('Save in folder').selectOption('__new__');await page.getByLabel('New folder path').fill(folder);}await page.getByRole('button',{name:'Create note',exact:true}).click();await expect(page.getByLabel('Note path',{exact:true})).toHaveValue(`${folder}/${path.split('/').at(-1)!.replace(/\.md$/,'')}.md`);await expect(page.locator('footer')).not.toContainText('Saving locally');await page.getByLabel('Markdown source').fill(content);await page.getByRole('button',{name:'Save note',exact:true}).click();await expect(page.locator('footer')).not.toContainText('Saving locally');}
 async function openNote(page:Page,name:string){if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();await page.locator('nav').getByRole('button',{name,exact:true}).click();}
@@ -136,6 +137,7 @@ test('note detail edits title, hero, description and tags persist after reload',
 });
 test('panels are exclusive and close outside; trash requires a second confirmed delete to purge',async({page})=>{
  await login(page);
+ await create(page,'Panels.md','# Panels');
  await expect(page.locator('.sidebar')).toBeVisible();
  await expect(page.locator('.context')).toHaveCount(0);
  await page.getByRole('button',{name:'Toggle context'}).click();
@@ -144,7 +146,7 @@ test('panels are exclusive and close outside; trash requires a second confirmed 
  await page.getByRole('button',{name:'Toggle folders'}).click();
  await expect(page.locator('.context')).toHaveCount(0);
  await expect(page.locator('.sidebar')).toBeVisible();
- await page.locator('.main').click({position:{x:50,y:90}});
+ await page.locator('.brand').click();
  await expect(page.locator('.sidebar')).toHaveCount(0);
  await page.getByRole('button',{name:'Toggle folders'}).click();
  await create(page,'Purge.md','# disposable');await synced(page);
