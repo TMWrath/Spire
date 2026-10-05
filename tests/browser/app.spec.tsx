@@ -84,8 +84,9 @@ test('template selector previews the current note and inserts only after explici
  await expect(dialog).toContainText('#story');
  await expect(dialog).not.toContainText('A short description of this note goes here.');
  await expect(dialog).not.toContainText('#writing');
- await expect(dialog.getByRole('img',{name:'Example header image'})).toBeVisible();
- await expect(dialog.getByRole('button',{name:'Collapsible section preview'})).toBeVisible();
+ const heroPreview=dialog.getByRole('img',{name:'Example header image'});await expect(heroPreview).toBeVisible();
+ const heroBox=await heroPreview.boundingBox();expect(heroBox).not.toBeNull();expect(heroBox!.width/heroBox!.height).toBeGreaterThan(2.4);expect(heroBox!.width/heroBox!.height).toBeLessThan(2.7);
+ const collapsiblePreview=dialog.getByRole('button',{name:'Collapsible section preview'});await expect(collapsiblePreview).toBeVisible();await expect(collapsiblePreview.locator('.collapsible-template-chevron')).toHaveCSS('animation-name','collapsible-chevron-demo');await expect(collapsiblePreview.locator('.collapsible-template-content')).toHaveCSS('animation-name','collapsible-content-demo');
  await expect(page.getByLabel('Markdown source')).not.toContainText('spire:hero-section:start');
  await dialog.getByRole('button',{name:'Collapsible section preview'}).click();
  await expect(page.getByLabel('Markdown source')).toContainText('<details>\n<summary>Section title</summary>\n\nSection content\n\n</details>');
@@ -126,7 +127,7 @@ test('template-only note does not turn generated Markdown into its description',
  await login(page);await create(page,'Writing/Template-only.md','');
  await page.getByRole('button',{name:'Section templates'}).click();
  const dialog=page.getByRole('dialog',{name:'Section templates'});
- await expect(dialog.locator('.template-example-image')).toHaveCSS('height','78px');
+ const heroPreview=dialog.locator('.template-example-image');const heroBox=await heroPreview.boundingBox();expect(heroBox).not.toBeNull();expect(heroBox!.width/heroBox!.height).toBeGreaterThan(2.4);expect(heroBox!.width/heroBox!.height).toBeLessThan(2.7);
  await dialog.getByRole('button',{name:'Header & hero preview'}).click();
  await page.getByRole('button',{name:'Toggle context'}).click();
  const card=page.locator('.note-context-card');
