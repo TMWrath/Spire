@@ -27,7 +27,7 @@ Settings are grouped under top tabs: **Storage** (Reliquary location and import)
 
 ### Combined list gallery
 
-**State:** Implemented and production-build verified (23 unit/API tests and all 19 browser tests). The separate bullet, numbered, and task controls are replaced by one List chooser directly below the formatting rail, matching the heading-gallery interaction. Its horizontally scrollable preview cards cover the portable Markdown list markers (`-`, `*`, `+`, `1.`, `1)`, and tasks) plus explicit lowercase and uppercase alphabetic list options requested by the project owner. The chooser preserves the editor selection, replaces existing list markers instead of stacking them, stays inside the mobile viewport, and is unavailable in Preview-only or trashed-note states. Deployment is not yet recorded.
+**State:** Implemented, production-build verified (23 unit/API tests and all 19 browser tests), and deployed to the Tailscale-only private preview from source commit `da427eb`. The separate bullet, numbered, and task controls are replaced by one List chooser directly below the formatting rail, matching the heading-gallery interaction. Its horizontally scrollable preview cards cover the portable Markdown list markers (`-`, `*`, `+`, `1.`, `1)`, and tasks) plus explicit lowercase and uppercase alphabetic list options requested by the project owner. The chooser preserves the editor selection, replaces existing list markers instead of stacking them, stays inside the mobile viewport, and is unavailable in Preview-only or trashed-note states.
 
 ## Section templates — header and hero
 
