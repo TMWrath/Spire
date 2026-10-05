@@ -264,3 +264,6 @@ These are behavioral references, not sources to copy:
 The workspace + opens a compact New file / New folder menu. New file creates portable Markdown; New folder creates a real empty directory that persists through reload, snapshots, backups, and ZIP export/import. Folder creation requires a connection; offline note editing remains available.
 
 Deployment verification: healthy container, successful live HTTPS health endpoint, and served JavaScript/CSS containing the toolbar and attachment-positioning fix. Existing data volume and loopback-only port binding are preserved; a pre-release backup and prior image are retained. Authenticated live-owner/mobile interaction was not performed; interaction acceptance used the isolated production-build browser suite.
+
+## Editor action placement and heading gallery
+Star/unstar is grouped with Save and Trash in the note action row. Heading opens a gallery directly below the formatting toolbar with styled Heading 1–6 previews and Normal text. Selection is retained, existing heading markers are replaced, and normal text removes heading markers. Preview-only and trashed notes cannot apply headings. Source build and browser verification recorded locally; deployment is not part of this change.
