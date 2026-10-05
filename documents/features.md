@@ -267,3 +267,10 @@ Deployment verification: healthy container, successful live HTTPS health endpoin
 
 ## Editor action placement and heading gallery
 Star/unstar is grouped with Save and Trash in the note action row. Heading opens a gallery directly below the formatting toolbar with styled Heading 1–6 previews and Normal text. Selection is retained, existing heading markers are replaced, and normal text removes heading markers. Preview-only and trashed notes cannot apply headings. Source build and browser verification recorded locally; deployment is not part of this change.
+
+## Obsidian-compatible Markdown rendering
+Reference: https://kolavistudio.com/markdown-tools/obsidian
+CommonMark/GFM retained, with highlights, wiki links and aliases, heading/block navigation, recursive note/heading/block embeds with cycle/depth protection, local image/audio/video embeds, sandboxed local PDF frames with an open-link fallback, foldable callouts, KaTeX inline/display math, footnotes, block IDs, highlighted fenced code and lazy-loaded strict Mermaid diagrams. Underline and safe HTML remain sanitized; script, form and arbitrary iframe content are forbidden. Task checkboxes are disabled in preview. Styles are restricted to numeric layout declarations required by math. Markdown source remains unchanged; no data migration.
+No Dataview/community-plugin execution or custom MathJax macro settings are claimed. PDF display depends on browser PDF support; mobile users retain the open-file link. Rendering dependencies are bundled locally rather than fetched from third-party CDNs. Implementation is local pending deployment; build/unit/browser validation accompanies the source commit.
+
+The preceding star-action/heading-gallery release was deployed separately and verified healthy through HTTPS, with the new gallery present in the served bundle and port 4173 still loopback-only.

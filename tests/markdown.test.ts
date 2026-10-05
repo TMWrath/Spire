@@ -1,0 +1,13 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {renderMarkdown} from '../client/markdown';
+import type {Note} from '../shared/model';
+const note=(path:string,content:string):Note=>({id:path,path,content,rev:1,deleted:false,history:[],time:''});
+test('Obsidian syntax renders highlights, callouts, math, footnotes, block anchors and highlighted code',()=>{
+ const n=note('General/Formats.md','==bright **bold**==\n\n> [!tip]- Details\n> Hidden content\n\n$E=mc^2$\n\n$$\n\\frac{1}{3}\n$$\n\nText[^one].\n\n[^one]: Source detail\n\nQuoted block. ^block-1\n\n```js\nconst x = 1;\n```\n\n```mermaid\ngraph TD; A-->B;\n```');const html=renderMarkdown(n,[n],[]);assert.match(html,/<mark>bright <strong>bold/);assert.match(html,/<details class="callout callout-tip" >/);assert.match(html,/Hidden content/);assert.match(html,/class="katex/);assert.match(html,/katex-display/);assert.match(html,/id="fn-one"/);assert.match(html,/Source detail/);assert.match(html,/id="block-1"/);assert.match(html,/hljs-keyword/);assert.match(html,/mermaid-source/);
+});
+test('code and escaped syntax are not interpreted as Obsidian extensions',()=>{const n=note('General/Code.md','`==plain== $x$ [[Other]]`\n\n```text\n==plain==\n[[Other]]\n```\n\n\\==escaped==');const html=renderMarkdown(n,[n],[]);assert.doesNotMatch(html,/<mark>|class="katex|href=/);});
+test('embeds resolve notes, heading sections, blocks and local media without recursion',()=>{
+ const target=note('General/Other.md','# First\nInclude me. ^chosen\n\n# Second\nDo not include.');const n=note('General/Main.md','![[Other#First]]\n\n![[Other#^chosen]]\n\n![[photo.png]]\n\n![[sound.mp3]]\n\n![[doc.pdf]]');const html=renderMarkdown(n,[n,target],['Attachments/photo.png','Attachments/sound.mp3','Attachments/doc.pdf']);assert.match(html,/Include me/);assert.doesNotMatch(html,/Do not include/);assert.match(html,/<img src="\/api\/attachment/);assert.match(html,/<audio controls/);assert.match(html,/data-pdf-path="Attachments\/doc.pdf"/);const cycle=note('General/Cycle.md','![[Cycle]]');assert.match(renderMarkdown(cycle,[cycle],[]),/Circular or deeply nested/);
+});
+test('baseline CommonMark/GFM and safe HTML formatting remain available',()=>{const n=note('General/Base.md','# Title\n\n***both*** ~~strike~~ <u>underline</u>\n\n- Parent\n    - Child\n\n- [ ] Open\n- [x] Done\n\n| A | B |\n| --- | ---: |\n| 1 | 2 |\n\nhttps://example.com\n\n---');const html=renderMarkdown(n,[n],[]);for(const pattern of [/<h1>/,/<strong>/,/<del>/,/<u>/,/<table>/,/type="checkbox"/,/<hr>/,/href="https:\/\/example.com"/])assert.match(html,pattern);});
