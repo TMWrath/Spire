@@ -1,5 +1,11 @@
 # Spire — Bugs
 
+## Table editor header overlapped its size controls on mobile
+
+**State:** Resolved locally; awaiting private-preview deployment.
+
+At narrow mobile widths, the table editor header inherited the application's fixed `58px` mobile header height. Its instruction text overflowed that fixed box, so the Rows and Columns controls rendered over the sentence. The table dialog header now explicitly uses content-driven height, and browser coverage verifies that the size controls begin below the complete instruction text at a 390px mobile viewport.
+
 ## Permanent deletion remained visible when invoked from the open trashed note
 
 **State:** Resolved locally; not yet deployed to the private preview.
