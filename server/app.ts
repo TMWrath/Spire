@@ -14,10 +14,11 @@ type Auth = {owner?:{id:string;username:string;salt:string;hash:string};devices:
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 export function createApp(root:string,origin:string){
  const app=express(),store=new Store(root);const url=new URL(origin);if(url.origin!==origin)throw new Error('SPIRE_ORIGIN must be an exact origin');if(url.protocol!=='https:'&&!['127.0.0.1','localhost','[::1]'].includes(url.hostname))throw new Error('Non-loopback origins require HTTPS');
+ app.set('trust proxy',1);
  let auth:Auth=store.load('auth.json')??{devices:[],sessions:{}};const saveAuth=()=>atomic(store.file('auth.json'),JSON.stringify(auth));
  app.disable('x-powered-by');app.use(helmet({contentSecurityPolicy:{directives:{defaultSrc:["'self'"],scriptSrc:["'self'"],styleSrc:["'self'"],imgSrc:["'self'",'data:','blob:'],objectSrc:["'none'"],frameSrc:["'none'"],upgradeInsecureRequests:url.protocol==='https:'?[]:null}},strictTransportSecurity:url.protocol==='https:'?undefined:false}));
  app.use((req,res,next)=>{if(req.headers.host!==url.host)return res.status(403).json({error:'Host rejected'});next();});
- app.use('/api',(req,res,next)=>{res.set('Cache-Control','no-store');if(!['GET','HEAD'].includes(req.method)&&req.headers.origin!==origin)return res.status(403).json({error:'Origin rejected'});next();});
+ app.use('/api',(req,res,next)=>{res.set('Cache-Control','no-store');if(!['GET','HEAD'].includes(req.method)){const started=Date.now();res.on('finish',()=>console.info(JSON.stringify({event:'api_mutation',method:req.method,path:req.path,status:res.statusCode,durationMs:Date.now()-started})));}if(!['GET','HEAD'].includes(req.method)&&req.headers.origin!==origin)return res.status(403).json({error:'Origin rejected'});next();});
  app.use(cookieParser());app.use(express.json({limit:'2mb'}));
  app.get('/api/health',(_req,res)=>res.json({ok:!store.poisoned}));
  app.get('/api/bootstrap',(_req,res)=>res.json({setup:!auth.owner}));
