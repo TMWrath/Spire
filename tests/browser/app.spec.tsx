@@ -205,9 +205,9 @@ test('empty note selector shows a clearly marked visual example without insertin
  await expect(dialog.getByRole('button',{name:'Insert header and hero'})).toHaveCount(0);
  await page.getByRole('button',{name:'Toggle context'}).click();
  const card=page.locator('.note-context-card');
- await expect(card.getByRole('button',{name:'Edit description'})).toHaveText('Just my own prose.');
+ await expect(card.getByRole('button',{name:'Edit description'})).toHaveText('Add a description…');
  await card.getByRole('button',{name:'Edit description'}).click();
- await expect(card.getByLabel('Note description')).toHaveValue('Just my own prose.');
+ await expect(card.getByLabel('Note description')).toHaveValue('');
 });
 
 test('template-only note does not turn generated Markdown into its description',async({page})=>{

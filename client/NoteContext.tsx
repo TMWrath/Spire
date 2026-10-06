@@ -9,7 +9,7 @@ export function NoteContext({note,notes,stylePath,styleContent,onStyleDraft,onCs
  const meta=metadata(note.content);
  const title=note.path.split('/').at(-1)?.replace(/\.md$/i,'')||note.path;
  const [titleDraft,setTitleDraft]=useState(title),[descriptionDraft,setDescriptionDraft]=useState(''),[tagDraft,setTagDraft]=useState('');
- const description=typeof meta.properties.description==='string'?meta.properties.description:meta.body.replace(/<!-- spire:hero-section:start -->[\s\S]*?<!-- spire:hero-section:end -->/g,'').split(/\n\s*\n/).map(p=>p.replace(/^\s{0,3}#{1,6}\s+[^\n]*\n?/,'').replace(/!?(?:\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]*\))/g,'').trim()).find(Boolean)||'';
+ const description=typeof meta.properties.description==='string'?meta.properties.description:'';
  const hero=typeof meta.properties.hero==='string'&&/^Attachments\/[\w./-]+\.(png|jpe?g|webp|gif)$/i.test(meta.properties.hero)?meta.properties.hero:null;
  const outgoing=links(note.content).map(link=>({link,target:resolveLink(link,note,notes)})).filter((entry):entry is {link:ReturnType<typeof links>[number];target:Note}=>!!entry.target&&!entry.target.deleted&&entry.target.id!==note.id);
  const incoming=notes.filter(n=>!n.deleted&&n.id!==note.id&&links(n.content).some(l=>resolveLink(l,n,notes)?.id===note.id));
