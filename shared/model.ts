@@ -26,8 +26,8 @@ export type Revision = { rev: number; path: string; content: string; deleted: bo
 export type Note = Revision & { id: string; history: Revision[] };
 export type Conflict = { id: string; mutation: Mutation; current: number; time: string };
 export type Attachment = { path: string; data: string };
-export type State = { version: 1; seq: number; notes: Record<string, Note>; folders?: string[]; purged?: string[]; conflicts: Conflict[]; events: { seq: number; id: string; rev: number; device: string; time: string }[]; operations: Record<string, { id: string; rev: number }>; attachments: Attachment[] };
-export const emptyState = (): State => ({ version: 1, seq: 0, notes: {}, folders: [], purged: [], conflicts: [], events: [], operations: {}, attachments: [] });
+export type State = { version: 1; seq: number; notes: Record<string, Note>; folders?: string[]; styles?: Record<string,string>; purged?: string[]; conflicts: Conflict[]; events: { seq: number; id: string; rev: number; device: string; time: string }[]; operations: Record<string, { id: string; rev: number }>; attachments: Attachment[] };
+export const emptyState = (): State => ({ version: 1, seq: 0, notes: {}, folders: [], styles: {}, purged: [], conflicts: [], events: [], operations: {}, attachments: [] });
 export function metadata(content: string): { properties: Record<string, unknown>; aliases: string[]; tags: string[]; body: string; error?: string } {
  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(content); let properties: Record<string, unknown> = {}; let error: string | undefined;
  if (match) { try { const value = parse(match[1], { maxAliasCount: 20 }); if (value && typeof value === 'object' && !Array.isArray(value)) properties = value; else error = 'Frontmatter must be a mapping'; } catch { error = 'Invalid YAML; source preserved'; } }

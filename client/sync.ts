@@ -1,9 +1,9 @@
 import {openDB} from 'idb';
 import {type Note,type Mutation,type Conflict,mutationSchema} from '../shared/model';
 export type Identity={owner:string;username:string;csrf:string;device:{id:string;name:string}};
-export type Snapshot={seq:number;notes:Note[];folders:string[];conflicts:Conflict[];attachments:{path:string;size:number}[]};
+export type Snapshot={seq:number;notes:Note[];folders:string[];styles:Record<string,string>;conflicts:Conflict[];attachments:{path:string;size:number}[]};
 type Cache={identity?:Identity;snapshot:Snapshot;outbox:Mutation[]};
-const blank=():Cache=>({snapshot:{seq:0,notes:[],folders:[],conflicts:[],attachments:[]},outbox:[]});
+const blank=():Cache=>({snapshot:{seq:0,notes:[],folders:[],styles:{},conflicts:[],attachments:[]},outbox:[]});
 const db=openDB('spire-private-v1',1,{upgrade(db){db.createObjectStore('cache');}});
 export class ApiError extends Error{constructor(public status:number,message:string,public details?:Conflict){super(message);}}
 export async function api(url:string,options:RequestInit={},csrf?:string){const r=await fetch('/api'+url,{...options,headers:{...(options.body instanceof Blob?{}:{'Content-Type':'application/json'}),...(csrf?{'X-CSRF-Token':csrf}:{}),...options.headers},signal:AbortSignal.timeout(15000)});if(!r.ok){const e=await r.json().catch(()=>({error:r.statusText}));throw new ApiError(r.status,e.error,e.details);}return r.json();}

@@ -36,6 +36,21 @@ test('Reliquary migration preserves notes, attachments, empty folders, state and
 test('portable paths reject traversal, platform hazards and hidden metadata',()=> { for(const p of ['../x.md','/x.md','a\\b.md','.spire/a.md','a/../b','a//b','NUL.md','x%2fy.md']) assert.equal(safePath.safeParse(p).success,false,p); assert.ok(safePath.safeParse('Notes/Hello world.md').success); });
 test('revision CAS, replay, delete/restore and durable conflict survive restart',()=> { let s=fresh(); const m=create(); const a=s.mutate(m,'d'); assert.equal(a.rev,1); assert.equal(s.mutate(m,'d').rev,1); assert.throws(()=>s.mutate({...m,op:randomUUID(),content:'stale'},'d'), /Conflict/); assert.equal(s.state.conflicts.length,1); const b=s.mutate({...m,op:randomUUID(),base:1,deleted:true},'d'); assert.equal(b.rev,2); assert.equal(fs.existsSync(`${root}/vault/${m.path}`),false); s=new Store(root); assert.equal(s.state.conflicts.length,1); s.mutate({...m,op:randomUUID(),base:2},'d'); assert.equal(fs.readFileSync(`${root}/vault/${m.path}`,'utf8'),'# First'); });
 test('rename updates wiki and relative Markdown references as a transaction',()=>{const s=fresh();const a=create('Folder/First.md');s.mutate(a,'d');const b=create('Other.md','[[First#Top|label]] [link](Folder/First.md#Top) `[[First]]`');s.mutate(b,'d');s.mutate({...a,base:1,op:randomUUID(),path:'New/Renamed.md'},'d'); assert.equal(s.state.notes[b.id].content,'[[New/Renamed#Top|label]] [link](New/Renamed.md#Top) `[[First]]`');assert.equal(s.state.notes[b.id].rev,2);assert.equal(fs.existsSync(`${root}/vault/Folder/First.md`),false);});
+test('adjacent stylesheets are portable, follow file renames, and unmatched styles remain in place',()=>{
+ let s=fresh();const file=create('Writing/First.md');s.mutate(file,'d');
+ s.putStyle('Writing/First.css','.preview { color: ivory; }');
+ s.putStyle('Writing/Loose.css','h1 { letter-spacing: .1em; }');
+ assert.equal(fs.readFileSync(`${root}/vault/Writing/First.css`,'utf8'),'.preview { color: ivory; }');
+ s.mutate({...file,base:1,op:randomUUID(),path:'Archive/Renamed.md'},'d');
+ assert.equal(s.state.styles?.['Archive/Renamed.css'],'.preview { color: ivory; }');
+ assert.equal(s.state.styles?.['Writing/First.css'],undefined);
+ assert.equal(s.state.styles?.['Writing/Loose.css'],'h1 { letter-spacing: .1em; }');
+ assert.equal(fs.existsSync(`${root}/vault/Writing/First.css`),false);
+ assert.equal(fs.readFileSync(`${root}/vault/Archive/Renamed.css`,'utf8'),'.preview { color: ivory; }');
+ assert.throws(()=>s.putStyle('Archive/Renamed.css','@import "https://example.com/x.css"'),/not allowed/i);
+ assert.throws(()=>s.putStyle('Archive/Renamed.css','p { background: url(https://example.com/x) }'),/not allowed/i);
+ s=new Store(root);assert.equal(s.state.styles?.['Archive/Renamed.css'],'.preview { color: ivory; }');
+});
 test('duplicate path rejected; symlink boundary refused',()=>{const s=fresh();s.mutate(create(),'d');assert.throws(()=>s.mutate(create(),'d'));fs.symlinkSync(process.cwd(),`${root}/vault/Escape`);assert.throws(()=>s.mutate(create('Escape/Bad.md'),'d'),/symbolic/i);fs.unlinkSync(`${root}/vault/Escape`);});
 test('prepared journal rolls forward after interruption',()=>{let s=fresh();const a=create();s.mutate(a,'d');const next=structuredClone(s.state);next.notes[a.id].content='recovered';fs.writeFileSync(`${root}/pending.json`,JSON.stringify({before:s.state,after:next}));s=new Store(root);assert.equal(fs.readFileSync(`${root}/vault/${a.path}`,'utf8'),'recovered');assert.equal(fs.existsSync(`${root}/pending.json`),false);});
 test('frontmatter preserves arbitrary properties, aliases and nested tags',()=>{const m=metadata('---\naliases: [One, Two]\ntags: [a/b]\ncustom: 42\n---\n# Hello\n#inline');assert.deepEqual(m.aliases,['One','Two']);assert.equal(m.properties.custom,42);assert.deepEqual(m.tags,['a/b','inline']);assert.equal(mutationSchema.safeParse(create()).success,true);});
