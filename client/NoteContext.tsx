@@ -1,3 +1,4 @@
+import {RevisionHistory} from './RevisionHistory';
 import {touchEditing} from './editor-focus';
 import React,{useState} from 'react';
 import {CalendarDays,ChevronDown,FileText,Image as ImageIcon,Link2,MoreHorizontal,Network,Pencil,Plus,ArrowUpRight} from 'lucide-react';
@@ -22,5 +23,5 @@ export function NoteContext({note,notes,open,edit,rename,descriptionChange,addTa
  <div className="context-stats"><div><Network/><span>Linked Notes</span><strong>{linked.length}</strong></div><div><Link2/><span>Direct Links</span><strong>{outgoing.length}</strong></div><div><Network/><span>Backlinks</span><strong>{incoming.length}</strong></div><div><CalendarDays/><span>First Created</span><strong>{date(note.history[0]?.time||note.time)}</strong></div><div><Pencil/><span>Last Edited</span><strong>{date(note.time)}</strong></div></div>
  <details className="context-linked" open><summary><ChevronDown aria-hidden="true"/><span>Linked Notes ({linked.length})</span><button aria-label="Add linked note" onClick={e=>{e.preventDefault();addLink();}}><Plus/></button></summary><div className="context-link-list">{linked.map(n=><button key={n.id} onClick={()=>open(n)}><FileText/><span>{n.path.split('/').at(-1)?.replace(/\.md$/i,'')}</span><ArrowUpRight/></button>)}{linked.length===0&&<p className="muted">No linked notes yet.</p>}</div></details>
  {meta.error&&<p className="muted" role="alert">{meta.error}</p>}
- <details className="context-advanced"><summary>Properties and revisions</summary><p className="muted">Edit other properties in Markdown source.</p><pre>{JSON.stringify(meta.properties,null,2)}</pre><details><summary>Revision history ({note.history.length})</summary>{[...note.history].reverse().map(r=><details key={r.rev}><summary>Revision {r.rev} · {date(r.time)}</summary><pre>{r.content}</pre><button onClick={()=>restore(r.rev)}>Restore revision {r.rev}</button></details>)}</details></details></div>;
+ <details className="context-advanced"><summary>Properties and revisions</summary><p className="muted">Edit other properties in Markdown source.</p><pre>{JSON.stringify(meta.properties,null,2)}</pre><RevisionHistory note={note} restore={restore}/></details></div>;
 }
