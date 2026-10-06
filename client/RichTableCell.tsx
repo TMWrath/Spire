@@ -1,3 +1,5 @@
+import {TextSelection} from '@tiptap/pm/state';
+import {touchEditing} from './editor-focus';
 import React,{useEffect,useRef} from 'react';
 import {useEditor,EditorContent,type Editor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -21,9 +23,10 @@ export function RichTableCell({source,label,alignment,onChange,onActive,autoFocu
    // Paste plain text rather than importing arbitrary external HTML/styles.
    handlePaste:(view,event)=>{const text=event.clipboardData?.getData('text/plain');if(text===undefined)return false;event.preventDefault();view.dispatch(view.state.tr.insertText(text));return true;}},
   onFocus:({editor})=>callbacks.current.onActive(editor),
+  onBlur:({editor})=>{const selection=window.getSelection(),view=editor.view;if(!selection?.anchorNode||!selection.focusNode||!view.dom.contains(selection.anchorNode)||!view.dom.contains(selection.focusNode))return;const anchor=view.posAtDOM(selection.anchorNode,selection.anchorOffset),head=view.posAtDOM(selection.focusNode,selection.focusOffset);view.dispatch(editor.state.tr.setSelection(TextSelection.between(editor.state.doc.resolve(anchor),editor.state.doc.resolve(head))));},
   onUpdate:({editor})=>callbacks.current.onChange(editor.getMarkdown()),
  });
- useEffect(()=>{if(editor&&autoFocus)editor.commands.focus('start');},[editor,autoFocus]);
+ useEffect(()=>{if(editor&&autoFocus&&!touchEditing())editor.commands.focus('start');},[editor,autoFocus]);
  // Never replace a live editor's document on React updates: that would destroy its selection/history.
  return <EditorContent editor={editor} style={{textAlign:alignment??'left'}}/>;
 }

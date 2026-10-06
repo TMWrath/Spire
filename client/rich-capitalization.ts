@@ -1,3 +1,4 @@
+import {focusForTyping} from './editor-focus';
 import type {Editor} from '@tiptap/react';
 import {closeHistory} from '@tiptap/pm/history';
 import {TextSelection} from '@tiptap/pm/state';
@@ -13,5 +14,5 @@ export function capitalizeCell(editor:Editor,style:string){
  for(const piece of pieces.reverse())if(piece.text!==doc.textBetween(piece.start,piece.end))tr.replaceWith(piece.start,piece.end,editor.schema.text(piece.text,piece.marks));
  if(!tr.docChanged)return;
  tr.setSelection(TextSelection.create(tr.doc,tr.mapping.map(from,-1),tr.mapping.map(to,1)));
- editor.view.dispatch(tr);editor.commands.focus();
+ editor.view.dispatch(tr);focusForTyping(editor.commands);
 }

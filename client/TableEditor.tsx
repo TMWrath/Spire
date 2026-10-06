@@ -1,3 +1,4 @@
+import {touchEditing,focusForTyping} from './editor-focus';
 import React,{useRef,useState} from 'react';
 import {FormattingToolbar,type FormatKind} from './FormattingToolbar';
 import {wordRange} from './capitalization';
@@ -16,7 +17,7 @@ export function TableEditor({initial,initialAlignments=[],onClose,onSave,editing
  const formatMarkdown=(kind:FormatKind,option:number|string=2)=>{
   const editor=richEditor.current;if(!editor||editor.isDestroyed)return;
   if(kind==='case'){capitalizeCell(editor,String(option));return;}
-  const chain=editor.chain().focus();
+  const chain=touchEditing()?editor.chain():editor.chain().focus();
   if(kind==='bold')chain.toggleBold().run();
   else if(kind==='italic')chain.toggleItalic().run();
   else if(kind==='underline')chain.toggleUnderline().run();
@@ -33,7 +34,7 @@ export function TableEditor({initial,initialAlignments=[],onClose,onSave,editing
    }else{if(!editor.isActive('bulletList'))chain.toggleBulletList();chain.run();}
   }
  };
- const formatHtml=(option:'left'|'center'|'right')=>{const column=active.current[1];if(column>=columns)return;setAlignments(current=>Array.from({length:columns},(_,i)=>i===column?option:current[i]??null));richEditor.current?.commands.focus();};
+ const formatHtml=(option:'left'|'center'|'right')=>{const column=active.current[1];if(column>=columns)return;setAlignments(current=>Array.from({length:columns},(_,i)=>i===column?option:current[i]??null));focusForTyping(richEditor.current?.commands);};
  return <div className="template-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)onClose();}}><section className="table-editor" role="dialog" aria-modal="true" aria-label={editing?'Edit Markdown table':'Create Markdown table'}>
   <header className="table-editor-head"><div><small>MARKDOWN / TABLE</small><h2>{editing?'Edit table':'Create a table'}</h2><p>Fill in the grid. The first row becomes the table header.</p></div><button aria-label="Close table editor" onClick={onClose}><X/></button></header>
   <div className="table-size-controls" aria-label="Table size controls"><span>Rows</span><button aria-label="Remove row" disabled={rows<=2} onClick={()=>resize(rows-1,columns)}><Minus/></button><output aria-label="Row count">{rows}</output><button aria-label="Add row" onClick={()=>resize(rows+1,columns)}><Plus/></button><span>Columns</span><button aria-label="Remove column" disabled={columns<=1} onClick={()=>resize(rows,columns-1)}><Minus/></button><output aria-label="Column count">{columns}</output><button aria-label="Add column" onClick={()=>resize(rows,columns+1)}><Plus/></button></div>

@@ -1,8 +1,13 @@
 # Spire — Features
 
+## Mobile keyboard focus
+
+Touch-capable devices no longer force text-field focus after formatting, capitalization, alignment, table insertion, template insertion, or chooser dismissal. Dialog and metadata fields wait for a direct tap instead of autofocus; desktop retains focus conveniences. Table cells snapshot their DOM selection on blur so toolbar actions retain the selected text without reopening the keyboard. Touch toolbar presses preserve selection without preventing native horizontal scrolling. Mobile touch-event regression verifies source/rich-cell transformations, no editor autofocus, table insertion, link-form opening, and direct writing-area focus. Production build, 30 unit/API tests and all 27 browser tests passed across split runs.
+
+
 ## Capitalization gallery
 
-**State:** Implemented and locally verified; not published yet. The shared **Aa ▾** control uses the same horizontally scrollable preview-card gallery as Headings, in the Markdown section before HTML. Styles: UPPERCASE, lowercase, Title Case (every word), Sentence case, and tOGGLE cASE. Cards preview selected text or the cursor word. Applying a style transforms the selection or the cursor word, preserves surrounding content, and keeps the transformed selection usable. Rich table cells retain existing marks, including combined bold/italic/underline, and capitalization is a single undoable transaction; Insert/Update and reopening retain the result. Unicode letters, contractions, multi-line selections, and case expansions such as ß → SS are supported. Empty/whitespace cursor positions are no-ops. This is a direct text conversion, not CSS-only styling or custom Markdown syntax.
+**State:** Implemented, production-build and browser verified, and deployed to the private preview from `0938f78`. Fresh data backup checksum verified; container healthy; local/container/live JavaScript hashes match. The shared **Aa ▾** control uses the same horizontally scrollable preview-card gallery as Headings, in the Markdown section before HTML. Styles: UPPERCASE, lowercase, Title Case (every word), Sentence case, and tOGGLE cASE. Cards preview selected text or the cursor word. Applying a style transforms the selection or the cursor word, preserves surrounding content, and keeps the transformed selection usable. Rich table cells retain existing marks, including combined bold/italic/underline, and capitalization is a single undoable transaction; Insert/Update and reopening retain the result. Unicode letters, contractions, multi-line selections, and case expansions such as ß → SS are supported. Empty/whitespace cursor positions are no-ops. This is a direct text conversion, not CSS-only styling or custom Markdown syntax.
 
 
 ## Table editor formatting toolbar
