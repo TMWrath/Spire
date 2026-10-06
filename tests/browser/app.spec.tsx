@@ -164,17 +164,23 @@ test('calendar date shows its files and creates a new dated file only on request
  await expect(page.getByLabel('Note path',{exact:true})).toHaveValue(`Daily Notes/${iso} - Morning thoughts.md`);
 });
 
-test('Markdown toolbar inserts the current date and time at the selection',async({page})=>{
- await login(page);await create(page,'Writing/Date and time.md','Before replace after');
+test('Markdown toolbar asks for current or manual date and time at the selection',async({page})=>{
+ await login(page);await create(page,'Writing/Date and time.md','Date replace | Time replace');
  const source=page.getByLabel('Markdown source');
- const date=await page.evaluate(()=>{const now=new Date();return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;});
- await source.evaluate((el:HTMLTextAreaElement)=>{el.focus();el.setSelectionRange(7,14);});
+ const currentDate=await page.evaluate(()=>{const now=new Date();return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;});
  const toolbar=page.getByRole('toolbar',{name:'Markdown formatting'});
+ await source.evaluate((el:HTMLTextAreaElement)=>{el.focus();el.setSelectionRange(5,12);});
  await toolbar.getByRole('button',{name:'Insert date',exact:true}).click();
- await expect(source).toHaveValue(`Before ${date} after`);
- await source.evaluate((el:HTMLTextAreaElement)=>{el.focus();el.setSelectionRange(el.value.length,el.value.length);});
- await toolbar.getByRole('button',{name:'Insert time',exact:true}).click();
- await expect(source).toHaveValue(new RegExp(`^Before ${date} after\\d{2}:\\d{2}$`));
+ let chooser=page.getByRole('dialog',{name:'Insert date'});await expect(chooser).toBeVisible();await expect(chooser.getByRole('button',{name:'Current',exact:true})).toBeVisible();await expect(chooser.getByRole('button',{name:'Manual',exact:true})).toBeVisible();await chooser.getByRole('button',{name:'Current',exact:true}).click();
+ await expect(source).toHaveValue(`Date ${currentDate} | Time replace`);
+ await source.evaluate((el:HTMLTextAreaElement,date)=>{const start=el.value.indexOf(date);el.focus();el.setSelectionRange(start,start+date.length);},currentDate);
+ await toolbar.getByRole('button',{name:'Insert date',exact:true}).click();chooser=page.getByRole('dialog',{name:'Insert date'});await chooser.getByRole('button',{name:'Manual',exact:true}).click();await expect(chooser.getByLabel('Date',{exact:true})).toHaveAttribute('type','date');await chooser.getByLabel('Date',{exact:true}).fill('2030-12-25');await chooser.getByRole('button',{name:'Insert selected date',exact:true}).click();
+ await expect(source).toHaveValue('Date 2030-12-25 | Time replace');
+ await source.evaluate((el:HTMLTextAreaElement)=>{const start=el.value.indexOf('replace');el.focus();el.setSelectionRange(start,start+7);});
+ await toolbar.getByRole('button',{name:'Insert time',exact:true}).click();chooser=page.getByRole('dialog',{name:'Insert time'});await chooser.getByRole('button',{name:'Current',exact:true}).click();await expect(source).toHaveValue(/^Date 2030-12-25 \| Time \d{2}:\d{2}$/);
+ await source.evaluate((el:HTMLTextAreaElement)=>{const match=el.value.match(/\d{2}:\d{2}$/)!;const start=el.value.length-match[0].length;el.focus();el.setSelectionRange(start,el.value.length);});
+ await toolbar.getByRole('button',{name:'Insert time',exact:true}).click();chooser=page.getByRole('dialog',{name:'Insert time'});await chooser.getByRole('button',{name:'Manual',exact:true}).click();await expect(chooser.getByLabel('Time',{exact:true})).toHaveAttribute('type','time');await chooser.getByLabel('Time',{exact:true}).fill('09:45');await chooser.getByRole('button',{name:'Insert selected time',exact:true}).click();
+ await expect(source).toHaveValue('Date 2030-12-25 | Time 09:45');
 });
 test('star icon persists in portable note content and survives reload',async({browser})=>{
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await login(page);await create(page,'Important.md','# Keep this');await page.getByRole('button',{name:'Star note'}).click();await expect(page.getByRole('button',{name:'Unstar note'})).toHaveAttribute('aria-pressed','true');await synced(page);await page.reload();await openNote(page,'Important');await expect(page.getByRole('button',{name:'Unstar note'})).toBeVisible();await page.getByRole('button',{name:'Unstar note'}).click();await synced(page);await expect(page.getByRole('button',{name:'Star note'})).toHaveAttribute('aria-pressed','false');await context.close();
