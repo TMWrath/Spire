@@ -2,6 +2,14 @@ import {test} from 'node:test';
 import {strict as assert} from 'node:assert';
 import {findManagedTableAt,managedTableMarkdown,placeManagedTable} from '../shared/managed-table';
 
+test('Markdown column alignments round-trip without changing cell content',()=>{
+ const cells=[['A','B','C'],['one','two','three']];
+ const block=managedTableMarkdown('aligned',cells,['left','center','right']);
+ assert.ok(block.includes('| :--- | :---: | ---: |'));assert.ok(!block.includes('<div'));
+ const parsed=findManagedTableAt(block,0)!;assert.deepEqual(parsed.cells,cells);assert.deepEqual(parsed.alignments,['left','center','right']);
+ const result=placeManagedTable(block,0,[['A','B','C'],['updated','two','three']],parsed);
+ assert.ok(result.content.includes('| :--- | :---: | ---: |'));
+});
 test('managed table emits portable Markdown wrapped in invisible stable markers',()=>{
  assert.equal(managedTableMarkdown('table-1',[['Name','Notes'],['Ty','A | B']]),'<!-- spire:table id=table-1 -->\n| Name | Notes |\n| --- | --- |\n| Ty | A \\| B |\n<!-- /spire:table -->');
 });

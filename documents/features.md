@@ -4,7 +4,8 @@
 - The table dialog reuses the main editor Markdown/HTML formatting toolbar and visual heading, list, and alignment choosers.
 - Formatting targets the active cell and preserves its text selection; Cancel leaves the note unchanged, and Insert/Update applies the edited grid.
 - The dialog omits nested-table creation and note-level insert tools. Markdown remains before HTML; the rail scrolls on mobile without widening the dialog.
-- Source implementation verified locally; not deployed yet.
+- Shared toolbar deployed from `78e18bd`.
+- Follow-up (locally verified, not deployed): table alignment uses native Markdown column delimiters (`:---`, `:---:`, `---:`), leaves cell content unchanged, and round-trips on reopening. The main editor retains HTML paragraph alignment.
 
 
 ## Knowledge hierarchy and provisional terminology
