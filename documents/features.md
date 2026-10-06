@@ -26,7 +26,7 @@ Touch-capable devices no longer force text-field focus after formatting, capital
 
 ### Empty workspace canvas
 
-**State:** The previous centered **Shape your Reliquary.** onboarding, explanatory text, folder icon, and **Create your first folder** button have been removed. When no file is selected, the writing canvas remains empty so it can receive the planned replacement experience later. Folder creation remains available through the sidebar’s **Create → New folder** action.
+**State:** Deployed to the Tailscale-only private preview from implementation commit `6905f7d7464aa3880a622f9030f0053c7c4cf2a1` in immutable release `20261006T223137Z-clear-empty-canvas-6905f7d`. The previous centered **Shape your Reliquary.** onboarding, explanatory text, folder icon, and **Create your first folder** button have been removed. When no file is selected, the writing canvas remains empty so it can receive the planned replacement experience later. Folder creation remains available through the sidebar’s **Create → New folder** action.
 
 ## Folder deletion and reassignment
 
