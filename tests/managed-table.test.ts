@@ -25,3 +25,10 @@ test('managed table updates in place without changing surrounding prose',()=>{
  const result=placeManagedTable(original,table.start,[['Heading'],['Updated']],table);
  assert.equal(result.content,`Before\n\n${managedTableMarkdown('table-1',[['Heading'],['Updated']])}\n\nAfter`);
 });
+
+test('rich-cell Markdown escapes and marks survive the table storage boundary',()=>{
+ const cells=[['Title'],['Literal \\*asterisks\\* and **bold** with \\[brackets\\]']];
+ const block=managedTableMarkdown('rich',cells);
+ assert.ok(block.includes('| Literal \\*asterisks\\* and **bold** with \\[brackets\\] |'));
+ assert.deepEqual(findManagedTableAt(block,0)?.cells,cells);
+});

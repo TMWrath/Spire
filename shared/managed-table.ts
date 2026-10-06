@@ -10,10 +10,10 @@ const splitRow=(line:string)=>{
  for(const char of inner){
   if(escaped){cell+=char;escaped=false;continue;}
   if(char==='\\'){escaped=true;cell+=char;continue;}
-  if(char==='|'){cells.push(cell.trim().replace(/\\\|/g,'|').replace(/\\\\/g,'\\'));cell='';continue;}
+  if(char==='|'){cells.push(cell.trim().replace(/\\\|/g,'|'));cell='';continue;}
   cell+=char;
  }
- cells.push(cell.trim().replace(/\\\|/g,'|').replace(/\\\\/g,'\\'));
+ cells.push(cell.trim().replace(/\\\|/g,'|'));
  return cells;
 };
 
@@ -37,7 +37,8 @@ export function findManagedTableAt(content:string,offset:number):ManagedTable|nu
  }
 }
 
-const escapeCell=(value:string)=>value.replace(/\\/g,'\\\\').replace(/\|/g,'\\|').replace(/\r?\n/g,'<br>');
+// Cells contain Markdown, not raw text: never double its syntax escapes.
+const escapeCell=(value:string)=>value.replace(/(\\*)\|/g,(_,slashes:string)=>slashes+(slashes.length%2?'':'\\')+'|').replace(/\r?\n/g,'<br>');
 export function managedTableMarkdown(id:string,cells:string[][],alignments:TableAlignment[]=[]){
  const columns=Math.max(1,...cells.map(row=>row.length));
  const rows=(cells.length?cells:[[]]).map(row=>Array.from({length:columns},(_,index)=>escapeCell(row[index]??'')));
