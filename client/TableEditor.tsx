@@ -16,6 +16,7 @@ export function TableEditor({initial,initialAlignments=[],onClose,onSave,editing
   const chain=editor.chain().focus();
   if(kind==='bold')chain.toggleBold().run();
   else if(kind==='italic')chain.toggleItalic().run();
+  else if(kind==='underline')chain.toggleUnderline().run();
   else if(kind==='strike')chain.toggleStrike().run();
   else if(kind==='code')chain.toggleCode().run();
   else if(kind==='heading'){const level=Number(option);if(!level)chain.setParagraph().run();else chain.setHeading({level:level as 1|2|3|4|5|6}).run();}

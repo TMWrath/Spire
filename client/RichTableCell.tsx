@@ -2,6 +2,12 @@ import React,{useEffect,useRef} from 'react';
 import {useEditor,EditorContent,type Editor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import {Markdown} from '@tiptap/markdown';
+import Underline from '@tiptap/extension-underline';
+// Use ordinary HTML, not Tiptap's nonstandard ++underline++ dialect.
+const PortableUnderline=Underline.extend({
+ renderMarkdown:(node,helpers)=>`<u>${helpers.renderChildren(node)}</u>`,
+ markdownTokenizer:{name:'underline',level:'inline',start:src=>src.indexOf('<u>'),tokenize:(src,_tokens,lexer)=>{const match=/^<u>([\s\S]+?)<\/u>/.exec(src);if(!match)return;return {type:'underline',raw:match[0],tokens:lexer.inlineTokens(match[1])};}},
+});
 import {TaskList,TaskItem} from '@tiptap/extension-list';
 import type {TableAlignment} from '../shared/managed-table';
 
@@ -9,7 +15,7 @@ import type {TableAlignment} from '../shared/managed-table';
 export function RichTableCell({source,label,alignment,onChange,onActive,autoFocus=false}:{source:string;label:string;alignment:TableAlignment;onChange:(source:string)=>void;onActive:(editor:Editor)=>void;autoFocus?:boolean}){
  const callbacks=useRef({onChange,onActive});callbacks.current={onChange,onActive};
  const editor=useEditor({
-  extensions:[StarterKit.configure({link:{openOnClick:false},orderedList:{keepMarks:true},bulletList:{keepMarks:true}}),TaskList,TaskItem.configure({nested:true}),Markdown],
+  extensions:[PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false},orderedList:{keepMarks:true},bulletList:{keepMarks:true}}),TaskList,TaskItem.configure({nested:true}),Markdown],
   content:source,contentType:'markdown',
   editorProps:{attributes:{role:'textbox','aria-label':label,'aria-multiline':'true',class:'rich-table-cell'},
    // Paste plain text rather than importing arbitrary external HTML/styles.
