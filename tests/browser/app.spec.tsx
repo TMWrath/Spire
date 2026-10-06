@@ -1,14 +1,15 @@
 import {test,expect,type Page} from '@playwright/test';
 const credentials={username:'tester',password:'disposable-test-password',device:'Desktop'};
 async function login(page:Page,setup=false){await page.goto('/');await page.getByLabel('Username',{exact:true}).fill(credentials.username);await page.getByLabel('Password',{exact:true}).fill(credentials.password);const first=setup||await page.getByRole('button',{name:'Create Reliquary',exact:true}).isVisible();await page.getByRole('button',{name:first?'Create Reliquary':'Sign in',exact:true}).click();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();}
-test('empty workspace invites the user to define a folder structure instead of prescribing notes',async({page})=>{
+test('empty workspace leaves the writing canvas clear',async({page})=>{
  await login(page);
- await expect(page.getByRole('heading',{name:'Shape your Reliquary.'})).toBeVisible();
- await expect(page.getByText('Create your first folder and decide what belongs inside.')).toBeVisible();
- await expect(page.getByRole('button',{name:'Create your first folder'})).toBeVisible();
- await expect(page.getByText('Room to think.')).toHaveCount(0);
- await expect(page.getByRole('button',{name:'Create your first note'})).toHaveCount(0);
- await page.getByRole('button',{name:'Create your first folder'}).click();
+ await expect(page.getByRole('heading',{name:'Shape your Reliquary.'})).toHaveCount(0);
+ await expect(page.getByText('Create your first folder and decide what belongs inside.')).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Create your first folder'})).toHaveCount(0);
+ await expect(page.locator('main.main')).toBeEmpty();
+ if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();
+ await page.getByRole('button',{name:'Create',exact:true}).click();
+ await page.getByRole('menuitem',{name:'New folder'}).click();
  await expect(page.getByLabel('New folder path')).toBeVisible();
  await page.getByLabel('New folder path').fill('My Direction');
  await page.getByRole('button',{name:'Create folder',exact:true}).click();

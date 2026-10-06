@@ -24,9 +24,9 @@ Touch-capable devices no longer force text-field focus after formatting, capital
 
 **Confirmed structural invariant:** Every Markdown document must belong to a folder. Spire does not allow loose or "wild" Markdown files at the Reliquary root because they break the required organizational structure. Creating, importing, or moving a Markdown document must therefore include a destination folder.
 
-### First-folder onboarding lifecycle
+### Empty workspace canvas
 
-**State:** Implemented, browser-verified, and deployed to the Tailscale-only private preview. The centered **Shape your Reliquary.** onboarding is shown only while the Reliquary has no folders. Creating the first folder dismisses that onboarding immediately; it is not reused as a generic “no note selected” screen.
+**State:** The previous centered **Shape your Reliquary.** onboarding, explanatory text, folder icon, and **Create your first folder** button have been removed. When no file is selected, the writing canvas remains empty so it can receive the planned replacement experience later. Folder creation remains available through the sidebar’s **Create → New folder** action.
 
 ## Folder deletion and reassignment
 
@@ -57,7 +57,7 @@ Settings are grouped under top tabs: **Storage** (Reliquary location and import)
 
 ## Daily-file calendar
 
-**State:** The refined calendar workflow is deployed to the Tailscale-only private preview from source commit `5a4bb258f60adcabf9ba5094e669ec68b73b7fd6` in immutable release `20261006T201846Z-dated-file-browser-5a4bb25`. A calendar icon sits in the top application row immediately beside Settings. The month view highlights today, marks dates with files, and supports previous/next-month navigation. Choosing a date is non-mutating: it opens a list of every `Daily Notes/YYYY-MM-DD.md` or `Daily Notes/YYYY-MM-DD - Title.md` file for that date. An explicit **Create file** action creates a named dated Markdown file and creates the `Daily Notes` folder when needed. The Markdown formatting group also provides **Insert date** (`YYYY-MM-DD`) and **Insert time** (`HH:mm`) controls that replace the current selection or insert at the caret. A locally implemented follow-up now opens an explicit **Current** or **Manual** chooser for each control; the manual path uses the native date or time picker while preserving the captured editor selection. No event, appointment, reminder, or proprietary calendar data is introduced. The new chooser acceptance test, production build, and all 34 unit/API tests pass. The chooser follow-up is not yet deployed; the live preview still serves the earlier direct-insertion behavior until a separately authorized release.
+**State:** The refined calendar workflow and temporal chooser are deployed to the Tailscale-only private preview. The current implementation is commit `63318309ec8aa2fa9eb273f3afcae6a687d3ee49` in immutable release `20261006T204901Z-temporal-chooser-6331830`. A calendar icon sits in the top application row immediately beside Settings. The month view highlights today, marks dates with files, and supports previous/next-month navigation. Choosing a date is non-mutating: it opens a list of every `Daily Notes/YYYY-MM-DD.md` or `Daily Notes/YYYY-MM-DD - Title.md` file for that date. An explicit **Create file** action creates a named dated Markdown file and creates the `Daily Notes` folder when needed. The Markdown formatting group also provides **Insert date** (`YYYY-MM-DD`) and **Insert time** (`HH:mm`) controls that replace the captured selection or insert at the captured caret. Each control now opens an explicit **Current** or **Manual** chooser; the manual path uses the native date or time picker. No event, appointment, reminder, or proprietary calendar data is introduced. The chooser acceptance test, production build, and all 34 unit/API tests pass. The live container is healthy, retains `spire-preview_spire_data` read/write, HTTPS health returns `{"ok":true}`, and the served bundle contains the chooser UI markers.
 
 ## Adjacent per-file CSS
 
