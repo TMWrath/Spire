@@ -1,5 +1,12 @@
 # Spire — Features
 
+## Table editor formatting toolbar
+- The table dialog reuses the main editor Markdown/HTML formatting toolbar and visual heading, list, and alignment choosers.
+- Formatting targets the active cell and preserves its text selection; Cancel leaves the note unchanged, and Insert/Update applies the edited grid.
+- The dialog omits nested-table creation and note-level insert tools. Markdown remains before HTML; the rail scrolls on mobile without widening the dialog.
+- Source implementation verified locally; not deployed yet.
+
+
 ## Knowledge hierarchy and provisional terminology
 
 **State:** Partially confirmed by the project owner. **Spire** is the application, and a **Reliquary** is the complete collection of the user's stored knowledge and items. Product-specific names for folders and Markdown documents are intentionally unresolved. **Codex**, **Cluster**, and **Shard** have been discussed but are not canonical terms and must not yet replace ordinary folder/file language in the interface.
