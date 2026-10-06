@@ -132,7 +132,7 @@ test('production mobile: responsive folders, source/preview, delete and restore'
 test('settings hides workspace header actions and panels until returning to writing',async({browser})=>{
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await login(page);await page.getByRole('button',{name:'Toggle folders'}).click();await page.getByRole('button',{name:'Settings',exact:true}).click();for(const name of ['Toggle folders','Toggle context','Sync now','Calendar','Settings'])await expect(page.getByRole('button',{name,exact:true})).toHaveCount(0);await expect(page.locator('.sidebar,.context')).toHaveCount(0);await expect(page.getByRole('button',{name:'Back to writing'})).toBeVisible();await page.getByRole('button',{name:'Back to writing'}).click();await expect(page.getByRole('button',{name:'Toggle folders'})).toBeVisible();await context.close();
 });
-test('calendar icon opens daily-file calendar and dates open or create their file',async({page})=>{
+test('calendar date shows its files and creates a new dated file only on request',async({page})=>{
  await login(page);
  const calendarButton=page.getByRole('button',{name:'Calendar',exact:true});
  await expect(calendarButton).toBeVisible();
@@ -145,12 +145,36 @@ test('calendar icon opens daily-file calendar and dates open or create their fil
  const day=page.getByRole('gridcell',{name:new RegExp(`^${iso}`)});
  await expect(day).toBeVisible();
  await day.click();
- await expect(page.getByLabel('Note path',{exact:true})).toHaveValue(`Daily Notes/${iso}.md`);
- await expect(page.getByLabel('Markdown source')).toContainText(`# ${iso}`);
+ const browser=page.getByRole('dialog',{name:`Files for ${iso}`});
+ await expect(browser).toBeVisible();
+ await expect(browser).toContainText('No files for this day yet.');
+ await expect(page.getByLabel('Note path',{exact:true})).toHaveCount(0);
+ await browser.getByRole('button',{name:'Create file',exact:true}).click();
+ const createDialog=page.getByRole('dialog',{name:`Create file for ${iso}`});
+ await createDialog.getByLabel('File name',{exact:true}).fill('Morning thoughts');
+ await createDialog.getByRole('button',{name:'Create file',exact:true}).click();
+ await expect(page.getByLabel('Note path',{exact:true})).toHaveValue(`Daily Notes/${iso} - Morning thoughts.md`);
+ await expect(page.getByLabel('Markdown source')).toContainText(`# Morning thoughts`);
  await page.getByRole('button',{name:'Calendar',exact:true}).click();
- await expect(page.getByRole('gridcell',{name:new RegExp(`^${iso}.*daily file exists`)})).toBeVisible();
- await page.getByRole('gridcell',{name:new RegExp(`^${iso}.*daily file exists`)}).click();
- await expect(page.getByLabel('Note path',{exact:true})).toHaveValue(`Daily Notes/${iso}.md`);
+ await expect(page.getByRole('gridcell',{name:new RegExp(`^${iso}.*1 file`)})).toBeVisible();
+ await page.getByRole('gridcell',{name:new RegExp(`^${iso}.*1 file`)}).click();
+ const populated=page.getByRole('dialog',{name:`Files for ${iso}`});
+ await expect(populated.getByRole('button',{name:'Morning thoughts',exact:true})).toBeVisible();
+ await populated.getByRole('button',{name:'Morning thoughts',exact:true}).click();
+ await expect(page.getByLabel('Note path',{exact:true})).toHaveValue(`Daily Notes/${iso} - Morning thoughts.md`);
+});
+
+test('Markdown toolbar inserts the current date and time at the selection',async({page})=>{
+ await login(page);await create(page,'Writing/Date and time.md','Before replace after');
+ const source=page.getByLabel('Markdown source');
+ const date=await page.evaluate(()=>{const now=new Date();return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;});
+ await source.evaluate((el:HTMLTextAreaElement)=>{el.focus();el.setSelectionRange(7,14);});
+ const toolbar=page.getByRole('toolbar',{name:'Markdown formatting'});
+ await toolbar.getByRole('button',{name:'Insert date',exact:true}).click();
+ await expect(source).toHaveValue(`Before ${date} after`);
+ await source.evaluate((el:HTMLTextAreaElement)=>{el.focus();el.setSelectionRange(el.value.length,el.value.length);});
+ await toolbar.getByRole('button',{name:'Insert time',exact:true}).click();
+ await expect(source).toHaveValue(new RegExp(`^Before ${date} after\\d{2}:\\d{2}$`));
 });
 test('star icon persists in portable note content and survives reload',async({browser})=>{
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await login(page);await create(page,'Important.md','# Keep this');await page.getByRole('button',{name:'Star note'}).click();await expect(page.getByRole('button',{name:'Unstar note'})).toHaveAttribute('aria-pressed','true');await synced(page);await page.reload();await openNote(page,'Important');await expect(page.getByRole('button',{name:'Unstar note'})).toBeVisible();await page.getByRole('button',{name:'Unstar note'}).click();await synced(page);await expect(page.getByRole('button',{name:'Star note'})).toHaveAttribute('aria-pressed','false');await context.close();
