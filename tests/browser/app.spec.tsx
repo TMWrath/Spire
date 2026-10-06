@@ -130,7 +130,27 @@ test('production mobile: responsive folders, source/preview, delete and restore'
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await login(page);await expect(page.locator('.sidebar')).toHaveCount(0);await page.getByRole('button',{name:'Toggle folders'}).click();await create(page,'Mobile.md','# Mobile writing\nA clear, quiet canvas.');await synced(page);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.getByRole('button',{name:'Preview',exact:true}).click();await expect(page.locator('.preview h1')).toHaveText('Mobile writing');await page.screenshot({path:'artifacts/spire-mobile.png',fullPage:true});page.on('dialog',d=>d.accept());await page.getByRole('button',{name:'Delete note',exact:true}).click();await expect(page.getByText('This note is in trash. Restore it to edit.')).toBeVisible();await page.getByRole('button',{name:'Restore note',exact:true}).click();await expect(page.getByText('This note is in trash. Restore it to edit.')).toHaveCount(0);await context.close();
 });
 test('settings hides workspace header actions and panels until returning to writing',async({browser})=>{
- const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await login(page);await page.getByRole('button',{name:'Toggle folders'}).click();await page.getByRole('button',{name:'Settings',exact:true}).click();for(const name of ['Toggle folders','Toggle context','Sync now','Settings'])await expect(page.getByRole('button',{name,exact:true})).toHaveCount(0);await expect(page.locator('.sidebar,.context')).toHaveCount(0);await expect(page.getByRole('button',{name:'Back to writing'})).toBeVisible();await page.getByRole('button',{name:'Back to writing'}).click();await expect(page.getByRole('button',{name:'Toggle folders'})).toBeVisible();await context.close();
+ const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await login(page);await page.getByRole('button',{name:'Toggle folders'}).click();await page.getByRole('button',{name:'Settings',exact:true}).click();for(const name of ['Toggle folders','Toggle context','Sync now','Calendar','Settings'])await expect(page.getByRole('button',{name,exact:true})).toHaveCount(0);await expect(page.locator('.sidebar,.context')).toHaveCount(0);await expect(page.getByRole('button',{name:'Back to writing'})).toBeVisible();await page.getByRole('button',{name:'Back to writing'}).click();await expect(page.getByRole('button',{name:'Toggle folders'})).toBeVisible();await context.close();
+});
+test('calendar icon opens daily-file calendar and dates open or create their file',async({page})=>{
+ await login(page);
+ const calendarButton=page.getByRole('button',{name:'Calendar',exact:true});
+ await expect(calendarButton).toBeVisible();
+ const settingsButton=page.getByRole('button',{name:'Settings',exact:true});
+ const calendarBox=await calendarButton.boundingBox(),settingsBox=await settingsButton.boundingBox();
+ expect(calendarBox!.x).toBeLessThan(settingsBox!.x);
+ await calendarButton.click();
+ await expect(page.getByRole('heading',{name:'Calendar',exact:true})).toBeVisible();
+ const today=new Date();const iso=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+ const day=page.getByRole('gridcell',{name:new RegExp(`^${iso}`)});
+ await expect(day).toBeVisible();
+ await day.click();
+ await expect(page.getByLabel('Note path',{exact:true})).toHaveValue(`Daily Notes/${iso}.md`);
+ await expect(page.getByLabel('Markdown source')).toContainText(`# ${iso}`);
+ await page.getByRole('button',{name:'Calendar',exact:true}).click();
+ await expect(page.getByRole('gridcell',{name:new RegExp(`^${iso}.*daily file exists`)})).toBeVisible();
+ await page.getByRole('gridcell',{name:new RegExp(`^${iso}.*daily file exists`)}).click();
+ await expect(page.getByLabel('Note path',{exact:true})).toHaveValue(`Daily Notes/${iso}.md`);
 });
 test('star icon persists in portable note content and survives reload',async({browser})=>{
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await login(page);await create(page,'Important.md','# Keep this');await page.getByRole('button',{name:'Star note'}).click();await expect(page.getByRole('button',{name:'Unstar note'})).toHaveAttribute('aria-pressed','true');await synced(page);await page.reload();await openNote(page,'Important');await expect(page.getByRole('button',{name:'Unstar note'})).toBeVisible();await page.getByRole('button',{name:'Unstar note'}).click();await synced(page);await expect(page.getByRole('button',{name:'Star note'})).toHaveAttribute('aria-pressed','false');await context.close();

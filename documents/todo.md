@@ -34,6 +34,7 @@
 
 - [x] Add portable starred-note toggle and sidebar marker
 - [ ] Add a starred-only search/filter when the search/filter UI is expanded
+- [x] Add a top-row daily-file calendar that opens or creates dated Markdown files
 
 - [x] Implement the Docker-hosted service
 - [x] Implement accounts and device authentication
