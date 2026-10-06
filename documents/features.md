@@ -57,7 +57,7 @@ Settings are grouped under top tabs: **Storage** (Reliquary location and import)
 
 ## Daily-file calendar
 
-**State:** Implemented and locally verified; private-preview deployment pending. A calendar icon sits in the top application row immediately beside Settings. The month view marks dates that already have daily files, highlights today, and supports previous/next-month navigation. Choosing a date opens its existing portable Markdown file or creates `Daily Notes/YYYY-MM-DD.md` with a dated heading, automatically creating the `Daily Notes` folder when needed. No event, appointment, reminder, or proprietary calendar data is introduced.
+**State:** Implemented, locally verified, and deployed to the Tailscale-only private preview from source commit `12a36b4`. A calendar icon sits in the top application row immediately beside Settings. The month view marks dates that already have daily files, highlights today, and supports previous/next-month navigation. Choosing a date opens its existing portable Markdown file or creates `Daily Notes/YYYY-MM-DD.md` with a dated heading, automatically creating the `Daily Notes` folder when needed. No event, appointment, reminder, or proprietary calendar data is introduced. The focused Calendar/Settings browser acceptance passed 2/2, the production build passed, all 34 unit/API tests passed, and the live healthy container serves the calendar-marked JavaScript bundle while preserving the existing named data volume.
 
 ## Adjacent per-file CSS
 
