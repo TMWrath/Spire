@@ -1,5 +1,10 @@
 # Spire — Features
 
+## Capitalization gallery
+
+**State:** Implemented and locally verified; not published yet. The shared **Aa ▾** control uses the same horizontally scrollable preview-card gallery as Headings, in the Markdown section before HTML. Styles: UPPERCASE, lowercase, Title Case (every word), Sentence case, and tOGGLE cASE. Cards preview selected text or the cursor word. Applying a style transforms the selection or the cursor word, preserves surrounding content, and keeps the transformed selection usable. Rich table cells retain existing marks, including combined bold/italic/underline, and capitalization is a single undoable transaction; Insert/Update and reopening retain the result. Unicode letters, contractions, multi-line selections, and case expansions such as ß → SS are supported. Empty/whitespace cursor positions are no-ops. This is a direct text conversion, not CSS-only styling or custom Markdown syntax.
+
+
 ## Table editor formatting toolbar
 - The table dialog reuses the main editor Markdown/HTML formatting toolbar and visual heading, list, and alignment choosers.
 - Formatting targets the active cell and preserves its text selection; Cancel leaves the note unchanged, and Insert/Update applies the edited grid.
