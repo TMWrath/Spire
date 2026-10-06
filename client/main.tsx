@@ -10,7 +10,7 @@ import {findManagedTableAt,placeManagedTable,type ManagedTable,type TableAlignme
 import 'katex/dist/katex.min.css';
 import 'highlight.js/styles/github-dark.css';
 import DOMPurify from 'dompurify';
-import {engine,api} from './sync';
+import {engine,api,type Identity} from './sync';
 import {NoteContext} from './NoteContext';
 import {metadata,links,resolveLink,safePath,isStarred,setStarred,setProperty,type Note,type Conflict} from '../shared/model';
 import {insertHeroSection,refreshHeroSection,heroSectionMarkdown} from '../shared/section-template';
@@ -64,7 +64,7 @@ function App(){
  useEffect(()=>{const f=(e:BeforeUnloadEvent)=>{if(dirtyRef.current){e.preventDefault();e.returnValue='';}};window.addEventListener('beforeunload',f);const key=(e:KeyboardEvent)=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();void run(async()=>{await save();await engine.sync();});}};window.addEventListener('keydown',key);return()=>{window.removeEventListener('beforeunload',f);window.removeEventListener('keydown',key);};},[]);
  const open=async(n:Note,h?:string)=>{await save();setHeadingMenu(false);setListMenu(false);setAlignmentMenu(false);draft.current=n;dirtyRef.current=false;setDirty(false);setSelected(n);if(innerWidth<=760)setSidebar(false);if(h){setMode('preview');setTimeout(()=>document.getElementById(h.replace(/^\^/,'').toLowerCase().replace(/\s+/g,'-'))?.scrollIntoView(),100);}};
  const create=async(p:string,content='')=>{safePath.parse(p);if(!p.endsWith('.md'))throw new Error('Use a .md filename');if(notes.some(n=>!n.deleted&&n.path.toLowerCase()===p.toLowerCase()))throw new Error('That path already exists');await save();const n=fresh(p,content);await engine.save(n);await engine.sync();await open(engine.cache.snapshot.notes.find(x=>x.id===n.id)??n);setNewPath(null);setTrash(false);};
- const createFolder=async(p:string)=>{const path=p.trim();safePath.parse(path);await save();await engine.sync();await api('/folders',{method:'POST',body:JSON.stringify({path})},identity?.csrf);await engine.sync();setNewFolder(null);setTrash(false);};
+ const createFolder=async(p:string)=>{const path=p.trim();safePath.parse(path);await save();await engine.sync();const current:Identity=await api('/me');engine.cache.identity=current;await engine.persist();await api('/folders',{method:'POST',body:JSON.stringify({path})},current.csrf);await engine.sync();setNewFolder(null);setTrash(false);};
  const beginFolderDelete=(path:string)=>{const prefix=path.toLowerCase()+'/';const hasItems=notes.some(n=>!n.deleted&&n.path.toLowerCase().startsWith(prefix))||(engine.cache.snapshot.attachments??[]).some(a=>a.path.toLowerCase().startsWith(prefix))||folders.some(f=>f!==path&&f.toLowerCase().startsWith(prefix));setFolderDestination('');setFolderDelete({path,step:hasItems?'confirm':'empty'});};
  const startFolderPress=(path:string)=>{folderLongPressed.current=false;if(folderPress.current!==null)clearTimeout(folderPress.current);folderPress.current=window.setTimeout(()=>{folderLongPressed.current=true;beginFolderDelete(path);},550);};
  const stopFolderPress=()=>{if(folderPress.current!==null)clearTimeout(folderPress.current);folderPress.current=null;};
