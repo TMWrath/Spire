@@ -60,10 +60,24 @@ function App(){
  const[,render]=useState(0);const[ready,setReady]=useState(false),[setup,setSetup]=useState(false),[error,setError]=useState('');
  const[selected,setSelected]=useState<Note|null>(null),[dirty,setDirty]=useState(false),[mode,setMode]=useState('editor'),[splitEnabled,setSplitEnabled]=useState(()=>localStorage.getItem('spire-split-enabled')==='true'),[sidebar,setSidebar]=useState(innerWidth>760),[context,setContext]=useState(false),[settings,setSettings]=useState(false),[calendar,setCalendar]=useState(false),[settingsTab,setSettingsTab]=useState('storage'),[query,setQuery]=useState(''),[trash,setTrash]=useState(false),[newPath,setNewPath]=useState<string|null>(null),[fileFolder,setFileFolder]=useState(''),[fileFolderDraft,setFileFolderDraft]=useState(''),[selectedFolder,setSelectedFolder]=useState(''),[newFolder,setNewFolder]=useState<string|null>(null),[createMenu,setCreateMenu]=useState(false),[devices,setDevices]=useState<any[]>([]),[report,setReport]=useState(''),[folderDelete,setFolderDelete]=useState<{path:string;step:'empty'|'confirm'|'offer-reassign'|'reassign'}|null>(null),[folderDestination,setFolderDestination]=useState(''),[drag,setDrag]=useState<{id:string;x:number;y:number;over:string|null;active:boolean}|null>(null),[cssDraft,setCssDraft]=useState<string|null>(null);
  const [keyboardEnabled,setKeyboardEnabled]=useState(()=>!(touchEditing()||matchMedia('(max-width:760px)').matches));
- const showKeyboard=()=>{const field=mode==='editor'?richEditor.current?.view.dom:editor.current;if(!field)return;field.blur();setKeyboardEnabled(true);field.setAttribute('inputmode','text');field.focus({preventScroll:true});};
+ const keyboardViewport=useRef<{baseline:number;minimum:number;opened:boolean}|null>(null);
+ const showKeyboard=()=>{const field=mode==='editor'?richEditor.current?.view.dom:editor.current;if(!field)return;const height=window.visualViewport?.height??innerHeight;const baseline=Math.max(height,keyboardViewport.current?.baseline??height);keyboardViewport.current={baseline,minimum:height,opened:baseline-height>120};field.blur();setKeyboardEnabled(true);field.setAttribute('inputmode','text');field.focus({preventScroll:true});};
  const releaseKeyboard=()=>{if(touchEditing()||matchMedia('(max-width:760px)').matches){richEditor.current?.view.dom.setAttribute('inputmode','none');editor.current?.setAttribute('inputmode','none');}};
  useEffect(()=>{if(touchEditing()||matchMedia('(max-width:760px)').matches)setKeyboardEnabled(false);},[mode,selected?.id]);
  const richEditor=useRef<RichEditor|null>(null);
+ useEffect(()=>{
+  const viewport=window.visualViewport;
+  const reset=()=>{if(!(touchEditing()||matchMedia('(max-width:760px)').matches))return;releaseKeyboard();keyboardViewport.current=null;setKeyboardEnabled(false);};
+  const resize=()=>{const session=keyboardViewport.current;if(!session||!viewport||Math.abs(viewport.scale-1)>0.05)return;session.minimum=Math.min(session.minimum,viewport.height);if(session.baseline-viewport.height>120)session.opened=true;
+   // Back can close the IME while the editing element stays focused.
+   // Require an observed keyboard-sized contraction and recovery, not browser chrome jitter.
+   if(session.opened&&viewport.height-session.minimum>120&&viewport.height>=session.baseline-80)reset();
+  };
+  const keyboard=(navigator as Navigator&{virtualKeyboard?:EventTarget&{boundingRect:DOMRect}}).virtualKeyboard;
+  const geometry=()=>{const session=keyboardViewport.current;if(!session||!keyboard)return;if(keyboard.boundingRect.height>0)session.opened=true;else if(session.opened)reset();};
+  viewport?.addEventListener('resize',resize);keyboard?.addEventListener('geometrychange',geometry);
+  return()=>{viewport?.removeEventListener('resize',resize);keyboard?.removeEventListener('geometrychange',geometry);};
+ },[]);
  const draft=useRef<Note|null>(null);const dirtyRef=useRef(false);const saving=useRef(false);const createBusy=useRef(false);const version=useRef(0);const folderPress=useRef<number|null>(null);const folderLongPressed=useRef(false);const dragStart=useRef<{id:string;x:number;y:number}|null>(null);const suppressOpen=useRef(false);
  const[headingMenu,setHeadingMenu]=useState(false),[listMenu,setListMenu]=useState(false),[alignmentMenu,setAlignmentMenu]=useState(false);const headingSelection=useRef({start:0,end:0}),listSelection=useRef({start:0,end:0}),alignmentSelection=useRef({start:0,end:0});
  const[tableEditor,setTableEditor]=useState<{offset:number;table:ManagedTable|null;cells:string[][]}|null>(null);
