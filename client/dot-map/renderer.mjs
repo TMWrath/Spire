@@ -1,4 +1,5 @@
 import {layout,identity,turn,project,zoomAt,pairGesture,connectionPoint} from './core.mjs';
+export function orderPulseEdges(edges,depth){return edges.map((e,index)=>({...e,pulseOffset:(index*.173)%1,depth:depth(e)})).sort((a,b)=>a.depth-b.depth);}
 // Production adapter for the approved isolated canvas engine. No workspace writes or requests.
 export function createDotMap(canvas,{files,edges,onSelect,onOpen=()=>{}}){
  const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas drawing is unavailable');
@@ -44,13 +45,13 @@ function draw(now){
   const at=t=>{const a=t*Math.PI*2,s=Math.sin(a),c=Math.cos(a);return axis===0?[s,c,0]:axis===1?[s,0,c]:[0,s,c];};
   const a=project(at(i/80),camera,radius),b=project(at((i+1)/80),camera,radius);ctx.strokeStyle=`rgba(255,255,255,${a.depth<0?.023:.055})`;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
  }
- const ordered=edges.map(e=>({...e,depth:(project(positions.get(e.source),camera,radius).depth+project(positions.get(e.target),camera,radius).depth)/2})).sort((a,b)=>a.depth-b.depth);
+ const ordered=orderPulseEdges(edges,e=>(project(positions.get(e.source),camera,radius).depth+project(positions.get(e.target),camera,radius).depth)/2);
  for(let index=0;index<ordered.length;index++){
   const e=ordered[index],a=positions.get(e.source),b=positions.get(e.target),active=selected&&(e.source===selected||e.target===selected),dim=(selected&&!active)||!matching(fileIndex.get(e.source))||!matching(fileIndex.get(e.target));
   const opacity=dim?.022:active?.66:.075+(e.depth+1)*.06;
   ctx.strokeStyle=`rgba(230,230,230,${opacity})`;ctx.lineWidth=active?1.15:.65;ctx.beginPath();for(let j=1;j<=22;j++){const t=.035+j/23*.93,p=project(connectionPoint(a,b,t),camera,radius);if(j===1)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}ctx.stroke();
   if(active){const tip=project(connectionPoint(a,b,.9),camera,radius),prev=project(connectionPoint(a,b,.86),camera,radius),angle=Math.atan2(tip.y-prev.y,tip.x-prev.x);ctx.beginPath();ctx.moveTo(tip.x-5*Math.cos(angle-.5),tip.y-5*Math.sin(angle-.5));ctx.lineTo(tip.x,tip.y);ctx.lineTo(tip.x-5*Math.cos(angle+.5),tip.y-5*Math.sin(angle+.5));ctx.stroke();}
-  if(motion()&&!dim){const offset=(index*.173)%1,t=(now/5200+offset)%1;for(let tail=3;tail>=0;tail--){const progress=t-tail*.014;if(progress<.045||progress>.955)continue;const p=project(connectionPoint(a,b,progress),camera,radius);dot(p.x,p.y,tail?1:1.65,`rgba(255,255,255,${(active?.85:.4)*(1-tail*.2)})`);}}
+  if(motion()&&!dim){const t=(now/5200+e.pulseOffset)%1;for(let tail=3;tail>=0;tail--){const progress=t-tail*.014;if(progress<.045||progress>.955)continue;const p=project(connectionPoint(a,b,progress),camera,radius);dot(p.x,p.y,tail?1:1.65,`rgba(255,255,255,${(active?.85:.4)*(1-tail*.2)})`);}}
  }
  points=files.map(file=>{const p=project(positions.get(file.id),camera,radius);return {...p,file,r:Math.max(2.2,Math.min(7,(3.3+(p.depth+1)*.9)*Math.sqrt(camera.zoom))),dim:(selected&&!neighbors.has(file.id))||!matching(file)};}).sort((a,b)=>a.depth-b.depth);
  for(const p of points){const active=p.file.id===selected||p.file.id===hover,alpha=p.dim?.1:.28+(p.depth+1)*.34;if(active){ctx.strokeStyle='#bbb';ctx.lineWidth=.8;ctx.beginPath();ctx.arc(p.x,p.y,p.r+5,0,Math.PI*2);ctx.stroke();dot(p.x,p.y,p.r+10,'rgba(255,255,255,.035)');}dot(p.x,p.y,p.r,`rgba(245,245,245,${active?1:alpha})`);if(p.depth>.1&&!p.dim)dot(p.x-p.r*.22,p.y-p.r*.28,Math.max(.6,p.r*.2),'#fff');}
