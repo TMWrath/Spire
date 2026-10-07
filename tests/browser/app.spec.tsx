@@ -1,4 +1,4 @@
-import {test,expect,type Page} from '@playwright/test';
+import {test,expect,type Page} from './fixtures';
 const credentials={username:'tester',password:'disposable-test-password',device:'Desktop'};
 async function login(page:Page,setup=false){await page.goto('/');await page.getByLabel('Username',{exact:true}).fill(credentials.username);await page.getByLabel('Password',{exact:true}).fill(credentials.password);const first=setup||await page.getByRole('button',{name:'Create Reliquary',exact:true}).isVisible();await page.getByRole('button',{name:first?'Create Reliquary':'Sign in',exact:true}).click();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();}
 test('empty workspace leaves the writing canvas clear',async({page})=>{
@@ -89,7 +89,7 @@ test('rich table cells save partial formatting, reopen visually, toggle off and 
 
 test('underline and italic work in both editor rows and table underline reopens visually',async({page})=>{
  await login(page);await create(page,'Writing/Underline.md','main words');const source=page.getByLabel('Markdown source');
- await source.evaluate((el:HTMLTextAreaElement)=>{el.focus();el.setSelectionRange(0,4);});await page.getByRole('button',{name:'Underline',exact:true}).click();await expect(source).toHaveValue('<u>main</u> words');
+ await source.evaluate((el:HTMLTextAreaElement)=>{el.focus();el.setSelectionRange(0,4);});await page.getByRole('toolbar',{name:'Markdown formatting'}).getByRole('button',{name:'Underline',exact:true}).click();await expect(source).toHaveValue('<u>main</u> words');
  await source.evaluate((el:HTMLTextAreaElement)=>{el.focus();el.setSelectionRange(el.value.indexOf('words'),el.value.length);});await page.getByRole('button',{name:'Italic',exact:true}).click();await expect(source).toHaveValue('<u>main</u> *words*');
  await page.getByRole('button',{name:'Preview',exact:true}).click();await expect(page.locator('.preview u')).toHaveText('main');await expect(page.locator('.preview em')).toHaveText('words');await page.getByRole('button',{name:'Source',exact:true}).click();
  await source.evaluate((el:HTMLTextAreaElement)=>{el.focus();el.setSelectionRange(el.value.length,el.value.length);});await page.getByRole('button',{name:'Table',exact:true}).click();let dialog=page.getByRole('dialog',{name:'Create Markdown table'});let cell=dialog.getByLabel('Row 1, column 1',{exact:true});
@@ -313,7 +313,8 @@ test('panels are exclusive and close outside; trash requires a second confirmed 
  await page.getByRole('button',{name:'Delete permanently',exact:true}).click();
  if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();
  await expect(page.locator('nav')).not.toContainText('Purge');
- await expect(page.getByText('Shape your Reliquary.')).toBeVisible();
+ await expect(page.getByLabel('Note path',{exact:true})).toHaveCount(0);
+ await expect(page.getByRole('region',{name:'Reliquary mind map'})).toBeVisible();
  await expect.poll(async()=>{const r=await page.request.get('/api/snapshot');return (await r.json()).notes.some((n:{path:string})=>n.path==='General/Purge.md');}).toBe(false);
 });
 test('permanently deleting the open trashed note clears it and removes it from Trash immediately',async({page})=>{
@@ -333,16 +334,16 @@ test('long pressing a folder can move its notes to automatic Unsorted',async({br
  if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();
  const folder=page.locator('summary',{hasText:'Delete me'});await folder.dispatchEvent('pointerdown',{pointerType:'touch',button:0});await page.waitForTimeout(650);await folder.dispatchEvent('pointerup',{pointerType:'touch',button:0});
  await expect(page.getByRole('dialog',{name:'Delete folder'})).toBeVisible();
- await page.getByRole('button',{name:'Keep notes'}).click();
- await expect(page.getByRole('dialog',{name:'Reassign folder notes'})).toContainText('Do you want to move these notes to another folder?');
+ await page.getByRole('button',{name:'Keep files'}).click();
+ await expect(page.getByRole('dialog',{name:'Reassign folder files'})).toContainText('Do you want to move these files to another folder?');
  await page.getByRole('button',{name:'No, keep folder'}).click();
  await expect(page.getByRole('dialog')).toHaveCount(0);await expect(page.locator('nav')).toContainText('Delete me');
  await folder.dispatchEvent('pointerdown',{pointerType:'touch',button:0});await page.waitForTimeout(650);await folder.dispatchEvent('pointerup',{pointerType:'touch',button:0});
- await page.getByRole('button',{name:'Keep notes'}).click();
- await page.getByRole('button',{name:'Reassign notes'}).click();
+ await page.getByRole('button',{name:'Keep files'}).click();
+ await page.getByRole('button',{name:'Reassign files'}).click();
  await expect(page.getByLabel('Destination folder')).toBeVisible();
  await page.getByLabel('Destination folder').selectOption('__unsorted__');
- await page.getByRole('button',{name:'Move notes and delete folder'}).click();
+ await page.getByRole('button',{name:'Move files and delete folder'}).click();
  await expect(page.locator('nav')).not.toContainText('Delete me');await expect(page.locator('nav')).toContainText('Unsorted');
  await openNote(page,'Reassigned note');await expect(page.getByLabel('Note path')).toHaveValue('Unsorted/Reassigned note.md');await context.close();
 });

@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixtures';
 test('home mind map demo settings persist without creating files and respects reduced motion',async({page})=>{
  await page.goto('/');await page.getByLabel('Username',{exact:true}).fill('tester');await page.getByLabel('Password',{exact:true}).fill('disposable-test-password');await page.getByRole('button',{name:/^(Create Reliquary|Sign in)$/}).click();
  const map=page.getByRole('region',{name:'Reliquary mind map'});await expect(map).toBeVisible();await expect(map.locator('.mind-node')).toHaveCount(0);
