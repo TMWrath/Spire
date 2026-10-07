@@ -2,7 +2,7 @@
 
 ## Spherical-map release browser regressions
 
-Resolved: mobile focus/history tests used the obsolete Create note selector; the touch-map test requested the authenticated snapshot before setup completed. Updated selectors to Create file and awaited the authenticated Settings control without weakening behavioral assertions. Final production build and all 43 unit/API and 38 browser tests pass, including touch orbit/pinch/twist/cancel, mobile selection/focus, and revision comparisons. Deployment pending verification.
+Resolved: mobile focus/history tests used the obsolete Create note selector; the touch-map test requested the authenticated snapshot before setup completed. Updated selectors to Create file and awaited the authenticated Settings control without weakening behavioral assertions. Final production build and all 43 unit/API and 38 browser tests pass, including touch orbit/pinch/twist/cancel, mobile selection/focus, and revision comparisons. Deployed from source f914441c3c6fb07a1011d49d5a14fd0d6a7c35e3. Verified application backup and full-volume archive before replacement; existing named data volume preserved. Container healthy, loopback-only binding retained, HTTPS health 200, and served JavaScript byte-identical to the tested local production build. Authenticated live behavior and physical-phone testing were not performed.
 
 ## Table editor header overlapped its size controls on mobile
 
