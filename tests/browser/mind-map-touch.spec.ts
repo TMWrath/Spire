@@ -1,0 +1,20 @@
+import {test,expect} from './fixtures';
+test.use({viewport:{width:390,height:844},isMobile:true,hasTouch:true,video:{mode:'on',size:{width:390,height:844}}});
+test('spherical map mobile orbit, pinch, twist and lift/cancel preserve real files',async({page,context})=>{
+ const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.goto('/');await page.getByLabel('Username',{exact:true}).fill('tester');await page.getByLabel('Password',{exact:true}).fill('disposable-test-password');await page.getByRole('button',{name:'Create Reliquary',exact:true}).click();
+ const beforeResponse=await context.request.get('/api/snapshot');expect(beforeResponse.status()).toBe(200);const before=await beforeResponse.json();expect(before.notes).toEqual([]);
+ await page.getByRole('button',{name:'Settings',exact:true}).click();await page.getByRole('tab',{name:'Mind map',exact:true}).click();await page.getByLabel('Show demo data').check();await page.getByRole('button',{name:'Back to writing'}).click();
+ const map=page.getByRole('region',{name:'Reliquary mind map'}),surface=map.locator('.mind-surface');await expect(map.locator('.mind-node')).toHaveCount(16);await expect(map.getByRole('button',{name:/Switch to (pan|orbit)/})).toHaveCount(0);await expect(map.locator('.mind-sphere-guides path')).toHaveCount(144);
+ const b=(await surface.boundingBox())!,x=b.x+b.width/2,y=b.y+b.height/2,cdp=await context.newCDPSession(page);
+ const touch=async(type:'touchStart'|'touchMove'|'touchEnd'|'touchCancel',points:[number,number,number][])=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:points.map(([id,x,y])=>({id,x,y,radiusX:5,radiusY:5,force:1}))});
+ await page.waitForTimeout(600);await touch('touchStart',[[1,x,y]]);for(let i=1;i<=30;i++){await touch('touchMove',[[1,x+i*2,y+i*1.4]]);await page.waitForTimeout(16);}await touch('touchEnd',[]);await expect(surface).not.toHaveAttribute('data-rotation','0,0,0,1');await page.waitForTimeout(450);
+ await map.getByRole('button',{name:'Fit map'}).tap();await expect(surface).toHaveAttribute('data-rotation','0,0,0,1');await page.waitForTimeout(250);
+ await touch('touchStart',[[1,x-35,y],[2,x+35,y]]);for(let i=1;i<=25;i++){await touch('touchMove',[[1,x-35-i*1.5,y],[2,x+35+i*1.5,y]]);await page.waitForTimeout(16);}await expect.poll(async()=>Number(await surface.getAttribute('data-zoom'))).toBeGreaterThan(1.8);
+ for(let i=1;i<=25;i++){const a=i/25*Math.PI*.3;await touch('touchMove',[[1,x+20-72.5*Math.cos(a),y+15-72.5*Math.sin(a)],[2,x+20+72.5*Math.cos(a),y+15+72.5*Math.sin(a)]]);await page.waitForTimeout(16);}await expect(surface).not.toHaveAttribute('data-pan','0,0');await expect(surface).not.toHaveAttribute('data-rotation','0,0,0,1');await page.waitForTimeout(120);
+ const rotation=await surface.getAttribute('data-rotation');await touch('touchEnd',[[1,x+20-72.5*Math.cos(Math.PI*.3),y+15-72.5*Math.sin(Math.PI*.3)]]);await page.waitForTimeout(100);await expect(surface).toHaveAttribute('data-rotation',rotation!);
+ await touch('touchMove',[[1,x-30,y-30]]);await touch('touchCancel',[]);await page.waitForTimeout(150);const cancelled=await surface.getAttribute('data-rotation');await page.waitForTimeout(350);await expect(surface).toHaveAttribute('data-rotation',cancelled!);
+ await map.getByRole('button',{name:'Fit map'}).tap();await expect(surface).toHaveAttribute('data-rotation','0,0,0,1');await expect(surface).toHaveAttribute('data-zoom','1.0000');await page.waitForTimeout(700);await page.screenshot({path:'artifacts/spherical-map-integrated-mobile.png'});
+ await page.emulateMedia({reducedMotion:'reduce'});await expect(map.locator('animateMotion')).toHaveCount(0);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth)).toBe(true);expect(errors).toEqual([]);
+ const afterResponse=await context.request.get('/api/snapshot');expect(afterResponse.status()).toBe(200);const after=await afterResponse.json();expect(after).toEqual(before);
+});

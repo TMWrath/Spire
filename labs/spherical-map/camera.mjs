@@ -1,0 +1,9 @@
+export const initialCamera=()=>({q:[0,0,0,1],zoom:1,x:0,y:0});
+export function multiply(a,b){const [x,y,z,w]=a,[X,Y,Z,W]=b;const q=[w*X+x*W+y*Z-z*Y,w*Y-x*Z+y*W+z*X,w*Z+x*Y-y*X+z*W,w*W-x*X-y*Y-z*Z];const n=Math.hypot(...q)||1;return q.map(v=>v/n);}
+export function axisAngle(x,y,z,a){const n=Math.hypot(x,y,z)||1,s=Math.sin(a/2)/n;return [x*s,y*s,z*s,Math.cos(a/2)];}
+export function rotateVector(p,q){const [x,y,z,w]=q;const tx=2*(y*p.z-z*p.y),ty=2*(z*p.x-x*p.z),tz=2*(x*p.y-y*p.x);return {x:p.x+w*tx+y*tz-z*ty,y:p.y+w*ty+z*tx-x*tz,z:p.z+w*tz+x*ty-y*tx};}
+export function orbit(camera,dx,dy){const d=Math.hypot(dx,dy);if(!d)return {...camera,q:[...camera.q]};return {...camera,q:multiply(axisAngle(-dy,dx,0,d*.006),camera.q)};}
+export function spherePoints(count,radius){return Array.from({length:count},(_,i)=>{const y=count===1?0:1-2*(i+.5)/count;const r=Math.sqrt(1-y*y),a=i*Math.PI*(3-Math.sqrt(5));return {x:radius*r*Math.cos(a),y:radius*y,z:radius*r*Math.sin(a)};});}
+export function zoomAt(camera,factor,x,y){const zoom=Math.min(4,Math.max(.45,camera.zoom*factor)),ratio=zoom/camera.zoom;return {...camera,zoom,x:x+(camera.x-x)*ratio,y:y+(camera.y-y)*ratio};}
+export function pinch(camera,start,current){const center=ps=>({x:(ps[0].x+ps[1].x)/2,y:(ps[0].y+ps[1].y)/2});const a=center(start),b=center(current);const dist=ps=>Math.hypot(ps[1].x-ps[0].x,ps[1].y-ps[0].y);const angle=ps=>Math.atan2(ps[1].y-ps[0].y,ps[1].x-ps[0].x);const factor=dist(start)>1?dist(current)/dist(start):1;const zoomed=zoomAt(camera,factor,a.x,a.y);return {...zoomed,x:zoomed.x+b.x-a.x,y:zoomed.y+b.y-a.y,q:multiply(axisAngle(0,0,1,angle(current)-angle(start)),camera.q)};}
+export function project(p,camera,radius){const v=rotateVector(p,camera.q),distance=radius*4,scale=distance/(distance-v.z);return {x:camera.x+v.x*scale*camera.zoom,y:camera.y+v.y*scale*camera.zoom,depth:v.z,scale:scale*camera.zoom};}

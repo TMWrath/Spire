@@ -19,7 +19,10 @@ test('3D orbit and pan survive rapid release and cancellation without blanking t
  const bounds=(await surface.boundingBox())!;for(let i=0;i<12;i++){await page.mouse.move(bounds.x+15,bounds.y+15);await page.mouse.down();await page.mouse.move(bounds.x+65+i*4,bounds.y+60+i*2,{steps:3});if(i%2===0)await surface.dispatchEvent('pointercancel',{pointerId:1,pointerType:'mouse'});await page.mouse.up();}
  await expect(node).not.toHaveAttribute('transform',initial!);await expect(map.locator('.mind-node')).toHaveCount(16);expect(errors).toEqual([]);
  await map.getByRole('button',{name:'Fit map'}).click();await expect(node).toHaveAttribute('transform',initial!);
- await map.getByRole('button',{name:'Switch to pan'}).click();const box=(await surface.boundingBox())!;await page.mouse.move(box.x+15,box.y+15);await page.mouse.down();await page.mouse.move(box.x+80,box.y+65,{steps:12});await page.mouse.up();
- await expect(node).toHaveAttribute('transform',initial!);await expect(map).toBeVisible();expect(errors).toEqual([]);
+ await expect(map.getByRole('button',{name:/Switch to (pan|orbit)/})).toHaveCount(0);const box=(await surface.boundingBox())!;await page.mouse.move(box.x+15,box.y+15);await page.mouse.down({button:'middle'});await page.mouse.move(box.x+80,box.y+65,{steps:12});await page.mouse.up({button:'middle'});
+ await expect(surface).toHaveAttribute('data-rotation','0,0,0,1');await expect(surface).not.toHaveAttribute('data-pan','0,0');await expect(map).toBeVisible();expect(errors).toEqual([]);
+ await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.wheel(0,-180);await expect.poll(async()=>Number(await surface.getAttribute('data-zoom'))).toBeGreaterThan(1);
+ await map.getByRole('button',{name:'Fit map'}).click();await expect(surface).toHaveAttribute('data-zoom','1.0000');await expect(surface).toHaveAttribute('data-pan','0,0');
+ await surface.focus();await page.keyboard.press('ArrowRight');await expect(surface).not.toHaveAttribute('data-rotation','0,0,0,1');await page.keyboard.press('Home');await expect(surface).toHaveAttribute('data-rotation','0,0,0,1');
  await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth)).toBe(true);
 });
