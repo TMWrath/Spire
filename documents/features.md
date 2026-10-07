@@ -312,3 +312,7 @@ CommonMark/GFM retained, with highlights, wiki links and aliases, heading/block 
 No Dataview/community-plugin execution or custom MathJax macro settings are claimed. PDF display depends on browser PDF support; mobile users retain the open-file link. Rendering dependencies are bundled locally rather than fetched from third-party CDNs. Implementation is local pending deployment; build/unit/browser validation accompanies the source commit.
 
 The preceding star-action/heading-gallery release was deployed separately and verified healthy through HTTPS, with the new gallery present in the served bundle and port 4173 still loopback-only.
+
+
+## Animated file mind map
+Implementation in progress: replace the blank home canvas with labeled hexagonal file nodes; real Markdown references pulse from referenced source to referencing file. No folders or attachments. Pan/zoom, selection neighborhood and open-file navigation. Settings offers opt-in, clearly labeled presentation-only demo data, disabled by default; no real data mutations. Reduced-motion support and mobile acceptance required. Commit and backup-safe private deployment authorized.

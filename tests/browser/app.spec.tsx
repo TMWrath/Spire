@@ -6,7 +6,7 @@ test('empty workspace leaves the writing canvas clear',async({page})=>{
  await expect(page.getByRole('heading',{name:'Shape your Reliquary.'})).toHaveCount(0);
  await expect(page.getByText('Create your first folder and decide what belongs inside.')).toHaveCount(0);
  await expect(page.getByRole('button',{name:'Create your first folder'})).toHaveCount(0);
- await expect(page.locator('main.main')).toBeEmpty();
+ await expect(page.getByRole('region',{name:'Reliquary mind map'})).toBeVisible();
  if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();
  await page.getByRole('button',{name:'Create',exact:true}).click();
  await page.getByRole('menuitem',{name:'New folder'}).click();
