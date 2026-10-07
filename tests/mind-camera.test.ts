@@ -1,0 +1,5 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {defaultCamera,dragCamera,projectPoint} from '../client/mind-camera.ts';
+test('orbit rotates around a stable center with depth and finite perspective',()=>{const start=defaultCamera();const p={x:200,y:80,z:100};const a=projectPoint(p,start,500);const camera=dragCamera(start,120,70,'orbit');const b=projectPoint(p,camera,500);assert.notEqual(a.x,b.x);assert.notEqual(a.y,b.y);assert.notEqual(a.depth,b.depth);assert.equal(camera.x,0);assert.equal(camera.y,0);assert.deepEqual(projectPoint({x:0,y:0,z:0},camera,500),{x:0,y:0,depth:0,scale:1});for(const n of [1,100,10000]){const q=projectPoint(p,dragCamera(start,n,-n,'orbit'),500);assert.ok(Object.values(q).every(Number.isFinite));assert.ok(q.scale>0);}});
+test('gesture camera is immutable and survives cleared pointer state',()=>{let pointer:{camera:ReturnType<typeof defaultCamera>}|null={camera:defaultCamera()};const captured=pointer.camera;pointer=null;assert.equal(dragCamera(captured,30,40,'pan').x,30);assert.equal(captured.x,0);assert.equal(dragCamera(captured,30,40,'pan').yaw,captured.yaw);});
