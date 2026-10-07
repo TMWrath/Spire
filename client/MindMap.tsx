@@ -1,40 +1,39 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {Plus,Minus,Maximize,Pause,Play,ArrowUpRight,X,Search} from 'lucide-react';
 import type {Note} from '../shared/model';
-import {buildGraph,demoFiles,graphLayout} from './mind-map-model';
-import {projectPoint,rotatePoint,type Point3D} from './mind-camera';
-import {useMindCamera} from './use-mind-camera';
+import {buildGraph,demoFiles} from './mind-map-model';
+import {createDotMap,type DotMapController} from './dot-map/renderer.mjs';
 import './mind-map.css';
-const hex='-48,0 -24,-30 24,-30 48,0 24,30 -24,30';
+const title=(n:Note)=>n.path.split('/').at(-1)!.replace(/\.md$/i,'');
 export function MindMap({files,demo,onOpen}:{files:Note[];demo:boolean;onOpen:(file:Note)=>void}){
  const graph=useMemo(()=>buildGraph(demo?demoFiles:files),[files,demo]);
- const [selected,setSelected]=useState<string|null>(null),[query,setQuery]=useState(''),[paused,setPaused]=useState(false),[reduced,setReduced]=useState(false),[hidden,setHidden]=useState(document.hidden);
- const svg=useRef<SVGSVGElement>(null),[size,setSize]=useState({w:1000,h:700});
- const {camera:view,reset,zoom}=useMindCamera(svg,reduced,{onTap:id=>setSelected(s=>s===id?null:id),onDoubleTap:id=>{const file=graph.nodes.find(n=>n.id===id);if(file&&!demo)onOpen(file);}});
- useEffect(()=>{const mq=matchMedia('(prefers-reduced-motion: reduce)');const change=()=>setReduced(mq.matches);change();mq.addEventListener('change',change);const visibility=()=>setHidden(document.hidden);document.addEventListener('visibilitychange',visibility);return()=>{mq.removeEventListener('change',change);document.removeEventListener('visibilitychange',visibility);};},[]);
- useEffect(()=>{const el=svg.current;if(!el)return;const observer=new ResizeObserver(([entry])=>setSize({w:entry.contentRect.width,h:entry.contentRect.height}));observer.observe(el);return()=>observer.disconnect();},[]);
- useEffect(()=>{setSelected(null);reset();},[demo,reset]);
- const radius=Math.max(50,Math.min(size.w,size.h)*.37),nodeSize=Math.min(.83,3.32/Math.sqrt(Math.max(1,graph.nodes.length)));
- const positions=useMemo(()=>graphLayout(graph.nodes,graph.edges,radius),[graph,radius]);
- const projected=new Map(graph.nodes.map(n=>[n.id,projectPoint(positions.get(n.id)!,view,radius)]));
- const active=graph.nodes.find(n=>n.id===selected),neighbors=new Set([selected]);for(const edge of graph.edges)if(edge.source===selected||edge.target===selected){neighbors.add(edge.source);neighbors.add(edge.target);}
- const motion=!paused&&!reduced&&!hidden;
- const title=(n:Note)=>n.path.split('/').at(-1)!.replace(/\.md$/i,'');
- const rings=graph.nodes.length?Array.from({length:3},(_,axis)=>Array.from({length:48},(_,i)=>{const v=(a:number):Point3D=>axis===0?{x:Math.cos(a)*radius,y:Math.sin(a)*radius,z:0}:axis===1?{x:Math.cos(a)*radius,y:0,z:Math.sin(a)*radius}:{x:0,y:Math.cos(a)*radius,z:Math.sin(a)*radius};const a=projectPoint(v(i/48*Math.PI*2),view,radius),b=projectPoint(v((i+1)/48*Math.PI*2),view,radius);return <path key={`${axis}:${i}`} d={`M${a.x},${a.y} L${b.x},${b.y}`} opacity={(a.depth+b.depth)/2<0?.12:.35}/>;})):null;
+ const [selected,setSelected]=useState<string|null>(null),[query,setQuery]=useState(''),[paused,setPaused]=useState(false),[unavailable,setUnavailable]=useState(false);
+ const graphKey=JSON.stringify([graph.nodes.map(n=>[n.id,n.path]),graph.edges]);
+ const graphRef=useRef(graph);graphRef.current=graph;
+ const canvas=useRef<HTMLCanvasElement>(null),engine=useRef<DotMapController|null>(null),open=useRef(onOpen);
+ open.current=onOpen;
+ useEffect(()=>{
+  if(!canvas.current)return;setSelected(null);setUnavailable(false);
+  let controller:DotMapController;
+  try{controller=createDotMap(canvas.current,{files:graph.nodes.map(n=>({id:n.id,path:n.path,name:title(n)})),edges:graph.edges,onSelect:setSelected,onOpen:id=>{const file=graphRef.current.nodes.find(n=>n.id===id);if(file&&!demo)open.current(file);}});}
+  catch{setUnavailable(true);return;}
+  engine.current=controller;controller.search(query);controller.pause(paused);
+  return()=>{controller.destroy();engine.current=null;};
+  // Query and motion updates below preserve the approved camera between control changes.
+ },[graphKey,demo]);
+ useEffect(()=>engine.current?.search(query),[query]);
+ useEffect(()=>engine.current?.pause(paused),[paused]);
+ const active=graph.nodes.find(n=>n.id===selected);
  return <section className="mind-map" aria-label="Reliquary mind map">
   <div className="mind-heading"><div><small>SPIRE / RELIQUARY</small><h1>Mind map<span className="mind-live" aria-hidden="true"/></h1><p>{graph.nodes.length} files <span> / </span>{graph.edges.length} connections</p></div><span className="mind-status">{demo?'Demo data':'Your files'}</span></div>
-  <div className="mind-tools"><label className="mind-search"><Search size={16}/><input aria-label="Find a file in the map" placeholder="Find a file…" value={query} onChange={e=>setQuery(e.target.value)}/></label><button aria-label="Zoom out" onClick={()=>zoom(.8)}><Minus size={18}/></button><button aria-label="Zoom in" onClick={()=>zoom(1.25)}><Plus size={18}/></button><button aria-label="Fit map" title="Reset view" onClick={reset}><Maximize size={18}/></button><button aria-label={paused?'Resume animation':'Pause animation'} aria-pressed={paused} onClick={()=>setPaused(!paused)}>{paused?<Play size={18}/>:<Pause size={18}/>}</button></div>
-  <svg ref={svg} className="mind-surface" aria-label="File connections" tabIndex={0} data-zoom={view.zoom.toFixed(4)} data-rotation={view.q.join(',')} data-pan={`${view.x},${view.y}`}>
-   <defs><filter id="mind-glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter><marker id="mind-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10" fill="#aaaab2"/></marker></defs>
-   <g transform={`translate(${size.w/2},${size.h/2})`}>
-    <g className="mind-sphere-guides" aria-hidden="true">{rings}</g>
-    {graph.edges.map((edge,i)=>{const a=projected.get(edge.source)!,b=projected.get(edge.target)!,dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1;const sr=Math.min(49*nodeSize*a.scale,d*.3),tr=Math.min(49*nodeSize*b.scale,d*.3),sx=a.x+dx/d*sr,sy=a.y+dy/d*sr,tx=b.x-dx/d*tr,ty=b.y-dy/d*tr,path=`M${sx},${sy} L${tx},${ty}`;const highlighted=!!selected&&(edge.source===selected||edge.target===selected),dim=!!selected&&!highlighted,animate=motion&&(selected?highlighted:i<36);return <g key={`${edge.source}:${edge.target}`} className={`mind-edge ${highlighted?'lit':''} ${dim?'dim':''}`} style={{opacity:dim?.06:highlighted?.9:.18+Math.max(0,(a.depth+b.depth)/(2*radius))*.35}} data-source={edge.source} data-target={edge.target}><path d={path} markerEnd="url(#mind-arrow)"/>{animate&&<circle className="mind-pulse" r="2" filter="url(#mind-glow)"><animateMotion path={path} dur={`${4+i%3}s`} begin={`${-(i*.73)}s`} repeatCount="indefinite"/></circle>}</g>;})}
-    {[...graph.nodes].sort((a,b)=>projected.get(a.id)!.depth-projected.get(b.id)!.depth).map(n=>{const p=projected.get(n.id)!,name=title(n),label=name.length>24?name.slice(0,23)+'…':name,split=label.length>12?label.lastIndexOf(' ',14):-1,lines=split>0?[label.slice(0,split),label.slice(split+1)]:label.length>14?[label.slice(0,12),label.slice(12)]:[label];const dim=(!!selected&&!neighbors.has(n.id))||(!!query&&!n.path.toLowerCase().includes(query.toLowerCase()));return <g key={n.id} data-file-id={n.id} transform={`translate(${p.x},${p.y}) scale(${Math.min(1.65,Math.max(.2,p.scale*nodeSize))})`} style={{opacity:dim?.13:p.depth<0?.35:.98}} className={`mind-node ${selected===n.id?'selected':''} ${dim?'dim':''}`} role="button" tabIndex={0} aria-label={`Select ${name}`} aria-pressed={selected===n.id} onClick={e=>{if(e.detail===0)setSelected(n.id===selected?null:n.id);}} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelected(n.id===selected?null:n.id);}}}><title>{n.path}</title><g className="mind-node-body"><polygon className="mind-halo" points={hex}/><polygon className="mind-shell" points={hex}/><polygon className="mind-inset" points={hex} transform="scale(.88)"/><text textAnchor="middle" className="mind-label">{lines.map((line,j)=><tspan key={j} x="0" y={(j-(lines.length-1)/2)*13+4}>{line}</tspan>)}</text><circle cy="22" r="1.5" className="mind-indicator"/></g></g>;})}
-   </g>
-  </svg>
-  {!!graph.nodes.length&&<div className="mind-compass" aria-hidden="true"><svg viewBox="-35 -35 70 70"><circle r="30"/>{(['X','Y','Z'] as const).map((label,i)=>{const p=rotatePoint({x:i===0?1:0,y:i===1?1:0,z:i===2?1:0},view.q);return <g key={label}><line x1="0" y1="0" x2={p.x*23} y2={p.y*23}/><text x={p.x*28} y={p.y*28} textAnchor="middle">{label}</text></g>;})}</svg><span>3D ORBIT</span></div>}
-  {!graph.nodes.length&&<div className="mind-empty"><svg viewBox="-80 -65 160 130" aria-hidden="true"><polygon points={hex}/></svg><h2>Your connections start here.</h2><p>Link files to bring your map to life.</p><small>Explore a sample in Settings → Mind map → Show demo data.</small></div>}
-  {active&&<div className="mind-detail"><div><small>{demo?'DEMO FILE':'SELECTED FILE'}</small><strong>{title(active)}</strong><span>{demo?'Demonstration only — no files are created.':active.path}</span><p>{graph.edges.filter(e=>e.target===active.id).length} references · {graph.edges.filter(e=>e.source===active.id).length} referencing files</p></div>{!demo&&<button onClick={()=>onOpen(active)}>Open file<ArrowUpRight size={16}/></button>}<button aria-label="Clear map selection" onClick={()=>setSelected(null)}><X size={16}/></button></div>}
-  <div className="mind-legend"><span className="mind-legend-line"/>Referenced file → referencing file<span className="mind-hint mind-mouse-hint">Drag to orbit · Wheel to zoom · Middle/Shift-drag to move</span><span className="mind-hint mind-touch-hint">One finger to orbit · Pinch to zoom · Two fingers to move/twist</span></div>
+  <div className="mind-tools"><label className="mind-search"><Search size={16}/><input aria-label="Find a file in the map" placeholder="Find a file…" value={query} onChange={e=>setQuery(e.target.value)}/></label><button aria-label="Zoom out" onClick={()=>engine.current?.zoom(.8)}><Minus size={18}/></button><button aria-label="Zoom in" onClick={()=>engine.current?.zoom(1.25)}><Plus size={18}/></button><button aria-label="Fit map" title="Reset view" onClick={()=>engine.current?.reset()}><Maximize size={18}/></button><button aria-label={paused?'Resume animation':'Pause animation'} aria-pressed={paused} onClick={()=>setPaused(!paused)}>{paused?<Play size={18}/>:<Pause size={18}/>}</button></div>
+  <div className="mind-stage"><canvas ref={canvas} className="mind-surface" aria-label="File connections" tabIndex={0} aria-describedby="mind-controls"/>
+   {!!graph.nodes.length&&<label className="mind-picker">Select file<select aria-label="Select a file in the map" value={selected??''} onChange={e=>engine.current?.select(e.target.value||null)}><option value="">No selection</option>{graph.nodes.map(n=><option className="mind-node" key={n.id} value={n.id}>{title(n)}</option>)}</select></label>}
+   {!graph.nodes.length&&<div className="mind-empty"><span className="mind-empty-dot" aria-hidden="true"/><h2>Your connections start here.</h2><p>Link files to bring your map to life.</p><small>Explore a sample in Settings → Mind map → Show demo data.</small></div>}
+   {unavailable&&<div className="mind-empty" role="status"><h2>The map could not be drawn.</h2><p>Your files are unchanged. Refresh to try again.</p></div>}
+   {active&&<div className="mind-detail"><div><small>{demo?'DEMO FILE':'SELECTED FILE'}</small><strong>{title(active)}</strong><span>{demo?'Demonstration only — no files are created.':active.path}</span><p>{graph.edges.filter(e=>e.target===active.id).length} references · {graph.edges.filter(e=>e.source===active.id).length} referencing files</p></div>{!demo&&<button onClick={()=>onOpen(active)}>Open file<ArrowUpRight size={16}/></button>}<button aria-label="Clear map selection" onClick={()=>engine.current?.select(null)}><X size={16}/></button></div>}
+  </div>
+  <p className="mind-sr" role="status" aria-live="polite">{active?`Selected ${title(active)}`:'No file selected'}</p>
+  <div className="mind-legend" id="mind-controls"><span className="mind-legend-line"/>Referenced file → referencing file<span className="mind-hint mind-mouse-hint">Drag to orbit · Wheel to zoom · Middle/Shift-drag to move</span><span className="mind-hint mind-touch-hint">One finger to orbit · Pinch to zoom · Two fingers to move/twist</span><span className="mind-sr">Arrow keys orbit. Shift and arrows move. Plus and minus zoom. Home resets. Escape clears selection. Use Select file to choose a file with the keyboard.</span></div>
  </section>;
 }

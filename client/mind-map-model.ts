@@ -1,4 +1,5 @@
 import {spherePoints} from './mind-camera';
+import {files as demoNodes,edges as demoEdges} from './dot-map/demo.mjs';
 import {links,metadata,resolveLink,type Note} from '../shared/model';
 export function buildGraph(files:Note[]){
  const nodes=files.filter(n=>!n.deleted);const edges:{source:string;target:string}[]=[];const seen=new Set<string>();
@@ -8,8 +9,7 @@ export function buildGraph(files:Note[]){
  }
  return {nodes,edges};
 }
-const names=['Origin','Architecture','Fragments','Nightfall','Characters','Worldbuilding','Sound & Motion','The Observatory','Research','Visual Language','Chapter One','Field Journal','Inspiration','Systems','Future Visions','Afterlight'];
-export const demoFiles:Note[]=names.map((name,i)=>({id:`demo-${i}`,path:`Demo/${name}.md`,content:[(i+1)%names.length,...(i%2===0?[(i+5)%names.length]:[]),...(i>0&&i%3===0?[0]:[])].map(j=>`[[${names[j]}]]`).join('\n'),rev:1,deleted:false,history:[],time:''}));
+export const demoFiles:Note[]=demoNodes.map(file=>({...file,content:demoEdges.filter(e=>e.target===file.id).map(e=>`[[${demoNodes.find(n=>n.id===e.source)!.name}]]`).join('\n'),rev:1,deleted:false,history:[],time:''}));
 export function graphLayout(nodes:Note[],_edges:{source:string;target:string}[],radius=300){
  // Fibonacci points spread files across a true sphere without a per-frame force simulation.
  const points=spherePoints(nodes.length,radius);
