@@ -19,3 +19,14 @@ test('mobile Back dismissal resets keyboard permission without editor blur',asyn
   }
  }
 });
+
+test('text style chooser previews inline styles and marks syntax source',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await setup(page);
+ const editor=page.getByRole('textbox',{name:'Document editor',exact:true});await editor.fill('Text for formatting');await editor.press('Control+a');
+ const chooser=page.getByRole('button',{name:'Text style',exact:true});await expect(chooser).toBeVisible();await chooser.click();
+ const previews=page.getByRole('group',{name:'Text styles',exact:true});
+ for(const [label,syntax] of [['Bold','Markdown'],['Italic','Markdown'],['Underline','HTML'],['Strikethrough','Markdown']]){
+  const card=previews.getByRole('button',{name:label,exact:true});await expect(card).toBeVisible();await expect(card.getByText(syntax,{exact:true})).toBeVisible();
+ }
+ await previews.getByRole('button',{name:'Bold',exact:true}).click();await page.getByRole('button',{name:'Source',exact:true}).click();await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue('**Text for formatting**');
+});
