@@ -17,8 +17,8 @@ import {scopeFileCss} from './style-css';
 const PortableUnderline=Underline.extend({renderMarkdown:(node,h)=>`<u>${h.renderChildren(node)}</u>`,markdownTokenizer:{name:'underline',level:'inline',start:src=>src.indexOf('<u>'),tokenize:(src,_tokens,lexer)=>{const m=/^<u>([\s\S]+?)<\/u>/.exec(src);if(m)return {type:'underline',raw:m[0],tokens:lexer.inlineTokens(m[1])};}}});
 
 /** Unsupported dialect blocks are rendered, but their exact portable source is retained. */
-export function DocumentEditor({note,notes,attachments,fileCss,onChange,onReady,onSource}:{note:Note;notes:Note[];attachments:string[];fileCss?:string;onChange:(content:string)=>void;onReady:(editor:Editor|null)=>void;onSource:()=>void}){
- const callbacks=useRef({note,notes,attachments,onChange,onReady,onSource});callbacks.current={note,notes,attachments,onChange,onReady,onSource};
+export function DocumentEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,onChange,onReady,onSource}:{keyboardEnabled?:boolean;onBlur?:()=>void;note:Note;notes:Note[];attachments:string[];fileCss?:string;onChange:(content:string)=>void;onReady:(editor:Editor|null)=>void;onSource:()=>void}){
+ const callbacks=useRef({note,notes,attachments,onBlur,onChange,onReady,onSource});callbacks.current={note,notes,attachments,onBlur,onChange,onReady,onSource};
  const prefix=useRef(''),last=useRef(note.content),originals=useRef(new Map<string,string[]>());
  const load=(editor:Editor,source:string)=>{
   const match=/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/.exec(source);prefix.current=match?.[0]??'';
@@ -41,12 +41,13 @@ export function DocumentEditor({note,notes,attachments,fileCss,onChange,onReady,
   dom.append(view);
   return {dom,stopEvent:()=>true};
  }});
- const editor=useEditor({extensions:[Preserved,PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false}}),TaskList,TaskItem.configure({nested:true}),Markdown],content:'',editorProps:{attributes:{role:'textbox','aria-label':'Document editor','aria-multiline':'true',class:'document-writing-surface'},handlePaste:(view,event)=>{const text=event.clipboardData?.getData('text/plain');if(text===undefined)return false;event.preventDefault();view.dispatch(view.state.tr.insertText(text));return true;}},onCreate:({editor})=>{load(editor,callbacks.current.note.content);callbacks.current.onReady(editor);},onUpdate:({editor})=>{
+ const editor=useEditor({onBlur:()=>callbacks.current.onBlur?.(),extensions:[Preserved,PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false}}),TaskList,TaskItem.configure({nested:true}),Markdown],content:'',editorProps:{attributes:{role:'textbox','aria-label':'Document editor','aria-multiline':'true',class:'document-writing-surface'},handlePaste:(view,event)=>{const text=event.clipboardData?.getData('text/plain');if(text===undefined)return false;event.preventDefault();view.dispatch(view.state.tr.insertText(text));return true;}},onCreate:({editor})=>{load(editor,callbacks.current.note.content);callbacks.current.onReady(editor);},onUpdate:({editor})=>{
   const used=new Map<string,number>();const blocks=(editor.getJSON().content??[]).map(node=>{if(node.type==='preservedBlock')return String(node.attrs?.source??'').trimEnd();const key=JSON.stringify(node),i=used.get(key)??0;used.set(key,i+1);return (originals.current.get(key)?.[i]??editor.markdown!.serialize({type:'doc',content:[node]})).trimEnd();});
   const source=prefix.current+blocks.join('\n\n');last.current=source;callbacks.current.onChange(source);
  }});
  useEffect(()=>{if(editor&&note.content!==last.current)load(editor,note.content);},[editor,note.content]);
  useEffect(()=>{editor?.setEditable(!note.deleted,false);},[editor,note.deleted]);
+ useEffect(()=>{if(editor)editor.view.dom.setAttribute("inputmode",keyboardEnabled?"text":"none");},[editor,keyboardEnabled]);
  useEffect(()=>()=>callbacks.current.onReady(null),[]);
  let scoped='';try{if(fileCss)scoped=scopeFileCss(fileCss,note.id);}catch{}
  return <>{scoped&&<style>{scoped}</style>}<EditorContent editor={editor} className="preview document-editor" data-style-scope={note.id}/></>;
