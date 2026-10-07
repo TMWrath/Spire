@@ -3,6 +3,7 @@ test.use({viewport:{width:390,height:844},isMobile:true,hasTouch:true,video:{mod
 test('spherical map mobile orbit, pinch, twist and lift/cancel preserve real files',async({page,context})=>{
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  await page.goto('/');await page.getByLabel('Username',{exact:true}).fill('tester');await page.getByLabel('Password',{exact:true}).fill('disposable-test-password');await page.getByRole('button',{name:'Create Reliquary',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
  const beforeResponse=await context.request.get('/api/snapshot');expect(beforeResponse.status()).toBe(200);const before=await beforeResponse.json();expect(before.notes).toEqual([]);
  await page.getByRole('button',{name:'Settings',exact:true}).click();await page.getByRole('tab',{name:'Mind map',exact:true}).click();await page.getByLabel('Show demo data').check();await page.getByRole('button',{name:'Back to writing'}).click();
  const map=page.getByRole('region',{name:'Reliquary mind map'}),surface=map.locator('.mind-surface');await expect(map.locator('.mind-node')).toHaveCount(16);await expect(map.getByRole('button',{name:/Switch to (pan|orbit)/})).toHaveCount(0);await expect(map.locator('.mind-sphere-guides path')).toHaveCount(144);

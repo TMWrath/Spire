@@ -1,5 +1,9 @@
 # Spire — Bugs
 
+## Spherical-map release browser regressions
+
+Resolved: mobile focus/history tests used the obsolete Create note selector; the touch-map test requested the authenticated snapshot before setup completed. Updated selectors to Create file and awaited the authenticated Settings control without weakening behavioral assertions. Final production build and all 43 unit/API and 38 browser tests pass, including touch orbit/pinch/twist/cancel, mobile selection/focus, and revision comparisons. Deployment pending verification.
+
 ## Table editor header overlapped its size controls on mobile
 
 **State:** Resolved and deployed to the private preview from source commit `d7eaca2`; the container is healthy and the live stylesheet contains the content-driven table-dialog header fix.
