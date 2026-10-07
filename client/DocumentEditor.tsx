@@ -38,7 +38,7 @@ export function DocumentEditor({note,notes,attachments,fileCss,keyboardEnabled=t
  const Preserved=Node.create({name:'preservedBlock',group:'block',atom:true,selectable:true,draggable:false,addAttributes:()=>({source:{default:'',rendered:false}}),parseHTML:()=>[],renderHTML:()=>['div',{'data-preserved-block':'true'}],renderMarkdown:node=>String(node.attrs?.source??'').trimEnd(),addNodeView:()=>({node})=>{
   const dom=document.createElement('div');dom.className='preserved-document-block';dom.contentEditable='false';
   const view=document.createElement('div'),c=callbacks.current;view.innerHTML=DOMPurify.sanitize(renderMarkdown({...c.note,content:String(node.attrs.source)},c.notes,c.attachments));
-  const button=document.createElement('button');button.type='button';button.textContent='Edit in Source';button.addEventListener('click',()=>callbacks.current.onSource());dom.append(view,button);
+  dom.append(view);
   return {dom,stopEvent:()=>true};
  }});
  const editor=useEditor({extensions:[Preserved,PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false}}),TaskList,TaskItem.configure({nested:true}),Markdown],content:'',editorProps:{attributes:{role:'textbox','aria-label':'Document editor','aria-multiline':'true',class:'document-writing-surface'},handlePaste:(view,event)=>{const text=event.clipboardData?.getData('text/plain');if(text===undefined)return false;event.preventDefault();view.dispatch(view.state.tr.insertText(text));return true;}},onCreate:({editor})=>{load(editor,callbacks.current.note.content);callbacks.current.onReady(editor);},onUpdate:({editor})=>{
