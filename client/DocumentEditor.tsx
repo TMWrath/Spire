@@ -1,0 +1,59 @@
+import './document-editor.css';
+import React,{useEffect,useRef} from 'react';
+import {useEditor,EditorContent,type Editor} from '@tiptap/react';
+import {Node,type JSONContent} from '@tiptap/core';
+import StarterKit from '@tiptap/starter-kit';
+import {Markdown} from '@tiptap/markdown';
+import Underline from '@tiptap/extension-underline';
+import {TaskList,TaskItem} from '@tiptap/extension-list';
+import {marked} from 'marked';
+import DOMPurify from 'dompurify';
+import {renderMarkdown} from './markdown';
+import {touchEditing} from './editor-focus';
+import {capitalizeCell} from './rich-capitalization';
+import type {FormatKind} from './FormattingToolbar';
+import type {Note} from '../shared/model';
+import {scopeFileCss} from './style-css';
+const PortableUnderline=Underline.extend({renderMarkdown:(node,h)=>`<u>${h.renderChildren(node)}</u>`,markdownTokenizer:{name:'underline',level:'inline',start:src=>src.indexOf('<u>'),tokenize:(src,_tokens,lexer)=>{const m=/^<u>([\s\S]+?)<\/u>/.exec(src);if(m)return {type:'underline',raw:m[0],tokens:lexer.inlineTokens(m[1])};}}});
+
+/** Unsupported dialect blocks are rendered, but their exact portable source is retained. */
+export function DocumentEditor({note,notes,attachments,fileCss,onChange,onReady,onSource}:{note:Note;notes:Note[];attachments:string[];fileCss?:string;onChange:(content:string)=>void;onReady:(editor:Editor|null)=>void;onSource:()=>void}){
+ const callbacks=useRef({note,notes,attachments,onChange,onReady,onSource});callbacks.current={note,notes,attachments,onChange,onReady,onSource};
+ const prefix=useRef(''),last=useRef(note.content),originals=useRef(new Map<string,string[]>());
+ const load=(editor:Editor,source:string)=>{
+  const match=/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/.exec(source);prefix.current=match?.[0]??'';
+  const body=source.slice(prefix.current.length),tokens=marked.lexer(body),content:JSONContent[]=[];originals.current=new Map();
+  const definitions=/^\s*\[[^\]]+\]:/m.test(body);
+  for(const token of tokens){if(token.type==='space')continue;
+   const raw=token.raw;
+   const protectedBlock=!['heading','paragraph','text','list','blockquote','hr','code'].includes(token.type)||/!?\[\[|\[\^|\[!|==|\$|!\[|\^[\w-]+(?:\n|$)|<(?!\/?u>)[A-Za-z!/]|&(?:\w+|#\d+);/.test(raw)||(definitions&&raw.includes('['))||token.type==='code'&&'lang' in token&&token.lang==='mermaid';
+   if(protectedBlock){content.push({type:'preservedBlock',attrs:{source:raw}});continue;}
+   const parsed=editor.markdown!.parse(raw).content??[];
+   if(!parsed.length){content.push({type:'preservedBlock',attrs:{source:raw}});continue;}
+   if(parsed.length===1){const key=JSON.stringify(parsed[0]);originals.current.set(key,[...(originals.current.get(key)??[]),raw]);}
+   content.push(...parsed);
+  }
+  editor.commands.setContent({type:'doc',content:content.length?content:[{type:'paragraph'}]},{emitUpdate:false});last.current=source;
+ };
+ const Preserved=Node.create({name:'preservedBlock',group:'block',atom:true,selectable:true,draggable:false,addAttributes:()=>({source:{default:'',rendered:false}}),parseHTML:()=>[],renderHTML:()=>['div',{'data-preserved-block':'true'}],renderMarkdown:node=>String(node.attrs?.source??'').trimEnd(),addNodeView:()=>({node})=>{
+  const dom=document.createElement('div');dom.className='preserved-document-block';dom.contentEditable='false';
+  const view=document.createElement('div'),c=callbacks.current;view.innerHTML=DOMPurify.sanitize(renderMarkdown({...c.note,content:String(node.attrs.source)},c.notes,c.attachments));
+  const button=document.createElement('button');button.type='button';button.textContent='Edit in Source';button.addEventListener('click',()=>callbacks.current.onSource());dom.append(view,button);
+  return {dom,stopEvent:()=>true};
+ }});
+ const editor=useEditor({extensions:[Preserved,PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false}}),TaskList,TaskItem.configure({nested:true}),Markdown],content:'',editorProps:{attributes:{role:'textbox','aria-label':'Document editor','aria-multiline':'true',class:'document-writing-surface'},handlePaste:(view,event)=>{const text=event.clipboardData?.getData('text/plain');if(text===undefined)return false;event.preventDefault();view.dispatch(view.state.tr.insertText(text));return true;}},onCreate:({editor})=>{load(editor,callbacks.current.note.content);callbacks.current.onReady(editor);},onUpdate:({editor})=>{
+  const used=new Map<string,number>();const blocks=(editor.getJSON().content??[]).map(node=>{if(node.type==='preservedBlock')return String(node.attrs?.source??'').trimEnd();const key=JSON.stringify(node),i=used.get(key)??0;used.set(key,i+1);return (originals.current.get(key)?.[i]??editor.markdown!.serialize({type:'doc',content:[node]})).trimEnd();});
+  const source=prefix.current+blocks.join('\n\n');last.current=source;callbacks.current.onChange(source);
+ }});
+ useEffect(()=>{if(editor&&note.content!==last.current)load(editor,note.content);},[editor,note.content]);
+ useEffect(()=>{editor?.setEditable(!note.deleted,false);},[editor,note.deleted]);
+ useEffect(()=>()=>callbacks.current.onReady(null),[]);
+ let scoped='';try{if(fileCss)scoped=scopeFileCss(fileCss,note.id);}catch{}
+ return <>{scoped&&<style>{scoped}</style>}<EditorContent editor={editor} className="preview document-editor" data-style-scope={note.id}/></>;
+}
+export function formatDocument(editor:Editor,kind:FormatKind,option:number|string=2){
+ if(!editor.isEditable)return;
+ if(kind==='case'){capitalizeCell(editor,String(option));return;}
+ const chain=touchEditing()?editor.chain():editor.chain().focus();
+ if(kind==='bold')chain.toggleBold().run();else if(kind==='italic')chain.toggleItalic().run();else if(kind==='underline')chain.toggleUnderline().run();else if(kind==='strike')chain.toggleStrike().run();else if(kind==='code')chain.toggleCode().run();else if(kind==='quote')chain.toggleBlockquote().run();else if(kind==='heading'){const level=Number(option);if(level)chain.setHeading({level:level as 1|2|3|4|5|6}).run();else chain.setParagraph().run();}else if(kind==='list'){const style=String(option);if(style==='task')chain.toggleTaskList().run();else if(['number-dot','number-paren','lower-alpha','upper-alpha'].includes(style))chain.toggleOrderedList().run();else chain.toggleBulletList().run();}
+}
