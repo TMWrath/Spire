@@ -19,8 +19,8 @@ import {scopeFileCss} from './style-css';
 const PortableUnderline=Underline.extend({renderMarkdown:(node,h)=>`<u>${h.renderChildren(node)}</u>`,markdownTokenizer:{name:'underline',level:'inline',start:src=>src.indexOf('<u>'),tokenize:(src,_tokens,lexer)=>{const m=/^<u>([\s\S]+?)<\/u>/.exec(src);if(m)return {type:'underline',raw:m[0],tokens:lexer.inlineTokens(m[1])};}}});
 
 /** Unsupported dialect blocks are rendered, but their exact portable source is retained. */
-function BodyEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,onChange,onReady,onSource}:{keyboardEnabled?:boolean;onBlur?:()=>void;note:Note;notes:Note[];attachments:string[];fileCss?:string;onChange:(content:string)=>void;onReady:(editor:Editor|null)=>void;onSource:()=>void}){
- const callbacks=useRef({note,notes,attachments,onBlur,onChange,onReady,onSource});callbacks.current={note,notes,attachments,onBlur,onChange,onReady,onSource};
+function BodyEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,onChange,onReady,onSource,label='Document editor',onActivate}:{label?:string;onActivate?:(editor:Editor)=>void;keyboardEnabled?:boolean;onBlur?:()=>void;note:Note;notes:Note[];attachments:string[];fileCss?:string;onChange:(content:string)=>void;onReady:(editor:Editor|null)=>void;onSource:()=>void}){
+ const callbacks=useRef({note,notes,attachments,onBlur,onChange,onReady,onSource,onActivate});callbacks.current={note,notes,attachments,onBlur,onChange,onReady,onSource,onActivate};
  const mediaViews=useRef(new Set<()=>void>());
  const prefix=useRef(''),last=useRef(note.content),originals=useRef(new Map<string,string[]>()),loaded=useRef<Editor|null>(null);
  const load=(editor:Editor,source:string)=>{
@@ -45,7 +45,7 @@ function BodyEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,
   dom.append(view);
   return {dom,stopEvent:()=>true,destroy:()=>{mediaViews.current.delete(refresh);}};
  }});
- const editor=useEditor({onBlur:()=>callbacks.current.onBlur?.(),extensions:[PortableHighlight,Preserved,PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false}}),TaskList,TaskItem.configure({nested:true}),Markdown],content:'',editorProps:{attributes:{role:'textbox','aria-label':'Document editor','aria-multiline':'true',class:'document-writing-surface'},handlePaste:(view,event)=>{const text=event.clipboardData?.getData('text/plain');if(text===undefined)return false;event.preventDefault();view.dispatch(view.state.tr.insertText(text));return true;}},onCreate:({editor})=>{if(loaded.current!==editor)load(editor,callbacks.current.note.content);callbacks.current.onReady(editor);},onUpdate:({editor})=>{
+ const editor=useEditor({onFocus:({editor})=>callbacks.current.onActivate?.(editor),onBlur:()=>callbacks.current.onBlur?.(),extensions:[PortableHighlight,Preserved,PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false}}),TaskList,TaskItem.configure({nested:true}),Markdown],content:'',editorProps:{attributes:{role:'textbox','aria-label':label,'aria-multiline':'true',class:'document-writing-surface'},handlePaste:(view,event)=>{const text=event.clipboardData?.getData('text/plain');if(text===undefined)return false;event.preventDefault();view.dispatch(view.state.tr.insertText(text));return true;}},onCreate:({editor})=>{if(loaded.current!==editor)load(editor,callbacks.current.note.content);callbacks.current.onReady(editor);},onUpdate:({editor})=>{
   const used=new Map<string,number>();const blocks=(editor.getJSON().content??[]).map(node=>{if(node.type==='preservedBlock')return String(node.attrs?.source??'').trimEnd();const key=JSON.stringify(node),i=used.get(key)??0;used.set(key,i+1);return (originals.current.get(key)?.[i]??editor.markdown!.serialize({type:'doc',content:[node]})).trimEnd();});
   const source=prefix.current+blocks.join('\n\n');last.current=source;callbacks.current.onChange(source);
  }});
@@ -58,11 +58,13 @@ function BodyEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,
  return <>{scoped&&<style>{scoped}</style>}<EditorContent editor={editor} className="preview document-editor" data-style-scope={note.id}/></>;
 }
 export function DocumentEditor(props:Parameters<typeof BodyEditor>[0]){
+ const bodyRef=useRef<Editor|null>(null),active=useRef<'body'|'header'|'footer'>('body');
+ const bodyReady=(editor:Editor|null)=>{bodyRef.current=editor;active.current='body';props.onReady(editor);};
  if(!hasPage(props.note.content))return <BodyEditor {...props}/>;
  let layout;try{layout=readPage(props.note.content);}catch(e){return <><p role="alert">{String((e as Error).message)}</p><BodyEditor {...props}/></>;}
  const update=(part:'header'|'footer',text:string)=>props.onChange(writePage(props.note.content,{...layout,[part]:{...layout[part],text}}));
- const section=(part:'header'|'footer')=>layout[part].enabled&&<section className="page-section" aria-label={part==='header'?'Page header':'Page footer'}><strong>{part==='header'?'Header':'Footer'}</strong><textarea aria-label={part==='header'?'Header Markdown':'Footer Markdown'} value={layout[part].text} disabled={props.note.deleted} inputMode={props.keyboardEnabled?'text':'none'} onBlur={props.onBlur} placeholder="Write ordinary Markdown…" onChange={e=>update(part,e.target.value)}/><div className="preview" dangerouslySetInnerHTML={{__html:DOMPurify.sanitize(renderMarkdown({...props.note,content:layout[part].text},props.notes,props.attachments))}}/></section>;
- return <div className="page-document">{section('header')}<BodyEditor {...props} note={{...props.note,content:layout.body}} onChange={body=>props.onChange(writePage(props.note.content,{...layout,body}))}/>{section('footer')}</div>;
+ const section=(part:'header'|'footer')=>layout[part].enabled&&<section className="page-section" data-page-section={part} aria-label={part==='header'?'Page header':'Page footer'}><div className="page-region-label">{part==='header'?'Header':'Footer'}</div><BodyEditor {...props} label={part==='header'?'Header editor':'Footer editor'} note={{...props.note,content:layout[part].text}} onReady={editor=>{if(!editor&&active.current===part){active.current='body';props.onReady(bodyRef.current);}}} onActivate={editor=>{active.current=part;props.onReady(editor);}} onChange={text=>update(part,text)}/></section>;
+ return <div className="page-document">{section('header')}<section className="page-body" data-page-section="body"><BodyEditor {...props} onReady={bodyReady} onActivate={editor=>{active.current='body';props.onReady(editor);}} note={{...props.note,content:layout.body}} onChange={body=>props.onChange(writePage(props.note.content,{...layout,body}))}/></section>{section('footer')}</div>;
 }
 export function formatDocument(editor:Editor,kind:FormatKind,option:number|string=2){
  if(!editor.isEditable)return;
