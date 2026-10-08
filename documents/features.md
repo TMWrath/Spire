@@ -1,5 +1,13 @@
 # Spire — Features
 
+## Split and generated Table of contents — deployed
+
+Deployed source `89ad1f0` as immutable release `20261008T232051Z-contents-89ad1f0` at https://spire.example. Split is always beside Source, with no Context preference gate. Context → Page layout offers Table of contents; its independently collapsible tab precedes Header. Entries derive from body Markdown headings, exclude fenced code, preserve heading levels, and navigate in the rich editor. Generated ordinary Markdown links serialize before Header and refresh on save; third-party heading-anchor conventions can differ.
+
+Acceptance: production build, 66/66 unit/API tests and 65/65 browser scenarios passed. Corrected the CSS browser assertion to check Split preview rather than an editor no longer mounted in that mode. Tested build assets match staged and served JS/CSS; live homepage references them. Container healthy, original named data volume and loopback binding retained; HTTPS health and logged-out API rejection pass. Application backup and full-volume archive verified with independently rechecked checksums; prior immutable image and pinned rollback retained. Source committed locally, not pushed. Authenticated live editing, physical phone checks and rollback drill not performed.
+
+
+
 ## Optional footnotes and collapsible document sections
 
 Context → Page layout now offers an opt-in Footnotes switch. Enabled definitions are stored after Footer in source using ordinary Markdown `[^id]: Explanation` syntax inside section-boundary comments; body references use `[^id]`. Disabled definitions are preserved in page-layout YAML for restoration. Incomplete footnotes boundaries reject section editing without silently consuming the body. Header, Footer and Footnotes have independent bottom collapse controls, start collapsed on reopening a file, and retain text through collapse, disable/re-enable, Source editing and save/reload. Header/Footer retain their formatted editors; Footnotes use a source textarea. Footnotes remain distinct from Footer and are not automatically printed at each page bottom.
