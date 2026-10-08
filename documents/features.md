@@ -1,5 +1,11 @@
 # Spire — Features
 
+## Properties tab — local implementation
+
+Context now has its own Properties tab. Add/edit/rename/remove Text, Number, Checkbox, Date and string List values in ordinary YAML frontmatter. Preserve body bytes, unrelated metadata/comments, and Page layout configuration. Nested/unknown metadata remains visible and source-editable. Internal spire_ settings stay in their own tabs. Invalid YAML, duplicates, reserved names, invalid typed values and dangling aliases fail safely. Removal requires confirmation; Cancel is non-mutating.
+
+Production build, 63/63 unit/API tests, 62/62 browser tests, focused persistence/mobile tests and whitespace checks passed. No physical-phone or authenticated-live validation. Local working tree only; not committed, deployed or pushed.
+
 ## Header/footer and page-break release
 
 Source `78866b3`, immutable release `20261008T193738Z-pages-78866b3`, deployed to https://spire.example. Page menu offers Header, Footer and Page break. Header/footer Markdown regions surround the adaptive body; disabling retains text in portable YAML frontmatter for restoration. Enabled content appears in ordinary Markdown header/body/footer order. Page breaks use explicit HTML `break-after: page` and a visible editor divider; third-party print/PDF support is renderer-dependent. Source boundary mismatch fails safely with a visible warning rather than guessing which words to move. Includes the pending Media image icon.
