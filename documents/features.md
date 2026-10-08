@@ -1,5 +1,10 @@
 # Spire — Features
 
+## Compact section bar — deployed
+
+Section tabs use one horizontally scrolling row. A caret above the bar collapses/reveals it with slide/fade and rotation; opened document sections remain open. Hidden controls are inert, reduced-motion is respected, and the dock is excluded from print. Deployed `c5b32fa` as `20261008T235036Z-tabs-c5b32fa`. Production build, 66 unit/API tests and all 65 browser tests passed, including desktop/mobile scrolling and collapse checks. Image and public assets match the tested build; anonymous live sign-in has no page errors, HTTPS health and unauthenticated rejection pass. Existing volume and loopback binding retained, application/full-volume backups checksum-verified, pinned rollback retained. No repository push, authenticated production editing, physical phone validation or rollback drill performed.
+
+
 ## Split and generated Table of contents — deployed
 
 Deployed source `89ad1f0` as immutable release `20261008T232051Z-contents-89ad1f0` at https://spire.example. Split is always beside Source, with no Context preference gate. Context → Page layout offers Table of contents; its independently collapsible tab precedes Header. Entries derive from body Markdown headings, exclude fenced code, preserve heading levels, and navigate in the rich editor. Generated ordinary Markdown links serialize before Header and refresh on save; third-party heading-anchor conventions can differ.
