@@ -1,5 +1,13 @@
 # Spire — Features
 
+## October 8 hybrid highlighting deployment
+
+Deployed source `6cd888c` as immutable release `20261008T165857Z-highlight-6cd888c`, including the hybrid highlight picker and a reproduced date/time caret race fix. Final gates: production build, 53/53 unit/API tests, 116/116 browser checks (58 scenarios repeated twice), and clean whitespace checks. The temporal regression failed before synchronous content/dialog commit and immediate caret restoration, then passed three focused repetitions and the full repeated suite.
+
+Application-consistent backup and full-volume archive were created before cutover; application integrity, archive readability and both SHA-256 checksums were independently verified afterward. Live container is healthy and matches the unique release image, the original read/write named data volume and loopback-only port are preserved, Caddy network remains connected, HTTPS health passes, logged-out snapshot returns 401, and served entry JavaScript/CSS exactly match the tested production build. Active-release pointer matches the running release. Previous Blocks release and pinned rollback image/config remain available. Source commits remain local/unpushed.
+
+Authenticated live editing, physical Android IME/microphone behavior, third-party import/edit/export fixtures, and a rollback drill were not performed. Default `==text==` and styled `<mark>` are not universal Markdown highlighting or exact-color guarantees.
+
 ## Hybrid selected-text highlighting
 
 The **Highlight** control opens a horizontally scrollable preview row below the formatting rail. **Custom color** is first, followed by default Markdown highlighting and eight standard swatches (Yellow, Orange, Pink, Red, Green, Cyan, Blue, Purple), plus Remove and Cancel. Previews use the selected text; empty selections disable application instead of inserting placeholder prose. Custom colors have a draggable saturation/brightness plane, hue slider, keyboard controls, editable HEX and RGB, validation, and live preview. Readable black/white foreground is chosen automatically.
