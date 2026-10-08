@@ -1,5 +1,6 @@
 import {TextSelection} from '@tiptap/pm/state';
 import {touchEditing} from './editor-focus';
+import {PortableHighlight} from './PortableHighlight';
 import React,{useEffect,useRef} from 'react';
 import {useEditor,EditorContent,type Editor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -17,7 +18,7 @@ import type {TableAlignment} from '../shared/managed-table';
 export function RichTableCell({source,label,alignment,onChange,onActive,autoFocus=false}:{source:string;label:string;alignment:TableAlignment;onChange:(source:string)=>void;onActive:(editor:Editor)=>void;autoFocus?:boolean}){
  const callbacks=useRef({onChange,onActive});callbacks.current={onChange,onActive};
  const editor=useEditor({
-  extensions:[PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false},orderedList:{keepMarks:true},bulletList:{keepMarks:true}}),TaskList,TaskItem.configure({nested:true}),Markdown],
+  extensions:[PortableHighlight,PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false},orderedList:{keepMarks:true},bulletList:{keepMarks:true}}),TaskList,TaskItem.configure({nested:true}),Markdown],
   content:source,contentType:'markdown',
   editorProps:{attributes:{role:'textbox','aria-label':label,'aria-multiline':'true',class:'rich-table-cell'},
    // Paste plain text rather than importing arbitrary external HTML/styles.

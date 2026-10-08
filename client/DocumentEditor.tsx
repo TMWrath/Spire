@@ -1,4 +1,5 @@
 import './document-editor.css';
+import {PortableHighlight} from './PortableHighlight';
 import React,{useEffect,useRef} from 'react';
 import {useEditor,EditorContent,type Editor} from '@tiptap/react';
 import {Node,type JSONContent} from '@tiptap/core';
@@ -27,7 +28,8 @@ export function DocumentEditor({note,notes,attachments,fileCss,keyboardEnabled=t
   const definitions=/^\s*\[[^\]]+\]:/m.test(body);
   for(const token of tokens){if(token.type==='space')continue;
    const raw=token.raw;
-   const protectedBlock=!['heading','paragraph','text','list','blockquote','hr','code'].includes(token.type)||/!?\[\[|\[\^|\[!|==|\$|!\[|\^[\w-]+(?:\n|$)|<(?!\/?u>)[A-Za-z!/]|&(?:\w+|#\d+);/.test(raw)||(definitions&&raw.includes('['))||token.type==='code'&&'lang' in token&&token.lang==='mermaid';
+   const highlightSafe=raw.replace(/==([^\n]+?)==/g,'$1').replace(/<mark(?:\s+style="background-color:\s*#[\da-f]{6};\s*color:\s*#[\da-f]{6};?")?>([^\n]*?)<\/mark>/gi,'$1');
+   const protectedBlock=!['heading','paragraph','text','list','blockquote','hr','code'].includes(token.type)||/!?\[\[|\[\^|\[!|==|\$|!\[|\^[\w-]+(?:\n|$)|<(?!\/?u>)[A-Za-z!/]|&(?:\w+|#\d+);/.test(highlightSafe)||(definitions&&raw.includes('['))||token.type==='code'&&'lang' in token&&token.lang==='mermaid';
    if(protectedBlock){content.push({type:'preservedBlock',attrs:{source:raw}});continue;}
    const parsed=editor.markdown!.parse(raw).content??[];
    if(!parsed.length){content.push({type:'preservedBlock',attrs:{source:raw}});continue;}
@@ -42,7 +44,7 @@ export function DocumentEditor({note,notes,attachments,fileCss,keyboardEnabled=t
   dom.append(view);
   return {dom,stopEvent:()=>true,destroy:()=>{mediaViews.current.delete(refresh);}};
  }});
- const editor=useEditor({onBlur:()=>callbacks.current.onBlur?.(),extensions:[Preserved,PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false}}),TaskList,TaskItem.configure({nested:true}),Markdown],content:'',editorProps:{attributes:{role:'textbox','aria-label':'Document editor','aria-multiline':'true',class:'document-writing-surface'},handlePaste:(view,event)=>{const text=event.clipboardData?.getData('text/plain');if(text===undefined)return false;event.preventDefault();view.dispatch(view.state.tr.insertText(text));return true;}},onCreate:({editor})=>{if(loaded.current!==editor)load(editor,callbacks.current.note.content);callbacks.current.onReady(editor);},onUpdate:({editor})=>{
+ const editor=useEditor({onBlur:()=>callbacks.current.onBlur?.(),extensions:[PortableHighlight,Preserved,PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false}}),TaskList,TaskItem.configure({nested:true}),Markdown],content:'',editorProps:{attributes:{role:'textbox','aria-label':'Document editor','aria-multiline':'true',class:'document-writing-surface'},handlePaste:(view,event)=>{const text=event.clipboardData?.getData('text/plain');if(text===undefined)return false;event.preventDefault();view.dispatch(view.state.tr.insertText(text));return true;}},onCreate:({editor})=>{if(loaded.current!==editor)load(editor,callbacks.current.note.content);callbacks.current.onReady(editor);},onUpdate:({editor})=>{
   const used=new Map<string,number>();const blocks=(editor.getJSON().content??[]).map(node=>{if(node.type==='preservedBlock')return String(node.attrs?.source??'').trimEnd();const key=JSON.stringify(node),i=used.get(key)??0;used.set(key,i+1);return (originals.current.get(key)?.[i]??editor.markdown!.serialize({type:'doc',content:[node]})).trimEnd();});
   const source=prefix.current+blocks.join('\n\n');last.current=source;callbacks.current.onChange(source);
  }});
