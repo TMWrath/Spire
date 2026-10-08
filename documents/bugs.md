@@ -1,17 +1,19 @@
 # Spire — Bugs
 
-## Spherical-map release browser regressions
+## Sidebar remained open after clicking outside it
 
-Resolved: mobile focus/history tests used the obsolete Create note selector; the touch-map test requested the authenticated snapshot before setup completed. Updated selectors to Create file and awaited the authenticated Settings control without weakening behavioral assertions. Final production build and all 43 unit/API and 38 browser tests pass, including touch orbit/pinch/twist/cancel, mobile selection/focus, and revision comparisons. Deployed from source f914441c3c6fb07a1011d49d5a14fd0d6a7c35e3. Verified application backup and full-volume archive before replacement; existing named data volume preserved. Container healthy, loopback-only binding retained, HTTPS health 200, and served JavaScript byte-identical to the tested local production build. Authenticated live behavior and physical-phone testing were not performed.
+**State:** Resolved locally; production build and focused browser acceptance passed. Release acceptance: full browser suite passed 98/98 repeated checks (49 scenarios), unit/API suite passed 45/45, and production build/TypeScript passed. Deployment verification is recorded separately.
 
-## Table editor header overlapped its size controls on mobile
+An open folder sidebar now closes on pointer-down outside the sidebar (including canvas and controls), while clicks within the sidebar and its toggle remain usable. Browser acceptance verifies outside dismissal.
 
-**State:** Resolved and deployed to the private preview from source commit `d7eaca2`; the container is healthy and the live stylesheet contains the content-driven table-dialog header fix.
+## Empty folder deletion incorrectly offered file disposition
 
-At narrow mobile widths, the table editor header inherited the application's fixed `58px` mobile header height. Its instruction text overflowed that fixed box, so the Rows and Columns controls rendered over the sentence. The table dialog header now explicitly uses content-driven height, and browser coverage verifies that the size controls begin below the complete instruction text at a 390px mobile viewport.
+**State:** Resolved locally; unit/API and focused browser acceptance passed. Release acceptance: full browser suite passed 98/98 repeated checks (49 scenarios), unit/API suite passed 45/45, and production build/TypeScript passed. Deployment verification is recorded separately.
 
-## Permanent deletion remained visible when invoked from the open trashed note
+Empty folders now show only the ordinary folder confirmation. The server revalidates emptiness at deletion time, including nested folders, attachments, and styles, so concurrent additions are not silently removed. Populated folders retain their existing file disposition flow.
 
-**State:** Resolved locally; not yet deployed to the private preview.
+## File movement lacked animated drag-and-drop feedback
 
-After a note was moved to Trash, using **Delete permanently** while that note remained open could complete the server purge while leaving the stale note visible in the browser cache and Trash list. Reopening the note from Trash before purging avoided the stale state. The client now removes the successfully purged note from its local snapshot, persists that state, clears the open editor, and synchronizes again. Browser coverage reproduces the exact open-note sequence and verifies that the note disappears immediately.
+**State:** Resolved locally; focused browser acceptance passed. Release acceptance: full browser suite passed 98/98 repeated checks (49 scenarios), unit/API suite passed 45/45, and production build/TypeScript passed. Deployment verification is recorded separately.
+
+File dragging now presents pickup/drag-ghost feedback, highlights and animates a valid folder target, then persists the move. Existing collision and server-side path validation remain in effect.

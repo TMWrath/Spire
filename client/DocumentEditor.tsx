@@ -19,7 +19,7 @@ const PortableUnderline=Underline.extend({renderMarkdown:(node,h)=>`<u>${h.rende
 /** Unsupported dialect blocks are rendered, but their exact portable source is retained. */
 export function DocumentEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,onChange,onReady,onSource}:{keyboardEnabled?:boolean;onBlur?:()=>void;note:Note;notes:Note[];attachments:string[];fileCss?:string;onChange:(content:string)=>void;onReady:(editor:Editor|null)=>void;onSource:()=>void}){
  const callbacks=useRef({note,notes,attachments,onBlur,onChange,onReady,onSource});callbacks.current={note,notes,attachments,onBlur,onChange,onReady,onSource};
- const prefix=useRef(''),last=useRef(note.content),originals=useRef(new Map<string,string[]>());
+ const prefix=useRef(''),last=useRef(note.content),originals=useRef(new Map<string,string[]>()),loaded=useRef<Editor|null>(null);
  const load=(editor:Editor,source:string)=>{
   const match=/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/.exec(source);prefix.current=match?.[0]??'';
   const body=source.slice(prefix.current.length),tokens=marked.lexer(body),content:JSONContent[]=[];originals.current=new Map();
@@ -33,7 +33,7 @@ export function DocumentEditor({note,notes,attachments,fileCss,keyboardEnabled=t
    if(parsed.length===1){const key=JSON.stringify(parsed[0]);originals.current.set(key,[...(originals.current.get(key)??[]),raw]);}
    content.push(...parsed);
   }
-  editor.commands.setContent({type:'doc',content:content.length?content:[{type:'paragraph'}]},{emitUpdate:false});last.current=source;
+  editor.commands.setContent({type:'doc',content:content.length?content:[{type:'paragraph'}]},{emitUpdate:false});last.current=source;loaded.current=editor;
  };
  const Preserved=Node.create({name:'preservedBlock',group:'block',atom:true,selectable:true,draggable:false,addAttributes:()=>({source:{default:'',rendered:false}}),parseHTML:()=>[],renderHTML:()=>['div',{'data-preserved-block':'true'}],renderMarkdown:node=>String(node.attrs?.source??'').trimEnd(),addNodeView:()=>({node})=>{
   const dom=document.createElement('div');dom.className='preserved-document-block';dom.contentEditable='false';
@@ -41,11 +41,11 @@ export function DocumentEditor({note,notes,attachments,fileCss,keyboardEnabled=t
   dom.append(view);
   return {dom,stopEvent:()=>true};
  }});
- const editor=useEditor({onBlur:()=>callbacks.current.onBlur?.(),extensions:[Preserved,PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false}}),TaskList,TaskItem.configure({nested:true}),Markdown],content:'',editorProps:{attributes:{role:'textbox','aria-label':'Document editor','aria-multiline':'true',class:'document-writing-surface'},handlePaste:(view,event)=>{const text=event.clipboardData?.getData('text/plain');if(text===undefined)return false;event.preventDefault();view.dispatch(view.state.tr.insertText(text));return true;}},onCreate:({editor})=>{load(editor,callbacks.current.note.content);callbacks.current.onReady(editor);},onUpdate:({editor})=>{
+ const editor=useEditor({onBlur:()=>callbacks.current.onBlur?.(),extensions:[Preserved,PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false}}),TaskList,TaskItem.configure({nested:true}),Markdown],content:'',editorProps:{attributes:{role:'textbox','aria-label':'Document editor','aria-multiline':'true',class:'document-writing-surface'},handlePaste:(view,event)=>{const text=event.clipboardData?.getData('text/plain');if(text===undefined)return false;event.preventDefault();view.dispatch(view.state.tr.insertText(text));return true;}},onCreate:({editor})=>{if(loaded.current!==editor)load(editor,callbacks.current.note.content);callbacks.current.onReady(editor);},onUpdate:({editor})=>{
   const used=new Map<string,number>();const blocks=(editor.getJSON().content??[]).map(node=>{if(node.type==='preservedBlock')return String(node.attrs?.source??'').trimEnd();const key=JSON.stringify(node),i=used.get(key)??0;used.set(key,i+1);return (originals.current.get(key)?.[i]??editor.markdown!.serialize({type:'doc',content:[node]})).trimEnd();});
   const source=prefix.current+blocks.join('\n\n');last.current=source;callbacks.current.onChange(source);
  }});
- useEffect(()=>{if(editor&&note.content!==last.current)load(editor,note.content);},[editor,note.content]);
+ useEffect(()=>{if(editor&&(loaded.current!==editor||note.content!==last.current))load(editor,note.content);},[editor,note.content]);
  useEffect(()=>{editor?.setEditable(!note.deleted,false);},[editor,note.deleted]);
  useEffect(()=>{if(editor)editor.view.dom.setAttribute("inputmode",keyboardEnabled?"text":"none");},[editor,keyboardEnabled]);
  useEffect(()=>()=>callbacks.current.onReady(null),[]);

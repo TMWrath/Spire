@@ -33,7 +33,7 @@ export function renderMarkdown(note:Note,notes:Note[],attachments:string[],visit
  if(token.type==='blockId')return `<span id="${escape(token.text)}" class="block-anchor"></span>`;
  const [destination,label]=token.text.split('|');const [path,heading]=destination.split('#');const target=path?resolveLink({target:path,heading,wiki:true,raw:token.raw,label:label??path,start:0,end:0},note,notes):note;
  if(!token.embed)return `<a href="${escape(encodeURI((target?.path??path)+(heading?'#'+heading:'')))}">${escape(label??destination)}</a>`;
- if(target&&!target.deleted){const body=excerpt(metadata(target.content).body,heading);return `<section class="note-embed" aria-label="Embedded note"><a href="${escape(encodeURI(target.path))}">${escape(label??target.path.split('/').at(-1)!)}</a>${renderMarkdown({...target,content:body},notes,attachments,ancestry)}</section>`;}
+ if(target&&!target.deleted){const body=excerpt(metadata(target.content).body,heading);return `<section class="note-embed" aria-label="Embedded file"><a href="${escape(encodeURI(target.path))}">${escape(label??target.path.split('/').at(-1)!)}</a>${renderMarkdown({...target,content:body},notes,attachments,ancestry)}</section>`;}
  const file=attachmentTarget(note.path,path,attachments);if(!file)return `<span class="embed-warning">Unresolved embed: ${escape(destination)}</span>`;
  const url='/api/attachment?path='+encodeURIComponent(file);const ext=file.split('.').at(-1)?.toLowerCase();if(['png','jpg','jpeg','webp','gif','svg'].includes(ext??''))return `<img src="${escape(url)}" alt="${escape(label??path)}">`;
  if(['mp3','ogg','wav','m4a','flac'].includes(ext??''))return `<audio controls src="${escape(url)}"></audio>`;

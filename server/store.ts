@@ -28,10 +28,16 @@ export class Store {
  purge(id:string,base:number,device:string){const n=this.state.notes[id];if(!n)throw new HttpError(404,'Note not found');if(n.rev!==base)throw new HttpError(409,'Conflict: note changed since deletion request');if(!n.deleted)throw new HttpError(409,'Move note to trash before permanent deletion');const next=structuredClone(this.state);delete next.notes[id];next.purged=[...(next.purged??[]),id];next.conflicts=next.conflicts.filter(c=>c.mutation.id!==id);for(const [op,value] of Object.entries(next.operations))if(value.id===id)delete next.operations[op];next.events=next.events.filter(e=>e.id!==id);next.events.push({seq:++next.seq,id,rev:0,device,time:new Date().toISOString()});this.commit(next);return {ok:true};}
  assertFree(p:string,id?:string,deleted=false){safePath.parse(p);if(deleted)return;const paths=[...Object.values(this.state.notes).filter(n=>!n.deleted&&n.id!==id).map(n=>n.path),...this.state.attachments.map(a=>a.path)];for(const q of paths){const a=p.toLowerCase(),b=q.toLowerCase();if(a===b||a.startsWith(b+'/')||b.startsWith(a+'/'))throw new HttpError(409,'Path already occupied');}if(fs.existsSync(this.vault(p))&&!Object.values(this.state.notes).some(n=>n.id===id&&n.path===p&&!n.deleted))throw new HttpError(409,'Untracked file occupies path');}
  createFolder(p:string){safePath.parse(p);if((this.state.folders??[]).some(f=>f.toLowerCase()===p.toLowerCase()))throw new HttpError(409,'Folder already exists');const paths=[...Object.values(this.state.notes).filter(n=>!n.deleted).map(n=>n.path),...this.state.attachments.map(a=>a.path)];if(paths.some(q=>q.toLowerCase()===p.toLowerCase()||p.toLowerCase().startsWith(q.toLowerCase()+'/')))throw new HttpError(409,'A file occupies this folder path');if(fs.existsSync(this.vault(p))&&!fs.statSync(this.vault(p)).isDirectory())throw new HttpError(409,'Path occupied');const next=structuredClone(this.state);next.folders=[...(next.folders??[]),p];next.seq++;this.commit(next);return {path:p};}
- deleteFolder(folder:string,action:{mode:'trash'}|{mode:'reassign';destination:string},device:string){
+ deleteFolder(folder:string,action:{mode:'empty'}|{mode:'trash'}|{mode:'reassign';destination:string},device:string){
   const source=safePath.parse(folder);const sourceLower=source.toLowerCase();const folders=this.state.folders??[];
   if(!folders.some(f=>f.toLowerCase()===sourceLower))throw new HttpError(404,'Folder not found');
   const inside=(p:string)=>p.toLowerCase().startsWith(sourceLower+'/');
+  if(action.mode==='empty'){
+   const hasContents=Object.values(this.state.notes).some(n=>!n.deleted&&inside(n.path))||this.state.attachments.some(a=>inside(a.path))||Object.keys(this.state.styles??{}).some(inside)||folders.some(f=>inside(f));
+   if(hasContents)throw new HttpError(409,'Folder is no longer empty; refresh before deleting it');
+   const next=structuredClone(this.state);next.folders=folders.filter(f=>f.toLowerCase()!==sourceLower);next.seq++;
+   this.commit(next);const old=this.vault(source);if(fs.existsSync(old))fs.rmSync(old,{recursive:true,force:true});return {moved:0,destination:null};
+  }
   if(this.state.attachments.some(a=>inside(a.path)))throw new HttpError(409,'Move attachments out of this folder before deleting it');
   const affected=Object.values(this.state.notes).filter(n=>!n.deleted&&inside(n.path));
   const next=structuredClone(this.state);let destination:string|null=null;

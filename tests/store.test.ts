@@ -8,6 +8,7 @@ const root = '.test-data/unit';
 function fresh() { fs.rmSync(root,{recursive:true,force:true}); return new Store(root); }
 const create = (path = 'Folder/First.md', content = '# First') => ({op:randomUUID(),id:randomUUID(),base:0,path,content,deleted:false});
 test('empty folders persist independently of notes and reject file collisions',()=>{let s=fresh();s.createFolder('Writing/Ideas');assert.equal(fs.statSync(`${root}/vault/Writing/Ideas`).isDirectory(),true);assert.deepEqual(new Store(root).state.folders,['Writing/Ideas']);assert.throws(()=>s.createFolder('Writing/Ideas'),/exists/);s.mutate(create('Writing/Ideas/First.md'),'d');assert.throws(()=>s.createFolder('Writing/Ideas/First.md'),/file occupies/);s=new Store(root);assert.equal(s.state.folders?.length,1);});
+test('empty-folder deletion is server-validated and never dispositions files',()=>{const s=fresh();s.createFolder('Empty');assert.deepEqual(s.deleteFolder('Empty',{mode:'empty'},'d'),{moved:0,destination:null});assert.deepEqual(s.state.folders,[]);s.createFolder('Concurrent');s.createFolder('Parent');s.mutate(create('Parent/Placeholder.md'),'d');s.createFolder('Parent/Child');assert.throws(()=>s.deleteFolder('Parent',{mode:'empty'},'d'),/no longer empty/i);});
 test('folder deletion can move contained notes to trash and remove the folder tree',()=>{
  const s=fresh();s.createFolder('Writing');s.createFolder('Writing/Ideas');
  const first=create('Writing/First.md');const nested=create('Writing/Ideas/Second.md');s.mutate(first,'d');s.mutate(nested,'d');
