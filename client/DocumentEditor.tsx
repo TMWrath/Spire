@@ -1,4 +1,5 @@
 import './document-editor.css';
+import {hasPage,readPage,writePage} from './page-layout';
 import {PortableHighlight} from './PortableHighlight';
 import React,{useEffect,useRef} from 'react';
 import {useEditor,EditorContent,type Editor} from '@tiptap/react';
@@ -18,7 +19,7 @@ import {scopeFileCss} from './style-css';
 const PortableUnderline=Underline.extend({renderMarkdown:(node,h)=>`<u>${h.renderChildren(node)}</u>`,markdownTokenizer:{name:'underline',level:'inline',start:src=>src.indexOf('<u>'),tokenize:(src,_tokens,lexer)=>{const m=/^<u>([\s\S]+?)<\/u>/.exec(src);if(m)return {type:'underline',raw:m[0],tokens:lexer.inlineTokens(m[1])};}}});
 
 /** Unsupported dialect blocks are rendered, but their exact portable source is retained. */
-export function DocumentEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,onChange,onReady,onSource}:{keyboardEnabled?:boolean;onBlur?:()=>void;note:Note;notes:Note[];attachments:string[];fileCss?:string;onChange:(content:string)=>void;onReady:(editor:Editor|null)=>void;onSource:()=>void}){
+function BodyEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,onChange,onReady,onSource}:{keyboardEnabled?:boolean;onBlur?:()=>void;note:Note;notes:Note[];attachments:string[];fileCss?:string;onChange:(content:string)=>void;onReady:(editor:Editor|null)=>void;onSource:()=>void}){
  const callbacks=useRef({note,notes,attachments,onBlur,onChange,onReady,onSource});callbacks.current={note,notes,attachments,onBlur,onChange,onReady,onSource};
  const mediaViews=useRef(new Set<()=>void>());
  const prefix=useRef(''),last=useRef(note.content),originals=useRef(new Map<string,string[]>()),loaded=useRef<Editor|null>(null);
@@ -55,6 +56,13 @@ export function DocumentEditor({note,notes,attachments,fileCss,keyboardEnabled=t
  useEffect(()=>()=>callbacks.current.onReady(null),[]);
  let scoped='';try{if(fileCss)scoped=scopeFileCss(fileCss,note.id);}catch{}
  return <>{scoped&&<style>{scoped}</style>}<EditorContent editor={editor} className="preview document-editor" data-style-scope={note.id}/></>;
+}
+export function DocumentEditor(props:Parameters<typeof BodyEditor>[0]){
+ if(!hasPage(props.note.content))return <BodyEditor {...props}/>;
+ let layout;try{layout=readPage(props.note.content);}catch(e){return <><p role="alert">{String((e as Error).message)}</p><BodyEditor {...props}/></>;}
+ const update=(part:'header'|'footer',text:string)=>props.onChange(writePage(props.note.content,{...layout,[part]:{...layout[part],text}}));
+ const section=(part:'header'|'footer')=>layout[part].enabled&&<section className="page-section" aria-label={part==='header'?'Page header':'Page footer'}><strong>{part==='header'?'Header':'Footer'}</strong><textarea aria-label={part==='header'?'Header Markdown':'Footer Markdown'} value={layout[part].text} disabled={props.note.deleted} inputMode={props.keyboardEnabled?'text':'none'} onBlur={props.onBlur} placeholder="Write ordinary Markdown…" onChange={e=>update(part,e.target.value)}/><div className="preview" dangerouslySetInnerHTML={{__html:DOMPurify.sanitize(renderMarkdown({...props.note,content:layout[part].text},props.notes,props.attachments))}}/></section>;
+ return <div className="page-document">{section('header')}<BodyEditor {...props} note={{...props.note,content:layout.body}} onChange={body=>props.onChange(writePage(props.note.content,{...layout,body}))}/>{section('footer')}</div>;
 }
 export function formatDocument(editor:Editor,kind:FormatKind,option:number|string=2){
  if(!editor.isEditable)return;
