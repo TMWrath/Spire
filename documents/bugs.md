@@ -1,5 +1,13 @@
 # Spire — Bugs
 
+## Newly recorded audio did not play immediately in Editor
+
+**State:** Reproduced and resolved locally; production build, 45/45 unit/API tests, and 3/3 focused recording tests pass. Full repeated browser verification and deployment are tracked separately.
+
+Recording inserts a preserved HTML audio block before the synchronized attachment list includes the uploaded recording. The node view previously rendered only once, leaving its portable relative URL unresolved even after synchronization. Preserved node views now refresh when attachment metadata or the file path changes, replacing their rendered DOM only when the sanitized HTML changes. The Markdown source remains portable and unchanged.
+
+The regression now requires the freshly inserted rich-editor audio to resolve through the authenticated attachment endpoint, successfully execute `play()`, and advance `currentTime`. Before the fix it failed on the unresolved relative URL; after the fix actual playback passes. Tests use real MediaRecorder bytes from a generated audio stream, not a physical microphone. Native Android microphone permission and real-device capture remain unverified.
+
 ## Sidebar remained open after clicking outside it
 
 **State:** Resolved locally; production build and focused browser acceptance passed. Release acceptance: full browser suite passed 98/98 repeated checks (49 scenarios), unit/API suite passed 45/45, and production build/TypeScript passed. Deployment verification is recorded separately.
