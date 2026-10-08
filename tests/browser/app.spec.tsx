@@ -358,6 +358,16 @@ test('long pressing a folder can move its notes to automatic Unsorted',async({br
  await openNote(page,'Reassigned note');await expect(page.getByLabel('File path')).toHaveValue('Unsorted/Reassigned note.md');await context.close();
 });
 
+test('date insertion cannot move the caret after the next edit has started',async({page})=>{
+ await login(page);await create(page,'Writing/Temporal caret.md','Before replace after');const source=page.getByLabel('Markdown source');
+ // Hold selection-restoration frames to exercise the delayed-frame race deterministically.
+ await page.evaluate(()=>{const native=window.requestAnimationFrame.bind(window);(window as any).__caretFrames=[];window.requestAnimationFrame=(callback:FrameRequestCallback)=>callback.toString().includes('setSelectionRange')?((window as any).__caretFrames.push(callback),-1):native(callback);});
+ await source.evaluate((el:HTMLTextAreaElement)=>el.setSelectionRange(7,14));await page.getByRole('button',{name:'Date & time',exact:true}).click();await page.getByRole('button',{name:'YYYY-MM-DD',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Insert date',exact:true});await dialog.getByRole('button',{name:'Manual',exact:true}).click();await dialog.getByLabel('Date',{exact:true}).fill('2030-12-25');await dialog.getByRole('button',{name:'Insert selected date',exact:true}).click();await expect(source).toHaveValue('Before 2030-12-25 after');
+ await source.evaluate((el:HTMLTextAreaElement)=>{el.focus();el.select();});
+ await page.evaluate(()=>{for(const callback of (window as any).__caretFrames.splice(0))callback(performance.now());});
+ await page.keyboard.type('Replacement text');await expect(source).toHaveValue('Replacement text');
+});
+
 test('combined temporal gallery inserts formatted manual plain text',async({page})=>{
  await login(page);await create(page,'Writing/Temporal formats.md','Before replace after');const source=page.getByLabel('Markdown source');
  for(const [format,value,expected,kind] of [['MM/DD/YYYY','2030-12-25','12/25/2030','date'],['DD/MM/YYYY','2030-12-25','25/12/2030','date'],['MMM D, YYYY','2030-12-25','Dec 25, 2030','date'],['D MMMM YYYY','2030-12-25','25 December 2030','date'],['HH:mm:ss','21:45:12','21:45:12','time'],['h:mm A','21:45','9:45 PM','time'],['h:mm:ss A','00:05:12','12:05:12 AM','time']]){
