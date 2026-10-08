@@ -1,5 +1,11 @@
 # Spire — Features
 
+## Optional footnotes and collapsible document sections
+
+Context → Page layout now offers an opt-in Footnotes switch. Enabled definitions are stored after Footer in source using ordinary Markdown `[^id]: Explanation` syntax inside section-boundary comments; body references use `[^id]`. Disabled definitions are preserved in page-layout YAML for restoration. Incomplete footnotes boundaries reject section editing without silently consuming the body. Header, Footer and Footnotes have independent bottom collapse controls, start collapsed on reopening a file, and retain text through collapse, disable/re-enable, Source editing and save/reload. Header/Footer retain their formatted editors; Footnotes use a source textarea. Footnotes remain distinct from Footer and are not automatically printed at each page bottom.
+
+Release acceptance: production build, 64/64 unit/API tests and final 63/63 browser scenarios passed. An earlier run had table-formatting and anonymous-startup failures; both passed in the clean full-suite rerun without product changes. Local authenticated browser coverage includes simulated mobile section toggles, source round-trip and persistence. Live deployment verification is recorded separately.
+
 ## Properties tab — local implementation
 
 Context now has its own Properties tab. Add/edit/rename/remove Text, Number, Checkbox, Date and string List values in ordinary YAML frontmatter. Preserve body bytes, unrelated metadata/comments, and Page layout configuration. Nested/unknown metadata remains visible and source-editable. Internal spire_ settings stay in their own tabs. Invalid YAML, duplicates, reserved names, invalid typed values and dangling aliases fail safely. Removal requires confirmation; Cancel is non-mutating.
