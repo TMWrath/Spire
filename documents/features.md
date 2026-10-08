@@ -4,7 +4,7 @@
 
 Context now has its own Properties tab. Add/edit/rename/remove Text, Number, Checkbox, Date and string List values in ordinary YAML frontmatter. Preserve body bytes, unrelated metadata/comments, and Page layout configuration. Nested/unknown metadata remains visible and source-editable. Internal spire_ settings stay in their own tabs. Invalid YAML, duplicates, reserved names, invalid typed values and dangling aliases fail safely. Removal requires confirmation; Cancel is non-mutating.
 
-Production build, 63/63 unit/API tests, 62/62 browser tests, focused persistence/mobile tests and whitespace checks passed. No physical-phone or authenticated-live validation. Local working tree only; not committed, deployed or pushed.
+Deployed source `d6f1135` as immutable release `20261008T211948Z-properties-d6f1135` to https://spire.example. Production build, 63/63 unit/API tests and 62/62 browser scenarios passed. Application backup and full-volume archive were verified and checksums independently rechecked. Container healthy, existing named data volume, loopback-only port and Caddy network preserved; served entry JavaScript/CSS match tested build bytes. HTTPS health and logged-out API rejection passed; fresh anonymous browser renders sign-in without page errors. Prior release and pinned rollback retained. No authenticated live Properties workflow, physical phone check or rollback drill performed. Source committed locally, not pushed.
 
 ## Header/footer and page-break release
 
