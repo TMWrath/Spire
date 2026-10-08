@@ -1,5 +1,13 @@
 # Spire — Features
 
+## Header/footer and page-break release
+
+Source `78866b3`, immutable release `20261008T193738Z-pages-78866b3`, deployed to https://spire.example. Page menu offers Header, Footer and Page break. Header/footer Markdown regions surround the adaptive body; disabling retains text in portable YAML frontmatter for restoration. Enabled content appears in ordinary Markdown header/body/footer order. Page breaks use explicit HTML `break-after: page` and a visible editor divider; third-party print/PDF support is renderer-dependent. Source boundary mismatch fails safely with a visible warning rather than guessing which words to move. Includes the pending Media image icon.
+
+Acceptance: production build, 56/56 unit/API tests, 60/60 isolated browser tests, clean whitespace. Page regression covers body editing, section toggle restoration, page-break insertion, save and reload. Tested local entry JS/CSS matched staged image and actual HTTPS homepage-linked bytes. Backups created and checksum-verified; healthy container, named data volume, loopback binding and Caddy network preserved. Previous immutable release and pinned rollback configuration retained. No authenticated live editing, physical Android validation or rollback drill performed. Source committed locally, not pushed.
+
+
+
 ## October 8 hybrid highlighting deployment
 
 Deployed source `6cd888c` as immutable release `20261008T165857Z-highlight-6cd888c`, including the hybrid highlight picker and a reproduced date/time caret race fix. Final gates: production build, 53/53 unit/API tests, 116/116 browser checks (58 scenarios repeated twice), and clean whitespace checks. The temporal regression failed before synchronous content/dialog commit and immediate caret restoration, then passed three focused repetitions and the full repeated suite.
