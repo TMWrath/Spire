@@ -365,3 +365,31 @@ test('combined temporal gallery inserts formatted manual plain text',async({page
  }
  await page.getByRole('button',{name:'Date & time',exact:true}).click();await page.getByRole('region',{name:'Date and time formats'}).getByRole('button',{name:'Cancel',exact:true}).click();await expect(source).toHaveValue('Before 12:05:12 AM after');
 });
+
+test('Blocks gallery previews code and quote, supports cancellation and empty code insertion',async({page})=>{
+ await login(page);await create(page,'Writing/Blocks.md','Before replace after');const source=page.getByLabel('Markdown source');
+ await source.evaluate((el:HTMLTextAreaElement)=>el.setSelectionRange(7,14));
+ await page.getByRole('button',{name:'Blocks',exact:true}).click();const gallery=page.getByRole('group',{name:'Block types'});
+ await expect(gallery.locator('pre')).toBeVisible();await expect(gallery.locator('blockquote')).toBeVisible();
+ await gallery.getByRole('button',{name:'Code block',exact:true}).click();let dialog=page.getByRole('dialog',{name:'Insert code block',exact:true});
+ await dialog.getByLabel('Block text').fill('discard me');await dialog.getByRole('button',{name:'Cancel',exact:true}).click();await expect(source).toHaveValue('Before replace after');
+ await source.evaluate((el:HTMLTextAreaElement)=>el.setSelectionRange(7,14));await page.getByRole('button',{name:'Blocks',exact:true}).click();await gallery.getByRole('button',{name:'Code block',exact:true}).click();
+ dialog=page.getByRole('dialog',{name:'Insert code block',exact:true});await expect(dialog.getByLabel('Block text')).toHaveValue('');await expect(dialog.getByRole('button',{name:'Insert',exact:true})).toBeEnabled();await dialog.getByRole('button',{name:'Insert',exact:true}).click();
+ await expect(source).toHaveValue('Before \n\n```\n\n```\n\n after');
+ await page.getByRole('button',{name:'Save file',exact:true}).click();await expect(page.locator('.network')).toHaveText('Synchronized');await page.reload();await page.locator('nav').getByRole('button',{name:'Blocks',exact:true}).click();await page.getByRole('button',{name:'Source',exact:true}).click();await expect(source).toHaveValue('Before \n\n```\n\n```\n\n after');
+});
+test('Blocks dialog inserts multiline quotes and literal code with rendered round trips',async({page})=>{
+ await login(page);await create(page,'Writing/Block text.md','');const source=page.getByLabel('Markdown source');
+ await page.getByRole('button',{name:'Blocks',exact:true}).click();await page.getByRole('button',{name:'Quote block',exact:true}).click();let dialog=page.getByRole('dialog',{name:'Insert quote block',exact:true});await dialog.getByLabel('Block text').fill('First line\n\n**Second** line');await dialog.getByRole('button',{name:'Insert',exact:true}).click();
+ await expect(source).toHaveValue('> First line\n>\n> **Second** line');await page.getByRole('button',{name:'Editor',exact:true}).click();await expect(page.locator('.tiptap blockquote')).toContainText('First line');await page.getByRole('button',{name:'Source',exact:true}).click();await expect(source).toHaveValue('> First line\n>\n> **Second** line');
+ await source.evaluate((el:HTMLTextAreaElement)=>el.setSelectionRange(el.value.length,el.value.length));await page.getByRole('button',{name:'Blocks',exact:true}).click();await page.getByRole('button',{name:'Code block',exact:true}).click();dialog=page.getByRole('dialog',{name:'Insert code block',exact:true});await dialog.getByLabel('Block text').fill('one\n```\n  two');await dialog.getByRole('button',{name:'Insert',exact:true}).click();await expect(source).toHaveValue('> First line\n>\n> **Second** line\n\n````\none\n```\n  two\n````');
+ await page.getByRole('button',{name:'Editor',exact:true}).click();await expect(page.locator('.tiptap pre')).toContainText('one\n```\n  two');
+});
+
+test('Blocks opens from the visual editor and remains usable on touch without automatic keyboard focus',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});await page.addInitScript(()=>{const native=window.matchMedia.bind(window);window.matchMedia=(query:string)=>query==='(any-pointer: coarse)'?{...native(query),matches:true,addEventListener(){},removeEventListener(){}} as MediaQueryList:native(query);});
+ await login(page);await create(page,'Writing/Touch blocks.md','Original text');await page.getByRole('button',{name:'Editor',exact:true}).click();await page.locator('.tiptap').click();
+ await page.getByRole('button',{name:'Blocks',exact:true}).click();await page.getByRole('button',{name:'Quote block',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Insert quote block',exact:true});await expect(dialog).toBeVisible();await expect(dialog.getByLabel('Block text')).not.toBeFocused();await dialog.getByLabel('Block text').fill('A touch quote');await dialog.getByRole('button',{name:'Insert',exact:true}).click();const source=page.getByLabel('Markdown source');await expect(source).toContainText('A touch quote');await expect(source).not.toBeFocused();
+ await page.getByRole('button',{name:'Blocks',exact:true}).click();await page.getByRole('button',{name:'Code block',exact:true}).click();await page.keyboard.press('Escape');await expect(page.getByRole('dialog',{name:'Insert code block',exact:true})).toHaveCount(0);await expect(source).not.toBeFocused();
+ await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+});

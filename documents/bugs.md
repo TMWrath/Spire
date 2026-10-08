@@ -25,3 +25,7 @@ Empty folders now show only the ordinary folder confirmation. The server revalid
 **State:** Resolved locally; focused browser acceptance passed. Release acceptance: full browser suite passed 98/98 repeated checks (49 scenarios), unit/API suite passed 45/45, and production build/TypeScript passed. Deployment verification is recorded separately.
 
 File dragging now presents pickup/drag-ghost feedback, highlights and animates a valid folder target, then persists the move. Existing collision and server-side path validation remain in effect.
+
+
+## Existing temporal repeated-insertion regression
+Full browser verification during Blocks work still fails `combined temporal gallery inserts formatted manual plain text`: resetting the source between manual insertions can retain previous insertion/selection state. Blocks acceptance passes independently. This date/time defect remains unresolved; the full suite is not green.
