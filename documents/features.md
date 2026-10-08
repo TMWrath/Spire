@@ -316,3 +316,8 @@ The preceding star-action/heading-gallery release was deployed separately and ve
 
 ## Animated file mind map
 Implementation in progress: replace the blank home canvas with labeled hexagonal file nodes; real Markdown references pulse from referenced source to referencing file. No folders or attachments. Pan/zoom, selection neighborhood and open-file navigation. Settings offers opt-in, clearly labeled presentation-only demo data, disabled by default; no real data mutations. Reduced-motion support and mobile acceptance required. Commit and backup-safe private deployment authorized.
+
+
+## Combined date and time format chooser
+
+One Date & time toolbar control opens two rows of portable plain-text previews: dates (YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY, MMM D, YYYY, D MMMM YYYY) and times (HH:mm, HH:mm:ss, h:mm A, h:mm:ss A). Selecting a format opens the existing Current/Manual dialog; manual insertion uses a native picker. Cancellation is non-mutating and insertion preserves the captured source selection. Values are fixed ordinary text with no Spire dependency. Local implementation; production unchanged pending deployment authorization.

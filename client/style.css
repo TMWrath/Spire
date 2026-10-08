@@ -42,3 +42,7 @@
 .context-tabs button[aria-selected="true"]{border-bottom-color:var(--fg)}
 .file-css{display:grid;gap:.8rem}.file-css code,.style-file{overflow-wrap:anywhere}.file-css textarea{min-height:16rem;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;resize:vertical}
 .virtual-styles{margin-top:.7rem;border-top:1px solid var(--line);padding-top:.65rem}.virtual-styles summary{font-weight:700}.style-file{padding:.45rem 1.75rem;color:var(--muted);font-size:.84rem}
+
+.temporal-options{min-width:0;max-width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;}
+.temporal-options .heading-options{margin:8px 0 12px;max-width:100%;overflow-x:auto;}
+.temporal-options .heading-options button{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}

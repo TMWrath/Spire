@@ -174,16 +174,16 @@ test('Markdown toolbar asks for current or manual date and time at the selection
  const currentDate=await page.evaluate(()=>{const now=new Date();return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;});
  const toolbar=page.getByRole('toolbar',{name:'Editor formatting'});
  await source.evaluate((el:HTMLTextAreaElement)=>{el.focus();el.setSelectionRange(5,12);});
- await toolbar.getByRole('button',{name:'Insert date',exact:true}).click();
+ await toolbar.getByRole('button',{name:'Date & time',exact:true}).click();await page.getByRole('button',{name:'YYYY-MM-DD',exact:true}).click();
  let chooser=page.getByRole('dialog',{name:'Insert date'});await expect(chooser).toBeVisible();await expect(chooser.getByRole('button',{name:'Current',exact:true})).toBeVisible();await expect(chooser.getByRole('button',{name:'Manual',exact:true})).toBeVisible();await chooser.getByRole('button',{name:'Current',exact:true}).click();
  await expect(source).toHaveValue(`Date ${currentDate} | Time replace`);
  await source.evaluate((el:HTMLTextAreaElement,date)=>{const start=el.value.indexOf(date);el.focus();el.setSelectionRange(start,start+date.length);},currentDate);
- await toolbar.getByRole('button',{name:'Insert date',exact:true}).click();chooser=page.getByRole('dialog',{name:'Insert date'});await chooser.getByRole('button',{name:'Manual',exact:true}).click();await expect(chooser.getByLabel('Date',{exact:true})).toHaveAttribute('type','date');await chooser.getByLabel('Date',{exact:true}).fill('2030-12-25');await chooser.getByRole('button',{name:'Insert selected date',exact:true}).click();
+ await toolbar.getByRole('button',{name:'Date & time',exact:true}).click();await page.getByRole('button',{name:'YYYY-MM-DD',exact:true}).click();chooser=page.getByRole('dialog',{name:'Insert date'});await chooser.getByRole('button',{name:'Manual',exact:true}).click();await expect(chooser.getByLabel('Date',{exact:true})).toHaveAttribute('type','date');await chooser.getByLabel('Date',{exact:true}).fill('2030-12-25');await chooser.getByRole('button',{name:'Insert selected date',exact:true}).click();
  await expect(source).toHaveValue('Date 2030-12-25 | Time replace');
  await source.evaluate((el:HTMLTextAreaElement)=>{const start=el.value.indexOf('replace');el.focus();el.setSelectionRange(start,start+7);});
- await toolbar.getByRole('button',{name:'Insert time',exact:true}).click();chooser=page.getByRole('dialog',{name:'Insert time'});await chooser.getByRole('button',{name:'Current',exact:true}).click();await expect(source).toHaveValue(/^Date 2030-12-25 \| Time \d{2}:\d{2}$/);
+ await toolbar.getByRole('button',{name:'Date & time',exact:true}).click();await page.getByRole('button',{name:'HH:mm',exact:true}).click();chooser=page.getByRole('dialog',{name:'Insert time'});await chooser.getByRole('button',{name:'Current',exact:true}).click();await expect(source).toHaveValue(/^Date 2030-12-25 \| Time \d{2}:\d{2}$/);
  await source.evaluate((el:HTMLTextAreaElement)=>{const match=el.value.match(/\d{2}:\d{2}$/)!;const start=el.value.length-match[0].length;el.focus();el.setSelectionRange(start,el.value.length);});
- await toolbar.getByRole('button',{name:'Insert time',exact:true}).click();chooser=page.getByRole('dialog',{name:'Insert time'});await chooser.getByRole('button',{name:'Manual',exact:true}).click();await expect(chooser.getByLabel('Time',{exact:true})).toHaveAttribute('type','time');await chooser.getByLabel('Time',{exact:true}).fill('09:45');await chooser.getByRole('button',{name:'Insert selected time',exact:true}).click();
+ await toolbar.getByRole('button',{name:'Date & time',exact:true}).click();await page.getByRole('button',{name:'HH:mm',exact:true}).click();chooser=page.getByRole('dialog',{name:'Insert time'});await chooser.getByRole('button',{name:'Manual',exact:true}).click();await expect(chooser.getByLabel('Time',{exact:true})).toHaveAttribute('type','time');await chooser.getByLabel('Time',{exact:true}).fill('09:45');await chooser.getByRole('button',{name:'Insert selected time',exact:true}).click();
  await expect(source).toHaveValue('Date 2030-12-25 | Time 09:45');
 });
 test('star icon persists in portable note content and survives reload',async({browser})=>{
@@ -356,4 +356,12 @@ test('long pressing a folder can move its notes to automatic Unsorted',async({br
  await page.getByRole('button',{name:'Move files and delete folder'}).click();
  await expect(page.locator('nav')).not.toContainText('Delete me');await expect(page.locator('nav')).toContainText('Unsorted');
  await openNote(page,'Reassigned note');await expect(page.getByLabel('File path')).toHaveValue('Unsorted/Reassigned note.md');await context.close();
+});
+
+test('combined temporal gallery inserts formatted manual plain text',async({page})=>{
+ await login(page);await create(page,'Writing/Temporal formats.md','Before replace after');const source=page.getByLabel('Markdown source');
+ for(const [format,value,expected,kind] of [['MM/DD/YYYY','2030-12-25','12/25/2030','date'],['DD/MM/YYYY','2030-12-25','25/12/2030','date'],['MMM D, YYYY','2030-12-25','Dec 25, 2030','date'],['D MMMM YYYY','2030-12-25','25 December 2030','date'],['HH:mm:ss','21:45:12','21:45:12','time'],['h:mm A','21:45','9:45 PM','time'],['h:mm:ss A','00:05:12','12:05:12 AM','time']]){
+ await source.fill('Before replace after');await source.evaluate((el:HTMLTextAreaElement)=>el.setSelectionRange(7,14));await page.getByRole('button',{name:'Date & time',exact:true}).click();await expect(source).toHaveValue('Before replace after');await page.getByRole('button',{name:format,exact:true}).click();const dialog=page.getByRole('dialog',{name:`Insert ${kind}`,exact:true});await expect(dialog.getByRole('button',{name:'Current',exact:true})).toBeVisible();await dialog.getByRole('button',{name:'Manual',exact:true}).click();await dialog.getByLabel(kind==='date'?'Date':'Time',{exact:true}).fill(value);await dialog.getByRole('button',{name:`Insert selected ${kind}`,exact:true}).click();await expect(source).toHaveValue(`Before ${expected} after`);
+ }
+ await page.getByRole('button',{name:'Date & time',exact:true}).click();await page.getByRole('region',{name:'Date and time formats'}).getByRole('button',{name:'Cancel',exact:true}).click();await expect(source).toHaveValue('Before 12:05:12 AM after');
 });
