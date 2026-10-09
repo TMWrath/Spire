@@ -7,7 +7,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import { Store, HttpError, atomic } from './store.ts';
 import { unpack, exportVault } from './archive.ts';
-import { safePath } from '../shared/model.ts';
+import { safePath,templateInputSchema } from '../shared/model.ts';
 type Device = {id:string;name:string;created:string;revoked:boolean};
 type Session = {device:string;csrf:string;expires:number};
 type Auth = {owner?:{id:string;username:string;salt:string;hash:string};devices:Device[];sessions:Record<string,Session>};
@@ -34,7 +34,8 @@ export function createApp(root:string,origin:string){
  app.post('/api/logout',(req,res)=>{delete auth.sessions[hash(req.cookies.spire_session)];saveAuth();res.clearCookie('spire_session',{path:'/'});res.json({ok:true});});
  app.get('/api/devices',(_req,res)=>res.json(auth.devices));
  app.delete('/api/devices/:id',(req,res)=>{const d=auth.devices.find(d=>d.id===req.params.id);if(!d)throw new HttpError(404,'Device not found');d.revoked=true;for(const[k,s]of Object.entries(auth.sessions))if(s.device===d.id)delete auth.sessions[k];saveAuth();res.json({ok:true});});
- app.get('/api/snapshot',(_req,res)=>res.json({seq:store.state.seq,notes:Object.values(store.state.notes),folders:store.state.folders??[],styles:store.state.styles??{},conflicts:store.state.conflicts,attachments:store.state.attachments.map(a=>({path:a.path,size:Buffer.from(a.data,'base64').length}))}));
+ app.post('/api/templates',(req,res)=>{const body=templateInputSchema.parse(req.body);res.status(201).json(store.saveTemplate(body));});
+ app.get('/api/snapshot',(_req,res)=>res.json({seq:store.state.seq,templates:store.state.templates??[],notes:Object.values(store.state.notes),folders:store.state.folders??[],styles:store.state.styles??{},conflicts:store.state.conflicts,attachments:store.state.attachments.map(a=>({path:a.path,size:Buffer.from(a.data,'base64').length}))}));
  app.put('/api/styles',(req,res)=>{const body=z.object({path:safePath.refine(p=>p.toLowerCase().endsWith('.css'),'Stylesheets must end in .css'),content:z.string().max(100_000)}).parse(req.body);res.json(store.putStyle(body.path,body.content));});
  app.post('/api/folders',(req,res)=>res.status(201).json(store.createFolder(z.object({path:safePath}).parse(req.body).path)));
  app.delete('/api/folders',(req,res)=>{const body=z.discriminatedUnion('mode',[z.object({path:safePath,mode:z.literal('empty')}),z.object({path:safePath,mode:z.literal('trash')}),z.object({path:safePath,mode:z.literal('reassign'),destination:safePath})]).parse(req.body);res.json(store.deleteFolder(body.path,body.mode==='empty'?{mode:'empty'}:body.mode==='trash'?{mode:'trash'}:{mode:'reassign',destination:body.destination},res.locals.device.id));});

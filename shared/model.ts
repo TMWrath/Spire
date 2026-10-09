@@ -26,7 +26,10 @@ export type Revision = { rev: number; path: string; content: string; deleted: bo
 export type Note = Revision & { id: string; history: Revision[] };
 export type Conflict = { id: string; mutation: Mutation; current: number; time: string };
 export type Attachment = { path: string; data: string };
-export type State = { version: 1; seq: number; notes: Record<string, Note>; folders?: string[]; styles?: Record<string,string>; purged?: string[]; conflicts: Conflict[]; events: { seq: number; id: string; rev: number; device: string; time: string }[]; operations: Record<string, { id: string; rev: number }>; attachments: Attachment[] };
+export const templateInputSchema=z.object({title:z.string().trim().min(1).max(100),category:z.enum(['section','full']),content:z.string().max(1_000_000),sourcePath:safePath});
+export const savedTemplateSchema=templateInputSchema.extend({id:z.string().uuid(),created:z.string().datetime()});
+export type SavedTemplate = z.infer<typeof savedTemplateSchema>;
+export type State = {templates?:SavedTemplate[]; version: 1; seq: number; notes: Record<string, Note>; folders?: string[]; styles?: Record<string,string>; purged?: string[]; conflicts: Conflict[]; events: { seq: number; id: string; rev: number; device: string; time: string }[]; operations: Record<string, { id: string; rev: number }>; attachments: Attachment[] };
 export const emptyState = (): State => ({ version: 1, seq: 0, notes: {}, folders: [], styles: {}, purged: [], conflicts: [], events: [], operations: {}, attachments: [] });
 export function metadata(content: string): { properties: Record<string, unknown>; aliases: string[]; tags: string[]; body: string; error?: string } {
  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(content); let properties: Record<string, unknown> = {}; let error: string | undefined;

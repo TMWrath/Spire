@@ -1,5 +1,9 @@
 # Spire — Bugs
 
+## Drag acceptance read stale coordinates after folder creation
+
+**State:** Test synchronization corrected and verified locally. The source row was measured before the asynchronous folder insertion shifted the tree; pointer-down then hit a folder summary and its long-press deletion safeguard legitimately appeared. The test now waits for the new folder target and Playwright-stable source hover before measuring. Existing ghost, drag-source, hover transform, successful drop and destination-path assertions remain unchanged. Reproduced failure before correction; focused regression passed afterward and the final full suite passed 80/80. No product drag implementation or deletion safeguard was weakened. No deployment performed.
+
 ## Newly recorded audio did not play immediately in Editor
 
 **State:** Reproduced and resolved locally; production build, 45/45 unit/API tests, and 3/3 focused recording tests pass. Full repeated browser verification and deployment are tracked separately.
