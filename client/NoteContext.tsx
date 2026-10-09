@@ -1,3 +1,4 @@
+import {FileMap} from './FileMap';
 import type {FileBookmark} from './bookmark';
 import {PropertiesPanel,type PropertyMutation} from './PropertiesPanel';
 import {readPage} from './page-layout';
@@ -25,6 +26,7 @@ export function NoteContext({bookmark,bookmarkAvailable,setBookmark,removeBookma
  <div className="tags context-tags">{meta.tags.map(t=><span key={t}>#{t}</span>)}<button aria-label="Add file tag" title="Add tag" disabled={note.deleted} onClick={()=>setAddingTag(true)}><Plus/></button></div>
  {addingTag&&<form className="context-tag-form" onSubmit={e=>{e.preventDefault();addTag(tagDraft);setTagDraft('');setAddingTag(false);}}><input aria-label="New file tag" autoFocus={!touchEditing()} placeholder="Tag name" value={tagDraft} onChange={e=>setTagDraft(e.target.value)} required/><button type="submit">Add</button><button type="button" onClick={()=>setAddingTag(false)}>Cancel</button></form>}
  <div className="context-stats"><div><Network/><span>Linked files</span><strong>{linked.length}</strong></div><div><Link2/><span>Direct links</span><strong>{outgoing.length}</strong></div><div><Network/><span>Backlinks</span><strong>{incoming.length}</strong></div><div><CalendarDays/><span>First Created</span><strong>{date(note.history[0]?.time||note.time)}</strong></div><div><Pencil/><span>Last Edited</span><strong>{date(note.time)}</strong></div></div>
+ <FileMap note={note} files={notes} onOpen={n=>open(n)}/>
  <details className="context-linked" open><summary><ChevronDown aria-hidden="true"/><span>Linked files ({linked.length})</span><button aria-label="Add linked file" onClick={e=>{e.preventDefault();addLink();}}><Plus/></button></summary><div className="context-link-list">{linked.map(n=><button key={n.id} onClick={()=>open(n)}><FileText/><span>{n.path.split('/').at(-1)?.replace(/\.md$/i,'')}</span><ArrowUpRight/></button>)}{linked.length===0&&<p className="muted">No linked files yet.</p>}</div></details>
  {meta.error&&<p className="muted" role="alert">{meta.error}</p>}
  <RevisionHistory note={note} restore={restore}/></>}</div>;

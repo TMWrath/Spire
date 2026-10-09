@@ -9,6 +9,10 @@ export function buildGraph(files:Note[]){
  }
  return {nodes,edges};
 }
+export function buildFileSlice(files:Note[],id:string){
+ const graph=buildGraph(files);const ids=new Set([id]);const edges=graph.edges.filter(e=>e.source===id||e.target===id);for(const e of edges){ids.add(e.source);ids.add(e.target);}
+ return {nodes:graph.nodes.filter(n=>ids.has(n.id)),edges};
+}
 export const demoFiles:Note[]=demoNodes.map(file=>({...file,content:demoEdges.filter(e=>e.target===file.id).map(e=>`[[${demoNodes.find(n=>n.id===e.source)!.name}]]`).join('\n'),rev:1,deleted:false,history:[],time:''}));
 export function graphLayout(nodes:Note[],_edges:{source:string;target:string}[],radius=300){
  // Fibonacci points spread files across a true sphere without a per-frame force simulation.

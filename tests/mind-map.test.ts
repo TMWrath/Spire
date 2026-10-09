@@ -1,7 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {buildGraph,demoFiles} from '../client/mind-map-model.ts';
+import {buildGraph,buildFileSlice,demoFiles} from '../client/mind-map-model.ts';
 import type {Note} from '../shared/model.ts';
+test('file slices contain only the current file and direct incoming/outgoing neighbors',()=>{const notes=[file('A','[[B]] [[Gone]] [[Missing]]'),file('B','[[D]]'),file('C','[[A]]'),file('D'),file('Gone','',true)];const g=buildFileSlice(notes,'A');assert.deepEqual(g.nodes.map(n=>n.id),['A','B','C']);assert.deepEqual(g.edges,[{source:'B',target:'A'},{source:'A',target:'C'}]);assert.deepEqual(buildFileSlice(notes,'D').nodes.map(n=>n.id),['B','D']);assert.deepEqual(buildFileSlice([file('Solo')],'Solo'),{nodes:[file('Solo')],edges:[]});assert.deepEqual(buildFileSlice(notes,'Gone'),{nodes:[],edges:[]});});
 const file=(id:string,content='',deleted=false):Note=>({id,path:`Writing/${id}.md`,content,deleted,rev:1,time:'',history:[]});
 test('reference pulses flow from referenced file to referencing file, deduplicated',()=>{const g=buildGraph([file('A','[[B]] [[B]]'),file('B')]);assert.deepEqual(g.edges,[{source:'B',target:'A'}]);});
 test('mutual references remain directional; deleted, external, unresolved and code links excluded',()=>{const g=buildGraph([file('A','[[B]] [[Gone]] [[Missing]] `[[C]]` [web](https://example.com)'),file('B','[[A]]'),file('C'),file('Gone','',true)]);assert.equal(g.nodes.length,3);assert.deepEqual(g.edges,[{source:'B',target:'A'},{source:'A',target:'B'}]);});
