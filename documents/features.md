@@ -1,10 +1,10 @@
 # Spire — Features
 
-## Sidebar map cleanup and external search — local, not deployed
+## Sidebar map cleanup and external search — deployed
 
 the project owner requested removal of the sidebar map heading/counts, status badge, control toolbar and visible legend, then clarified that search must remain below and outside the map panel. The compact panel retains the canvas, file picker and selected-file actions. Search is an independent sibling field immediately above the sidebar tabs and still filters map matches. Native pointer/touch gestures and keyboard navigation remain; screen-reader gesture instructions are retained without a visible legend. Full-size component controls are unchanged.
 
-TypeScript project check and Vite production build passed; all 80 unit/API tests and all 89 browser tests passed. New desktop and simulated-touch checks prove the search is outside/below the map, above the tabs, filters correctly and does not cause horizontal overflow. Existing graph, file opening, template tracking, hidden-map animation suspension, reduced-motion pixels and touch gesture tests pass. One initial test locator wrongly excluded the hidden map; it was corrected to query the hidden canvas directly. No source push, live deployment, native changes or phone access for this cleanup.
+TypeScript project check and Vite production build passed; all 80 unit/API tests and all 89 browser tests passed. New desktop and simulated-touch checks prove the search is outside/below the map, above the tabs, filters correctly and does not cause horizontal overflow. Existing graph, file opening, template tracking, hidden-map animation suspension, reduced-motion pixels and touch gesture tests pass. One initial test locator wrongly excluded the hidden map; it was corrected to query the hidden canvas directly. No source push, native changes or phone access for this cleanup. Deployed tested source `dd74e43` as `map-search-dd74e43` after the project owner's explicit deployment request. All 127 candidate image assets match the tested build (service-worker generated ordering normalized with identical precache set and logic). Live HTML and entry JS/CSS match; HTTPS health, anonymous snapshot rejection (401), healthy container, original writable named volume and loopback binding verified. Application backup and full-volume archive verified with checksums; prior image retained for rollback. Anonymous live sign-in loads without page errors. Authenticated live interaction and physical WebView testing were not performed.
 
 ## Sidebar map — deployed
 
