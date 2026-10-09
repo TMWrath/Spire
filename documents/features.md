@@ -1,8 +1,8 @@
 # Spire — Features
 
-## Section and full templates — local
+## Section and full templates — deployed
 
-The Templates picker has separate Section templates and Full templates categories. Section templates retain Header & hero and Collapsible section. Initial full templates are Cigar journal (details, thirds, construction, pairing, verdict), Journal (daily entry and reflection), and Checklist (portable Markdown task checkboxes). Choosing a full template inserts its Markdown into the current file without replacing existing writing; opening/canceling the picker does not change the file. Mobile acceptance covers all three insertions and save/reopen persistence. Not yet deployed.
+The Templates picker has separate Section templates and Full templates categories. Section templates retain Header & hero and Collapsible section. Initial full templates are Cigar journal (details, thirds, construction, pairing, verdict), Journal (daily entry and reflection), and Checklist (portable Markdown task checkboxes). Choosing a full template inserts its Markdown into the current file without replacing existing writing; opening/canceling the picker does not change the file. Mobile acceptance covers all three insertions and save/reopen persistence. Deployed source `b68cadd` as `templates-b68cadd`. Build, 71 unit/API tests and 70 browser tests passed locally. Live JS/CSS hashes match the accepted build; HTTPS health, anonymous sign-in without page errors and private API rejection verified. Verified application/full-volume backups and pinned rollback retained; persistent data, loopback binding and proxy network preserved. Authenticated live editing, physical-phone validation and a rollback drill were not performed.
 
 ## Per-file cursor bookmark
 
