@@ -1,5 +1,9 @@
 # Sources and portable citations
 
+## Deployment
+
+Live at https://spire.example as `sources-169917a` (code revision `169917a`). Candidate and live HTML/entry JS/CSS match the tested production build. Health passes; fresh anonymous browser sign-in has no page errors; private snapshot rejects anonymous requests. Original read/write named volume and loopback-only binding retained. Verified application backup and full-volume archive with checksums are at `/srv/spire/backups/sources-169917a-20261009T214337Z`. Pinned prior image and rollback configuration retained; no rollback drill, authenticated production edit, physical Android test or repository push was performed.
+
 Sources is a reusable sidebar library for books, websites, images, audio, video, documents and other references. Records include author/creator, title, publication year, edition, publisher, ISBN, URL, access date, description and optional attached media. Existing source edits use revision checks; stale edits reject rather than overwrite another device.
 
 Use Sources → Add source to create a record. In a writing file, the Sources toolbar button opens an explicit citation picker with page/timestamp/section and optional quotation. Browsing the library does not insert or rewrite writing. Source details list individual citation locations and jump to the corresponding Markdown selection. Rendered citation links open the source record.
