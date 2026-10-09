@@ -1,16 +1,16 @@
 # Spire — Features
 
-## Sidebar map — implementation ready; full regression acceptance in progress
+## Sidebar map — deployed
 
 The existing Files / Tags / Templates sidebar now contains the handmade sphere map above its tabs. Files shows existing references; Tags joins files sharing tags; Templates joins each saved or built-in template to files with recorded insertion usage. Template-node actions preview, never insert implicitly. Usage is synchronized note metadata, not additional Markdown, and survives ordinary edits, nested-folder reassignment, restart, history and application backup/restore. Older files have no trustworthy historical template provenance; no guessed backfill is performed. The map retains its camera when the sidebar closes and reopens, and pauses animation while hidden.
 
-Production build, 80 unit/API tests and focused desktop/touch map tests passed. Regression tests were updated to open the sidebar after deliberate dismissal or reload, avoid grabbing the relocated picker during canvas gestures, and scroll nested folder targets into view before dragging. Full-suite acceptance and live deployment are still pending at this checkpoint. Hosted UI is also the Android WebView UI; physical-device acceptance has not occurred. No source push.
+Production build, all 80 unit/API tests and all 87 browser tests passed. Regression tests open the relocated sidebar explicitly, avoid its picker during canvas gestures, and scroll nested drag targets into view. Deployed commit `55c087e` as `sidebar-map-55c087e`. All 126 non-worker image artifacts match local build hashes; the generated service worker has the same precache set and identical logic (only build-time asset ordering/cache-key ordering differs). Live entry JS/CSS and index match the accepted image. HTTPS health, private API rejection, anonymous sign-in without page errors, healthy container, original writable data volume and loopback binding verified. Application/full-volume backups verified and rollback image retained. Hosted UI also serves Android WebView; physical-device acceptance has not occurred. No source push.
 
-## Left sidebar Files / Tags / Templates — locally verified, not deployed
+## Left sidebar Files / Tags / Templates — deployed
 
 the project owner requested Tags and Templates tabs in the existing workspace sidebar. Files retains the existing nested folder tree, drag/drop and Trash. Tags groups active files using the shared inline/front-matter tag parser and opens them through the normal save/open path. Templates lists saved and built-in section/full templates with a source preview and an explicit Insert template action; browsing does not mutate writing, and insertion is disabled without an editable file. Existing writing and complete saved-template source are retained. The tab strip includes visible labels and arrow/Home/End keyboard navigation. Search applies to the selected tab; switching tabs clears search. Hosted UI is reused by Android WebView; no native changes or phone access.
 
-Production build, 77 unit/API tests, two focused desktop/touch scenarios and the complete browser suite passed. Test setup repairs addressed desktop tap support, initialization after reload and closing the mobile sidebar before Save; these are not claimed as production defect fixes. Physical Android testing, source commit/push and live deployment have not occurred for this feature.
+The initial local checkpoint passed 77 unit/API tests and the full browser suite. Final combined sidebar/map acceptance passed 80 unit/API and 87 browser tests, and is deployed as `sidebar-map-55c087e`. Test setup repairs are not claimed as production defect fixes. Source is committed locally; no Forgejo push or physical Android testing was performed.
 
 ## Code-language selection and template creation — deployed
 
