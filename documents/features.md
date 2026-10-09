@@ -455,3 +455,6 @@ Selecting a template from the library or map opens it in the main visual/source 
 - Live HTTPS health and byte-for-byte branding asset/build parity verified; named data volume and loopback-only port preserved.
 - Android launcher/themed-icon update: source `60790ab`, version 0.1.2/code 3. Tests/lint/assembly and canonical signing passed; APK supplied separately, not installed or device-verified.
 - Source commits remain unpushed; production deployment is complete.
+
+## Source type dropdown
+Custom monochrome picker replaces the native Source type select: seven labeled icon rows, descriptions, selected checkmark, large touch targets, scrolling, outside dismissal, Escape and arrow/Home/End keyboard navigation. Production build, unit/API suite and complete browser suite passed. Shared hosted UI reaches the Android WebView without a native APK change; physical WebView acceptance remains unverified.
