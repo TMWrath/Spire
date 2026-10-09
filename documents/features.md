@@ -444,3 +444,14 @@ Acceptance: 76/76 unit/API tests, production TypeScript/Vite build, and 80/80 br
 
 ## Main-area template editing
 Selecting a template from the library or map opens it in the main visual/source editor, not a sidebar source preview. Save template updates saved templates in place with a stale-content conflict guard. Built-ins save as editable copies. File insertion remains explicit, and template editing does not create or modify workspace files. Hosted UI is reused by Android; no native changes or APK required. Production build, 80 unit/API tests and 91 browser tests passed, including desktop and simulated-touch template persistence. Physical Android WebView acceptance remains unverified. Deployed as template-editor-77cc5a5; all 127 candidate/live assets matched. Live health and anonymous-access protection verified; data volume retained, application/full-volume backups verified and rollback image retained.
+
+
+## Approved emblem release — 2026-10-09
+
+- Browser favicon, Apple touch icon, PWA manifest icons and legacy SVG endpoint now use the project owner’s supplied silver emblem with preserved aspect ratio.
+- Deployed implementation: `0f3970c`; immutable release `branding-0f3970c`.
+- Verification: production build, 80/80 unit/API tests, 93/93 existing browser tests, and the new branding browser test passed.
+- Application backup and volume archive verified before cutover; rollback image retained.
+- Live HTTPS health and byte-for-byte branding asset/build parity verified; named data volume and loopback-only port preserved.
+- Android launcher/themed-icon update: source `60790ab`, version 0.1.2/code 3. Tests/lint/assembly and canonical signing passed; APK supplied separately, not installed or device-verified.
+- Source commits remain unpushed; production deployment is complete.
