@@ -20,9 +20,9 @@ export function setProperty(content: string, key: 'description'|'hero'|'tags', v
  return `---\n${doc.toString()}---\n${match ? content.slice(match[0].length) : content}`;
 }
 export const safePath = z.string().min(1).max(240).refine(p => !/[\\\x00-\x1f<>:"|?*%]/.test(p) && !p.startsWith('/') && p.split('/').every(s => s && s !== '.' && s !== '..' && !s.startsWith('.') && !/[. ]$/.test(s) && !/^(con|prn|aux|nul|com\d|lpt\d)(\.|$)/i.test(s)), 'Use a relative portable path without hidden or parent segments');
-export const mutationSchema = z.object({ op: z.string().uuid(), id: z.string().uuid(), base: z.number().int().nonnegative(), path: safePath.refine(p => p.endsWith('.md'), 'Notes must end in .md'), content: z.string().max(1_000_000), deleted: z.boolean().default(false) });
+export const mutationSchema = z.object({ op: z.string().uuid(), id: z.string().uuid(), base: z.number().int().nonnegative(), path: safePath.refine(p => p.endsWith('.md'), 'Notes must end in .md'), content: z.string().max(1_000_000), deleted: z.boolean().default(false), templateIds:z.array(z.string().max(100).regex(/^[a-zA-Z0-9_-]+$/)).max(100).optional() });
 export type Mutation = z.infer<typeof mutationSchema>;
-export type Revision = { rev: number; path: string; content: string; deleted: boolean; time: string };
+export type Revision = { rev: number; path: string; content: string; deleted: boolean; time: string; templateIds?: string[] };
 export type Note = Revision & { id: string; history: Revision[] };
 export type Conflict = { id: string; mutation: Mutation; current: number; time: string };
 export type Attachment = { path: string; data: string };
