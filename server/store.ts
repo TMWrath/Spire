@@ -30,8 +30,9 @@ export class Store {
  createFolder(p:string){safePath.parse(p);if((this.state.folders??[]).some(f=>f.toLowerCase()===p.toLowerCase()))throw new HttpError(409,'Folder already exists');const paths=[...Object.values(this.state.notes).filter(n=>!n.deleted).map(n=>n.path),...this.state.attachments.map(a=>a.path)];if(paths.some(q=>q.toLowerCase()===p.toLowerCase()||p.toLowerCase().startsWith(q.toLowerCase()+'/')))throw new HttpError(409,'A file occupies this folder path');if(fs.existsSync(this.vault(p))&&!fs.statSync(this.vault(p)).isDirectory())throw new HttpError(409,'Path occupied');const next=structuredClone(this.state);next.folders=[...(next.folders??[]),p];next.seq++;this.commit(next);return {path:p};}
  deleteFolder(folder:string,action:{mode:'empty'}|{mode:'trash'}|{mode:'reassign';destination:string},device:string){
   const source=safePath.parse(folder);const sourceLower=source.toLowerCase();const folders=this.state.folders??[];
-  if(!folders.some(f=>f.toLowerCase()===sourceLower))throw new HttpError(404,'Folder not found');
   const inside=(p:string)=>p.toLowerCase().startsWith(sourceLower+'/');
+  const knownPaths=[...folders,...Object.values(this.state.notes).filter(n=>!n.deleted).map(n=>n.path),...this.state.attachments.map(a=>a.path),...Object.keys(this.state.styles??{})];
+  if(!folders.some(f=>f.toLowerCase()===sourceLower)&&!knownPaths.some(inside))throw new HttpError(404,'Folder not found');
   if(action.mode==='empty'){
    const hasContents=Object.values(this.state.notes).some(n=>!n.deleted&&inside(n.path))||this.state.attachments.some(a=>inside(a.path))||Object.keys(this.state.styles??{}).some(inside)||folders.some(f=>inside(f));
    if(hasContents)throw new HttpError(409,'Folder is no longer empty; refresh before deleting it');

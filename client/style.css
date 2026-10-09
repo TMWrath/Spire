@@ -53,3 +53,7 @@
 .blocks-options pre{margin:0;padding:.65rem;background:#151515;font-size:.8rem;white-space:pre-wrap;overflow-wrap:anywhere}
 .blocks-options blockquote{margin:0;border-left:3px solid #eee;padding:.6rem;color:#bbb}
 .block-dialog{max-height:90dvh;overflow:auto}.block-dialog textarea{width:100%;min-height:180px;max-height:45dvh;resize:vertical;background:#151515;color:#eee;border:1px solid #383838;padding:.8rem;font:inherit}
+
+/* Nested folders retain their full data-folder path for drag/drop and deletion. */
+.sidebar nav details > details{margin-left:16px;border-left:1px solid var(--border,#333);padding-left:6px}
+.sidebar nav summary{overflow-wrap:anywhere}
