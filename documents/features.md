@@ -1,14 +1,16 @@
 # Spire — Features
 
-## Code-language selection — verified locally, deployment pending
+## Code-language selection and template creation — deployed
+
+Deployed hosted code revision `40ae5f5` as `code-templates-40ae5f5`. All 122 tested asset hashes matched the image; live entry `/assets/index-Csu7sKjd.js` matches the tested hash and contains template creation and Code language controls. HTTPS health passes, anonymous snapshot returns 401, container is healthy, original read/write data volume and loopback port are preserved. Application backup and volume archive passed verification/checksums; rollback image is retained. No physical Android WebView test or source push was performed.
 
 Blocks → Code provides a language selector based on highlight.js languages/aliases, plain code, JSX/TSX and a custom language tag. Insertion preserves captured selection, surrounding source and literal pasted backticks using a safe fence. Empty insertion and Quote behavior remain supported. Focused browser acceptance passed on desktop and touch, including Bash/Python/TypeScript/custom tags and save/reopen. Saved section/full template creation passed all four desktop/touch category checks with exact complete-source preservation and reuse. The Android shell loads the same hosted feature; no native implementation is necessary. Physical Android WebView acceptance remains unperformed.
 
-## Unified Android app settings — local implementation, not deployed
+## Unified Android app settings — hosted support deployed; physical client acceptance pending
 
 the project owner approved Aphelion's proposal to move Reload, Print / Save PDF, Server connection and About into the hosted Settings surface. Settings → Android app appears only when the APK supplies the origin-scoped message bridge; ordinary browsers and older APKs retain their existing Settings tabs without Android controls. The new 0.1.1 (versionCode 2) client removes the separate native header/overflow menu. Native confirmations still protect reload/server switching; a native Server connection recovery control is shown on main-page connection/HTTP/TLS failure so an unreachable hosted Settings screen cannot trap the user. No account or cache migration, new offline guarantee or editing-lease changes.
 
-Both canonical repositories are required for this feature: `/workspace/spire` supplies the Settings UI and `/workspace/spire-android` supplies the allowlisted native bridge and updated APK. Native accepts only info/reload/print/connection/about from the selected HTTPS origin's main frame, rejects stale WebViews, and reports current version/server metadata. Hosted browser regression was proven failing before implementation and passing afterward; full acceptance and build/signature verification are pending. Physical WebView/print-dialog acceptance, source push and live deployment remain unperformed. Deploy the compatible hosted build before relying on the new APK's integrated controls.
+Both canonical repositories are required for this feature: `/workspace/spire` supplies the Settings UI and `/workspace/spire-android` supplies the allowlisted native bridge and updated APK. Native accepts only info/reload/print/connection/about from the selected HTTPS origin's main frame, rejects stale WebViews, and reports current version/server metadata. Hosted browser regression was proven failing before implementation and passing afterward. Final hosted acceptance passed 77 unit/API tests and 83 browser tests. Compatible hosted support is deployed in `code-templates-40ae5f5`. Physical WebView/print-dialog acceptance and source push remain unperformed; APK build verification is tracked separately.
 
 
 ## Current-file mind-map slice — deployed
