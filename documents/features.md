@@ -1,5 +1,9 @@
 # Spire — Features
 
+## Section and full templates — local
+
+The Templates picker has separate Section templates and Full templates categories. Section templates retain Header & hero and Collapsible section. Initial full templates are Cigar journal (details, thirds, construction, pairing, verdict), Journal (daily entry and reflection), and Checklist (portable Markdown task checkboxes). Choosing a full template inserts its Markdown into the current file without replacing existing writing; opening/canceling the picker does not change the file. Mobile acceptance covers all three insertions and save/reopen persistence. Not yet deployed.
+
 ## Per-file cursor bookmark
 
 Context → Bookmark provides Set/Update bookmark and Remove bookmark. Reopening a bookmarked file automatically returns to the stored Editor or Source position. A versioned `spire_bookmark` YAML property stores the offset and nearby text for recovery after edits; document body and user metadata are retained. Invalid bookmark data is ignored and malformed YAML blocks bookmark mutation. Browser acceptance proves Source restoration and actual typing at the restored Editor caret after reopening. Header/Footer bookmarks reveal the matching optional region. Deployed source `dd36fc4` as immutable release `bookmark-dd36fc4`. Production build, 69 unit/API tests and 67 browser scenarios passed. Image and public JS/CSS hashes match the accepted build; HTTPS health, anonymous sign-in without page errors and private API rejection verified. Application backup and full-volume archive verified, existing persistent files unchanged at cutover, volume/loopback binding/proxy network preserved, pinned rollback retained. No repository push, authenticated production editing, physical phone validation or rollback drill performed.

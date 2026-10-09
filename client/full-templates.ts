@@ -1,0 +1,10 @@
+export const fullTemplates=[
+ {id:'cigar-journal',title:'Cigar journal',description:'Cigar details, smoking experience, pairing and verdict.',content:'# Cigar journal\n\n## Cigar details\n\n- Date: \n- Brand: \n- Cigar / line: \n- Vitola / size: \n- Origin: \n- Wrapper: \n- Binder: \n- Filler: \n- Price: \n\n## Before lighting\n\nAppearance, construction, aroma and cold draw.\n\n## Smoking experience\n\n### First third\n\nFlavor, strength and balance.\n\n### Second third\n\nFlavor changes and development.\n\n### Final third\n\nFinish and overall impression.\n\n## Burn and draw\n\nBurn consistency, ash, draw and any touch-ups.\n\n## Pairing and setting\n\nDrink, food, company and atmosphere.\n\n## Verdict\n\n- Rating: \n- Would smoke again: \n\nFinal thoughts.\n'},
+ {id:'journal',title:'Journal',description:'A daily entry with room for reflection and tomorrow.',content:'# Journal\n\n- Date: \n- Mood: \n\n## Today\n\nWhat happened today?\n\n## Thoughts and feelings\n\nWhat is on your mind?\n\n## Highlights\n\n- \n\n## Challenges\n\nWhat was difficult, and what helped?\n\n## Gratitude\n\n- \n\n## Tomorrow\n\nWhat would you like to carry forward?\n'},
+ {id:'checklist',title:'Checklist',description:'An editable task list with priorities and follow-up.',content:'# Checklist\n\n## Details\n\n- Goal: \n- Due date: \n\n## Priority\n\n- [ ] First priority\n- [ ] Second priority\n\n## Tasks\n\n- [ ] First task\n- [ ] Second task\n- [ ] Third task\n\n## Follow-up\n\n- [ ] Review progress\n\n## Additional details\n\nAdd supporting information here.\n'}
+] as const;
+export function insertFullTemplate(content:string,offset:number,template:string):string{
+ const at=Math.max(0,Math.min(content.length,offset));
+ const prefix=content.slice(0,at),suffix=content.slice(at);
+ return prefix+(prefix&&!prefix.endsWith('\n\n')?'\n\n':'')+template+(suffix&&!template.endsWith('\n\n')?'\n':'')+suffix;
+}
