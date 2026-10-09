@@ -1,5 +1,11 @@
 # Spire — Features
 
+## Sidebar map cleanup and external search — local, not deployed
+
+the project owner requested removal of the sidebar map heading/counts, status badge, control toolbar and visible legend, then clarified that search must remain below and outside the map panel. The compact panel retains the canvas, file picker and selected-file actions. Search is an independent sibling field immediately above the sidebar tabs and still filters map matches. Native pointer/touch gestures and keyboard navigation remain; screen-reader gesture instructions are retained without a visible legend. Full-size component controls are unchanged.
+
+TypeScript project check and Vite production build passed; all 80 unit/API tests and all 89 browser tests passed. New desktop and simulated-touch checks prove the search is outside/below the map, above the tabs, filters correctly and does not cause horizontal overflow. Existing graph, file opening, template tracking, hidden-map animation suspension, reduced-motion pixels and touch gesture tests pass. One initial test locator wrongly excluded the hidden map; it was corrected to query the hidden canvas directly. No source push, live deployment, native changes or phone access for this cleanup.
+
 ## Sidebar map — deployed
 
 The existing Files / Tags / Templates sidebar now contains the handmade sphere map above its tabs. Files shows existing references; Tags joins files sharing tags; Templates joins each saved or built-in template to files with recorded insertion usage. Template-node actions preview, never insert implicitly. Usage is synchronized note metadata, not additional Markdown, and survives ordinary edits, nested-folder reassignment, restart, history and application backup/restore. Older files have no trustworthy historical template provenance; no guessed backfill is performed. The map retains its camera when the sidebar closes and reopens, and pauses animation while hidden.
