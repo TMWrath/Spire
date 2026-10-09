@@ -1,9 +1,10 @@
 import React,{useState} from 'react';
-import {FileText,Tag,LayoutTemplate} from 'lucide-react';
+import {FileText,Tag,LayoutTemplate,BookOpen} from 'lucide-react';
 import {metadata,type Note,type SavedTemplate} from '../shared/model';
-export type SidebarTab='files'|'tags'|'templates';
+export type SidebarTab='files'|'tags'|'templates'|'sources';
 export function SidebarTabs({tab,onChange}:{tab:SidebarTab;onChange:(tab:SidebarTab)=>void}){
- return <div className="sidebar-tabs" role="tablist" aria-label="Workspace sections">{(['files','tags','templates'] as const).map(id=><button key={id} role="tab" aria-selected={tab===id} aria-controls={`sidebar-${id}`} onKeyDown={event=>{const ids=['files','tags','templates'] as const;const at=ids.indexOf(id);const next=event.key==='ArrowRight'?ids[(at+1)%3]:event.key==='ArrowLeft'?ids[(at+2)%3]:event.key==='Home'?'files':event.key==='End'?'templates':null;if(next){event.preventDefault();onChange(next);const buttons=event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role=tab]');buttons?.[ids.indexOf(next)].focus();}}} onClick={()=>onChange(id)}>{id==='files'?<FileText aria-hidden="true"/>:id==='tags'?<Tag aria-hidden="true"/>:<LayoutTemplate aria-hidden="true"/>}{id[0].toUpperCase()+id.slice(1)}</button>)}</div>;
+ const ids=['files','tags','templates','sources'] as const;
+ return <div className="sidebar-tabs" role="tablist" aria-label="Workspace sections">{ids.map((id,at)=><button key={id} role="tab" aria-selected={tab===id} aria-controls={`sidebar-${id}`} onKeyDown={event=>{const next=event.key==='ArrowRight'?ids[(at+1)%ids.length]:event.key==='ArrowLeft'?ids[(at+ids.length-1)%ids.length]:event.key==='Home'?'files':event.key==='End'?'sources':null;if(next){event.preventDefault();onChange(next);event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role=tab]')[ids.indexOf(next)]?.focus();}}} onClick={()=>onChange(id)}>{id==='files'?<FileText aria-hidden="true"/>:id==='tags'?<Tag aria-hidden="true"/>:id==='sources'?<BookOpen aria-hidden="true"/>:<LayoutTemplate aria-hidden="true"/>}{id[0].toUpperCase()+id.slice(1)}</button>)}</div>;
 }
 export function SidebarLibrary({tab,notes,templates,builtins,query,canInsert,onOpen,onInsert,preview,onPreview}:{preview:string|null;onPreview:(id:string|null)=>void;tab:'tags'|'templates';notes:Note[];templates:SavedTemplate[];builtins:{id:string;title:string;category:'section'|'full';content:string}[];query:string;canInsert:boolean;onOpen:(note:Note)=>void;onInsert:(content:string,id:string)=>void}){
  const setPreview=onPreview;const q=query.trim().toLowerCase();const active=notes.filter(n=>!n.deleted);
