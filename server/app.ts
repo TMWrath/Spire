@@ -34,6 +34,7 @@ export function createApp(root:string,origin:string){
  app.post('/api/logout',(req,res)=>{delete auth.sessions[hash(req.cookies.spire_session)];saveAuth();res.clearCookie('spire_session',{path:'/'});res.json({ok:true});});
  app.get('/api/devices',(_req,res)=>res.json(auth.devices));
  app.delete('/api/devices/:id',(req,res)=>{const d=auth.devices.find(d=>d.id===req.params.id);if(!d)throw new HttpError(404,'Device not found');d.revoked=true;for(const[k,s]of Object.entries(auth.sessions))if(s.device===d.id)delete auth.sessions[k];saveAuth();res.json({ok:true});});
+ app.put('/api/templates/:id',(req,res)=>{const body=templateInputSchema.extend({expectedContent:z.string().max(1_000_000)}).parse(req.body);res.json(store.updateTemplate(req.params.id,body,body.expectedContent));});
  app.post('/api/templates',(req,res)=>{const body=templateInputSchema.parse(req.body);res.status(201).json(store.saveTemplate(body));});
  app.get('/api/snapshot',(_req,res)=>res.json({seq:store.state.seq,templates:store.state.templates??[],notes:Object.values(store.state.notes),folders:store.state.folders??[],styles:store.state.styles??{},conflicts:store.state.conflicts,attachments:store.state.attachments.map(a=>({path:a.path,size:Buffer.from(a.data,'base64').length}))}));
  app.put('/api/styles',(req,res)=>{const body=z.object({path:safePath.refine(p=>p.toLowerCase().endsWith('.css'),'Stylesheets must end in .css'),content:z.string().max(100_000)}).parse(req.body);res.json(store.putStyle(body.path,body.content));});

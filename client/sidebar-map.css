@@ -2,3 +2,5 @@
 .sidebar .mind-search.sidebar-map-search{flex:0 0 auto;max-width:none;width:100%;min-height:44px;margin:0 0 12px;padding:0 10px;border:1px solid #303030;border-radius:3px;background:#111113;box-sizing:border-box}.sidebar-map-search input{min-height:44px;margin:0}.sidebar-map-search svg{flex-shrink:0}
 
 .sidebar-actions{display:flex;align-items:center;justify-content:center;gap:10px;width:100%}.sidebar-bottom{align-items:center;text-align:center}.sidebar-actions .create-menu{top:auto;bottom:calc(100% + 6px);right:auto;left:0}
+
+.template-main-editor{display:flex;flex-direction:column;flex:1;min-height:0}.template-main-editor .note-toolbar{flex-wrap:wrap}.template-main-editor .note-toolbar input{min-width:120px;flex:1}.template-main-editor>p{padding:0 14px}.template-formatting{display:flex;gap:6px;overflow-x:auto;padding:8px}.template-formatting button{flex-shrink:0}.template-main-editor .canvas{flex:1;min-height:260px}
