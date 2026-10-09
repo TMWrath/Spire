@@ -458,3 +458,5 @@ Selecting a template from the library or map opens it in the main visual/source 
 
 ## Source type dropdown
 Custom monochrome picker replaces the native Source type select: seven labeled icon rows, descriptions, selected checkmark, large touch targets, scrolling, outside dismissal, Escape and arrow/Home/End keyboard navigation. Production build, unit/API suite and complete browser suite passed. Shared hosted UI reaches the Android WebView without a native APK change; physical WebView acceptance remains unverified.
+
+Source type picker deployed and served HTML/JS/CSS verified equal to the accepted build. Health passed; backup and rollback retained. 91 unit/API tests and 96 browser tests passed. Physical Android WebView acceptance unverified.
