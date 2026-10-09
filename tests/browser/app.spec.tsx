@@ -388,6 +388,18 @@ test('combined temporal gallery inserts formatted manual plain text',async({page
  await page.getByRole('button',{name:'Date & time',exact:true}).click();await page.getByRole('region',{name:'Date and time formats'}).getByRole('button',{name:'Cancel',exact:true}).click();await expect(source).toHaveValue('Before 12:05:12 AM after');
 });
 
+test('Code language chooser inserts tagged blocks and persists on desktop and touch',async({page,browser})=>{
+ for(const touch of [false,true]){
+ const context=await browser.newContext({hasTouch:touch,viewport:touch?{width:390,height:844}:{width:1280,height:900}});const p=await context.newPage();
+ await login(p);await create(p,'Writing/Language '+(touch?'touch':'desktop')+'.md','Before replace after');const source=p.getByLabel('Markdown source');
+ for(const language of ['bash','python','typescript','__custom__']){
+ await source.fill('Before replace after');await source.evaluate((el:HTMLTextAreaElement)=>el.setSelectionRange(7,14));await p.getByRole('button',{name:'Blocks',exact:true}).click();await p.getByRole('button',{name:'Code block',exact:true}).click();
+ const dialog=p.getByRole('dialog',{name:'Insert code block',exact:true});await expect(dialog.getByLabel('Block text')).not.toBeFocused();await dialog.getByLabel('Code language').selectOption(language);if(language==='__custom__')await dialog.getByLabel('Language tag').fill('custom-lang');
+ await dialog.getByLabel('Block text').fill('print(1)');await dialog.getByRole('button',{name:'Insert',exact:true}).click();await expect(source).toHaveValue('Before \n\n```'+(language==='__custom__'?'custom-lang':language)+'\nprint(1)\n```\n\n after');
+ }
+ await p.getByRole('button',{name:'Save file',exact:true}).click();await expect(p.locator('.network')).toHaveText('Synchronized');await p.reload();await expect(p.getByRole('button',{name:'Settings',exact:true})).toBeVisible();if(!await p.locator('.sidebar').isVisible())await p.getByRole('button',{name:'Toggle folders',exact:true}).click();await p.locator('nav').getByRole('button',{name:'Language '+(touch?'touch':'desktop'),exact:true}).click();await p.getByRole('button',{name:'Source',exact:true}).click();await expect(source).toContainText('```custom-lang');await context.close();
+ }
+});
 test('Blocks gallery previews code and quote, supports cancellation and empty code insertion',async({page})=>{
  await login(page);await create(page,'Writing/Blocks.md','Before replace after');const source=page.getByLabel('Markdown source');
  await source.evaluate((el:HTMLTextAreaElement)=>el.setSelectionRange(7,14));

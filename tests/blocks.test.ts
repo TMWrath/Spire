@@ -7,6 +7,12 @@ test('blocks serialize portable Markdown including empty code and embedded fence
  assert.equal(blockMarkdown('quote','one\n\ntwo'),'> one\n>\n> two');
  assert.equal(blockMarkdown('quote',''),'>');
 });
+test('code language tags serialize safely and quote ignores language',()=>{
+ for(const language of ['bash','python','typescript','cpp'])assert.equal(blockMarkdown('code','',language),'```'+language+'\n\n```');
+ assert.equal(blockMarkdown('code','a\n```\nb','python'),'````python\na\n```\nb\n````');
+ assert.equal(blockMarkdown('quote','hello','python'),'> hello');
+ assert.equal(blockMarkdown('code','hello','python\n```'),'```python\nhello\n```');
+});
 test('block insertion replaces selection and separates adjacent prose',()=>{
  assert.equal(insertBlock('Before replace after',7,14,'code','hello').content,'Before \n\n```\nhello\n```\n\n after');
  assert.equal(insertBlock('',0,0,'code','').content,'```\n\n```');
