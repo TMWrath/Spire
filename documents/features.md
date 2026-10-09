@@ -1,5 +1,13 @@
 # Spire — Features
 
+## Shared template writing toolbar — release acceptance
+
+Template editing now reuses the normal writing toolbar in Editor and Source modes: text styles, highlighting, headings, lists, capitalization, code/quote blocks, tables, media/attachment insertion, dates/times, alignment, spacing, page breaks, links, tags and nested templates. Save template remains separate from workspace-file saving; saved templates update in place and built-ins save editable copies. Complex-template desktop/touch coverage verifies save/reopen persistence without creating workspace files. Microphone recording and physical Android WebView acceptance remain unverified.
+
+The existing outside-click sidebar dismissal, animated folder drag/drop and empty-folder deletion with file terminology remain required release checks. Status-bar test assertions were updated to include authoritative file counts and zero pending changes; production behavior was not weakened. Android consumes this hosted UI through MainActivity.loadUrl(server+"/"); no native source change or replacement APK is needed.
+
+
+
 ## Sidebar map cleanup and external search — deployed
 
 the project owner requested removal of the sidebar map heading/counts, status badge, control toolbar and visible legend, then clarified that search must remain below and outside the map panel. The compact panel retains the canvas, file picker and selected-file actions. Search is an independent sibling field immediately above the sidebar tabs and still filters map matches. Native pointer/touch gestures and keyboard navigation remain; screen-reader gesture instructions are retained without a visible legend. Full-size component controls are unchanged.
