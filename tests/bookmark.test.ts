@@ -1,0 +1,6 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {captureBookmark,bookmarkOffset,readBookmark,writeBookmark} from '../client/bookmark';
+test('bookmark survives serialization and removal without changing body or user properties',()=>{const source='---\ntitle: Sample\n---\nAlpha beta gamma';const b=captureBookmark('Alpha beta gamma',6,'source');const saved=writeBookmark(source,b);assert.deepEqual(readBookmark(saved),b);assert.match(saved,/title: Sample/);assert.ok(saved.endsWith('Alpha beta gamma'));const removed=writeBookmark(saved,null);assert.equal(readBookmark(removed),null);assert.ok(removed.endsWith('Alpha beta gamma'));});
+test('bookmark follows nearby text after insertions and safely clamps deleted text',()=>{const b=captureBookmark('Alpha beta gamma',6,'editor');assert.equal(bookmarkOffset('New introduction\nAlpha beta gamma',b),23);assert.equal(bookmarkOffset('x',b),1);});
+test('invalid bookmarks and malformed YAML are handled safely',()=>{assert.equal(readBookmark('---\nspire_bookmark: {version: 1, mode: source, region: body, offset: -1, before: "", after: ""}\n---\nBody'),null);assert.throws(()=>writeBookmark('---\nbroken: [\n---\nBody',null));});

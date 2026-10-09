@@ -1,5 +1,9 @@
 # Spire — Features
 
+## Per-file cursor bookmark
+
+Context → Bookmark provides Set/Update bookmark and Remove bookmark. Reopening a bookmarked file automatically returns to the stored Editor or Source position. A versioned `spire_bookmark` YAML property stores the offset and nearby text for recovery after edits; document body and user metadata are retained. Invalid bookmark data is ignored and malformed YAML blocks bookmark mutation. Browser acceptance proves Source restoration and actual typing at the restored Editor caret after reopening. Header/Footer bookmarks reveal the matching optional region. Deployment verification is recorded separately after cutover.
+
 ## Compact section bar — deployed
 
 Section tabs use one horizontally scrolling row. A caret above the bar collapses/reveals it with slide/fade and rotation; opened document sections remain open. Hidden controls are inert, reduced-motion is respected, and the dock is excluded from print. Deployed `c5b32fa` as `20261008T235036Z-tabs-c5b32fa`. Production build, 66 unit/API tests and all 65 browser tests passed, including desktop/mobile scrolling and collapse checks. Image and public assets match the tested build; anonymous live sign-in has no page errors, HTTPS health and unauthenticated rejection pass. Existing volume and loopback binding retained, application/full-volume backups checksum-verified, pinned rollback retained. No repository push, authenticated production editing, physical phone validation or rollback drill performed.
