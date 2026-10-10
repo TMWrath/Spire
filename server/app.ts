@@ -1,3 +1,4 @@
+import {quickActionInputSchema} from '../shared/quick-actions.ts';
 import {registerVideo} from './video.ts';
 import express, { type Request, type Response, type NextFunction } from 'express';
 import cookieParser from 'cookie-parser';
@@ -43,12 +44,17 @@ export function createApp(root:string,origin:string){
  app.post('/api/logout',(req,res)=>{delete auth.sessions[hash(req.cookies.spire_session)];saveAuth();res.clearCookie('spire_session',{path:'/'});res.json({ok:true});});
  app.get('/api/devices',(_req,res)=>res.json(auth.devices));
  app.delete('/api/devices/:id',(req,res)=>{const d=auth.devices.find(d=>d.id===req.params.id);if(!d)throw new HttpError(404,'Device not found');d.revoked=true;for(const[k,s]of Object.entries(auth.sessions))if(s.device===d.id)delete auth.sessions[k];saveAuth();res.json({ok:true});});
+ app.post('/api/quick-actions',(req,res)=>res.status(201).json(store.saveQuickAction(req.body)));
+ app.put('/api/quick-actions/order',(req,res)=>{const body=z.object({ids:z.array(z.string().uuid()),expected:z.array(z.string().uuid())}).parse(req.body);res.json(store.reorderQuickActions(body.ids,body.expected));});
+ app.put('/api/quick-actions/:id',(req,res)=>{const body=quickActionInputSchema.extend({revision:z.number().int().positive()}).parse(req.body);res.json(store.saveQuickAction(body,String(req.params.id),body.revision));});
+ app.delete('/api/quick-actions/:id',(req,res)=>res.json(store.deleteQuickAction(String(req.params.id),z.coerce.number().int().positive().parse(req.query.revision))));
+ app.post('/api/quick-actions/:id/activate',(req,res)=>res.status(201).json(store.activateQuickAction(String(req.params.id),z.object({op:z.string().uuid()}).parse(req.body).op,res.locals.device.id)));
  app.put('/api/templates/:id',(req,res)=>{const body=templateInputSchema.extend({expectedContent:z.string().max(1_000_000)}).parse(req.body);res.json(store.updateTemplate(req.params.id,body,body.expectedContent));});
  app.post('/api/templates',(req,res)=>{const body=templateInputSchema.parse(req.body);res.status(201).json(store.saveTemplate(body));});
  app.post('/api/sources',(req,res)=>res.status(201).json(store.saveSource(sourceInputSchema.parse(req.body))));
  app.put('/api/sources/:id',(req,res)=>{const body=sourceInputSchema.extend({expectedRevision:z.number().int().positive()}).parse(req.body);const {expectedRevision,...input}=body;res.json(store.saveSource(input,String(req.params.id),expectedRevision));});
  app.delete('/api/sources/:id',(req,res)=>res.json(store.deleteSource(String(req.params.id),z.coerce.number().int().positive().parse(req.query.revision))));
- app.get('/api/snapshot',(_req,res)=>res.json({seq:store.state.seq,sources:store.state.sources??[],templates:store.state.templates??[],notes:Object.values(store.state.notes),folders:store.state.folders??[],styles:store.state.styles??{},conflicts:store.state.conflicts,attachments:store.state.attachments.map(a=>({path:a.path,size:Buffer.from(a.data,'base64').length}))}));
+ app.get('/api/snapshot',(_req,res)=>res.json({seq:store.state.seq,quickActions:store.state.quickActions??[],sources:store.state.sources??[],templates:store.state.templates??[],notes:Object.values(store.state.notes),folders:store.state.folders??[],styles:store.state.styles??{},conflicts:store.state.conflicts,attachments:store.state.attachments.map(a=>({path:a.path,size:Buffer.from(a.data,'base64').length}))}));
  app.put('/api/styles',(req,res)=>{const body=z.object({path:safePath.refine(p=>p.toLowerCase().endsWith('.css'),'Stylesheets must end in .css'),content:z.string().max(100_000)}).parse(req.body);res.json(store.putStyle(body.path,body.content));});
  app.post('/api/folders',(req,res)=>res.status(201).json(store.createFolder(z.object({path:safePath}).parse(req.body).path)));
  app.delete('/api/folders',(req,res)=>{const body=z.discriminatedUnion('mode',[z.object({path:safePath,mode:z.literal('empty')}),z.object({path:safePath,mode:z.literal('trash')}),z.object({path:safePath,mode:z.literal('reassign'),destination:safePath})]).parse(req.body);res.json(store.deleteFolder(body.path,body.mode==='empty'?{mode:'empty'}:body.mode==='trash'?{mode:'trash'}:{mode:'reassign',destination:body.destination},res.locals.device.id));});

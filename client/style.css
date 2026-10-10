@@ -60,3 +60,5 @@
 .sidebar nav summary{overflow-wrap:anywhere}
 
 .save-template-actions{display:flex;flex-direction:column;gap:.6rem;margin:1rem 0}.save-template-actions button{width:100%;white-space:normal}
+.quick-actions-home{width:min(760px,100%);margin:2rem auto;text-align:left}.quick-action-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr));gap:.8rem;margin:1rem 0}.quick-action-tiles>button{display:flex;flex-direction:column;align-items:flex-start;gap:.6rem;padding:1rem;min-height:110px;white-space:normal;overflow-wrap:anywhere}.quick-action-tiles small,.quick-action-row small{display:block;color:#aaa;overflow-wrap:anywhere}.quick-action-list{display:flex;flex-direction:column;gap:.7rem;margin:1rem 0}.quick-action-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem;border:1px solid #383838;flex-wrap:wrap}.quick-action-row>div{min-width:0}.quick-action-controls{display:flex;gap:.4rem;flex-wrap:wrap}.quick-action-controls button{white-space:normal}#settings-actions form{max-width:600px}#settings-actions input,#settings-actions select{width:100%}.empty{overflow-y:auto}
+

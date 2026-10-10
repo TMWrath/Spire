@@ -1,7 +1,7 @@
 import {openDB} from 'idb';
 import {type Note,type Mutation,type Conflict,type SavedTemplate,mutationSchema} from '../shared/model';
 export type Identity={owner:string;username:string;csrf:string;device:{id:string;name:string}};
-export type Snapshot={sources?:import('../shared/sources').Source[];templates?:SavedTemplate[];seq:number;notes:Note[];folders:string[];styles:Record<string,string>;conflicts:Conflict[];attachments:{path:string;size:number}[]};
+export type Snapshot={quickActions?:import('../shared/quick-actions').QuickAction[];sources?:import('../shared/sources').Source[];templates?:SavedTemplate[];seq:number;notes:Note[];folders:string[];styles:Record<string,string>;conflicts:Conflict[];attachments:{path:string;size:number}[]};
 type Cache={identity?:Identity;snapshot:Snapshot;outbox:Mutation[]};
 const blank=():Cache=>({snapshot:{seq:0,notes:[],folders:[],styles:{},conflicts:[],attachments:[]},outbox:[]});
 const db=openDB('spire-private-v1',1,{upgrade(db){db.createObjectStore('cache');}});
