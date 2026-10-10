@@ -4,6 +4,12 @@ for(const touch of [false,true])test.describe(touch?'touch quick actions':'deskt
  test('settings CRUD, ordering, template creation, unique names and persistence',async({page})=>{
  await page.goto('/');await page.getByLabel('Username',{exact:true}).fill('actions-tester');await page.getByLabel('Password',{exact:true}).fill('disposable-actions-password');await page.getByRole('button',{name:'Create Reliquary',exact:true}).click();
  await page.getByRole('button',{name:'Manage quick actions',exact:true}).click();await expect(page.getByRole('tab',{name:'Actions',exact:true})).toHaveAttribute('aria-selected','true');
+ const template=page.getByLabel('Action template');
+ await expect(template).toHaveCSS('appearance','none');
+ await expect(template).toHaveCSS('background-color','rgb(21, 21, 21)');
+ await expect(page.getByRole('button',{name:'Add action',exact:true})).toHaveCSS('background-color','rgb(26, 26, 26)');
+ await page.getByLabel('Action destination folder').focus();
+ await expect(page.getByLabel('Action destination folder')).toHaveCSS('outline-color','rgb(136, 136, 136)');
  const add=async(label:string,pattern:string)=>{await page.getByLabel('Button label',{exact:true}).fill(label);await page.getByLabel('Action destination folder').fill('Writing/Journal');await page.getByLabel('Default name pattern').fill(pattern);await page.getByLabel('Action template').selectOption('journal');await page.getByRole('button',{name:'Add action',exact:true}).click();await expect(page.getByRole('button',{name:'Edit '+label,exact:true})).toBeVisible();};
  await add('Daily entry','Entry');await add('Ideas','Idea');await page.getByRole('button',{name:'Move Ideas up',exact:true}).click();await expect(page.locator('.quick-action-row').first()).toContainText('Ideas');
  await page.getByRole('button',{name:'Edit Daily entry',exact:true}).click();await page.getByLabel('Button label').fill('New journal');await page.getByRole('button',{name:'Save action',exact:true}).click();await expect(page.getByRole('button',{name:'Edit New journal',exact:true})).toBeVisible();
