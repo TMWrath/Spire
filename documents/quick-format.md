@@ -6,6 +6,12 @@ In the visual **Editor**, type `@bld`, `@itl`, `@stk` or `@und` followed by Spac
 
 Saved source uses ordinary Markdown bold/italic/strike and portable `<u>` HTML for underline. Raw **Source** mode remains literal; quick formatting is a visual Editor input feature, not a source-text rewrite engine.
 
+## Quick headings
+
+`@hd1` through `@hd6` + Space consume the shortcut and convert the current paragraph to heading level 1–6. The active indicator names the level; Enter preserves the heading and resumes a normal paragraph. Inline quick styles can be combined with headings. Export/source uses standard `#` through `######` Markdown. Invalid levels, email-like/escaped tokens and code remain literal. The heading regression tests all six levels, source round-trip, Enter reset, combined heading/bold, simulated mobile paragraph input and save/reload at a narrow viewport.
+
+Heading update: build, 91 unit/API tests, both focused browser tests and complete 98-test browser suite passed. Deployment pending for the heading update.
+
 Verification: production build, 91 unit/API tests, focused quick-format browser test and complete 97-test browser suite passed. Browser coverage exercises all four styles, exact persisted source, Enter reset, code/unknown-token protection, narrow-screen containment, simulated mobile beforeinput and save/reload. Real Android IME/device testing is not claimed.
 
 Live deployment verified at https://spire.example: running candidate image, healthy service, immutable release labels and existing read-write data volume confirmed; served HTML/JS/CSS match the tested build byte-for-byte. Application and full-volume backups passed verification and checksums; rollback image retained. Source push not authorized. Physical Android IME testing remains unverified.

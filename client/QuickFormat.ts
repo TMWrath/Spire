@@ -7,8 +7,9 @@ export const quickFormats:Record<string,{mark:string;label:string}>={
 };
 /** Exact, whitespace-delimited shortcuts; escaped text stays literal. */
 export function quickFormatMatch(before:string){
- const m=/(?:^|\s)@(bld|itl|stk|und)$/.exec(before);
- return m?{...quickFormats[m[1]],length:m[1].length+1}:null;
+ const m=/(?:^|\s)@(bld|itl|stk|und|hd[1-6])$/.exec(before);
+ if(!m)return null;
+ return m[1].startsWith('hd')?{mark:'',heading:Number(m[1][2]),label:'Heading '+m[1][2],length:4}:{...quickFormats[m[1]],heading:0,length:m[1].length+1};
 }
 const key=new PluginKey<string[]>('quickFormat');
 export const QuickFormat=Extension.create({
@@ -29,6 +30,7 @@ export const QuickFormat=Extension.create({
     if(!pending.length||!transactions.some(tr=>tr.docChanged))return null;
     let tr=state.tr;
     for(const name of pending){const mark=state.schema.marks[name];if(mark)tr=tr.removeStoredMark(mark);}
+    if(pending.some(name=>name.startsWith('hd'))&&state.selection.$from.parent.type.name==='heading'){const paragraph=state.schema.nodes.paragraph;if(paragraph)tr=tr.setNodeMarkup(state.selection.$from.before(),paragraph);}
     pending=[];return tr;
    },
    state:{init:()=>[],apply(tr,active){return tr.getMeta(key)??active;}},
@@ -39,8 +41,9 @@ export const QuickFormat=Extension.create({
      if($from.parent.type.spec.code||$from.marks().some(m=>m.type.name==='code'))return false;
      const match=quickFormatMatch($from.parent.textBetween(0,$from.parentOffset));
      if(!match)return false;
-     const mark=view.state.schema.marks[match.mark];if(!mark)return false;
      const active=key.getState(view.state)??[];
+     if(match.heading){const heading=view.state.schema.nodes.heading;if(!heading||!heading.spec.group?.includes('block'))return false;const parent=$from.node($from.depth-1);const index=$from.index($from.depth-1);if(!parent.canReplaceWith(index,index+1,heading))return false;view.dispatch(view.state.tr.delete(from-match.length,from).setNodeMarkup($from.before(),heading,{level:match.heading}).setMeta(key,[...active.filter(name=>!name.startsWith('hd')),'hd'+match.heading]));return true;}
+     const mark=view.state.schema.marks[match.mark];if(!mark)return false;
      view.dispatch(view.state.tr.delete(from-match.length,from).addStoredMark(mark.create()).setMeta(key,Array.from(new Set([...active,match.mark]))));
      return true;
     },
@@ -56,5 +59,5 @@ export const QuickFormat=Extension.create({
 });
 export function resetQuickFormat(editor:{view:EditorView}){editor.view.dispatch(editor.view.state.tr.setStoredMarks([]).setMeta(key,[]));}
 export function quickFormatLabel(editor:{state:EditorState}){
- return (key.getState(editor.state)??[]).map(name=>Object.values(quickFormats).find(f=>f.mark===name)?.label).filter(Boolean).join(' + ');
+ return (key.getState(editor.state)??[]).map(name=>name.startsWith('hd')?'Heading '+name.slice(2):Object.values(quickFormats).find(f=>f.mark===name)?.label).filter(Boolean).join(' + ');
 }
