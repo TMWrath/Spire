@@ -1,5 +1,17 @@
 # Spire — Todo
 
+## Quick actions — deployed
+
+- [x] Configurable empty-workspace tiles managed in Settings → Actions.
+- [x] User-defined label, destination folder, optional template and filename pattern.
+- [x] Unique file creation and immediate opening without prompting or arbitrary action limit.
+- [x] Synchronization, backup recovery, automated acceptance and live deployment verification.
+- [ ] Physical Android WebView acceptance; investigate intermittent unrelated table-suite failures.
+
+## Video extractor research — parked
+
+- [ ] Resume the YTDLnis/yt-dlp video-link support discussion later; no Spire implementation changes were made from that inspection.
+
 ## Project definition
 
 - [x] Capture the initial product vision

@@ -1,5 +1,12 @@
 # Spire — Features
 
+## Quick actions — deployed
+
+Configurable empty-workspace tiles managed in Settings → Actions: label, folder, optional template and filename pattern. Activation creates a collision-safe Markdown file and opens it without prompting. Actions synchronize with the account and survive backup recovery; creation requires a connection. No arbitrary action limit.
+
+Runtime revision `b061ef07781cb4d6da45aa3ee76f4464412bd736`, release `actions-runtime-fixed`, is live. Production build, 107 unit tests, desktop/touch acceptance and packaged-container activation passed. HTTPS homepage 200, health, served feature bundle, Docker health, release labels and existing writable volume verified. Broad browser runs each passed 105/106 with different intermittent table failures; both failures passed isolated reruns, including three formatting repetitions. Full browser suite is not reported green. Physical Android WebView remains untested. Separate extractor work excluded; no push.
+
+
 ## First-party video capture — deployed
 
 Deployed as `video-51bddf3` from code revision `51bddf3d8d0ad1df90742123096c89925d8f4dea` to https://spire.example. All 133 candidate assets matched the accepted build (service-worker ordering normalized with identical logic/precache set); served HTML and entry JS/CSS matched. Healthy container, HTTPS health, anonymous snapshot 401, existing writable data volume and loopback binding verified. Anonymous live sign-in loaded without page errors. Application/full-volume backups and checksums verified at `/srv/spire/backups/video-51bddf3-20261010T123313Z`; rollback image/config retained. No source push, authenticated production editing, physical WebView acceptance or rollback drill performed.
