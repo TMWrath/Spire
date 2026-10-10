@@ -1,3 +1,4 @@
+import {QuickFormat,quickFormatLabel,resetQuickFormat} from './QuickFormat';
 import './document-editor.css';
 import {tableOfContents} from './table-of-contents';
 import {hasPage,readPage,writePage} from './page-layout';
@@ -23,6 +24,7 @@ const PortableUnderline=Underline.extend({renderMarkdown:(node,h)=>`<u>${h.rende
 /** Unsupported dialect blocks are rendered, but their exact portable source is retained. */
 function BodyEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,onChange,onReady,onSource,label='Document editor',onActivate}:{label?:string;onActivate?:(editor:Editor)=>void;keyboardEnabled?:boolean;onBlur?:()=>void;note:Note;notes:Note[];attachments:string[];fileCss?:string;onChange:(content:string)=>void;onReady:(editor:Editor|null)=>void;onSource:()=>void}){
  const callbacks=useRef({note,notes,attachments,onBlur,onChange,onReady,onSource,onActivate});callbacks.current={note,notes,attachments,onBlur,onChange,onReady,onSource,onActivate};
+ const [quickLabel,setQuickLabel]=React.useState('');
  const mediaViews=useRef(new Set<()=>void>());
  const prefix=useRef(''),last=useRef(note.content),originals=useRef(new Map<string,string[]>()),loaded=useRef<Editor|null>(null);
  const load=(editor:Editor,source:string)=>{
@@ -39,7 +41,7 @@ function BodyEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,
    if(parsed.length===1){const key=JSON.stringify(parsed[0]);originals.current.set(key,[...(originals.current.get(key)??[]),raw]);}
    content.push(...parsed);
   }
-  editor.commands.setContent({type:'doc',content:content.length?content:[{type:'paragraph'}]},{emitUpdate:false});last.current=source;loaded.current=editor;
+  editor.commands.setContent({type:'doc',content:content.length?content:[{type:'paragraph'}]},{emitUpdate:false});resetQuickFormat(editor);last.current=source;loaded.current=editor;
  };
  const Preserved=Node.create({name:'preservedBlock',group:'block',atom:true,selectable:true,draggable:false,addAttributes:()=>({source:{default:'',rendered:false}}),parseHTML:()=>[],renderHTML:()=>['div',{'data-preserved-block':'true'}],renderMarkdown:node=>String(node.attrs?.source??'').trimEnd(),addNodeView:()=>({node})=>{
   const dom=document.createElement('div');dom.className='preserved-document-block';dom.contentEditable='false';
@@ -47,7 +49,7 @@ function BodyEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,
   dom.append(view);
   return {dom,stopEvent:()=>true,destroy:()=>{mediaViews.current.delete(refresh);}};
  }});
- const editor=useEditor({onFocus:({editor})=>callbacks.current.onActivate?.(editor),onBlur:()=>callbacks.current.onBlur?.(),extensions:[PortableHighlight,Preserved,PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false}}),TaskList,TaskItem.configure({nested:true}),Markdown],content:'',editorProps:{attributes:{role:'textbox','aria-label':label,'aria-multiline':'true',class:'document-writing-surface'},handlePaste:(view,event)=>{const text=event.clipboardData?.getData('text/plain');if(text===undefined)return false;event.preventDefault();view.dispatch(view.state.tr.insertText(text));return true;}},onCreate:({editor})=>{if(loaded.current!==editor)load(editor,callbacks.current.note.content);callbacks.current.onReady(editor);},onUpdate:({editor})=>{
+ const editor=useEditor({onFocus:({editor})=>callbacks.current.onActivate?.(editor),onBlur:()=>callbacks.current.onBlur?.(),onTransaction:({editor})=>setQuickLabel(quickFormatLabel(editor)),extensions:[QuickFormat,PortableHighlight,Preserved,PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false}}),TaskList,TaskItem.configure({nested:true}),Markdown],content:'',editorProps:{attributes:{role:'textbox','aria-label':label,'aria-multiline':'true',class:'document-writing-surface'},handlePaste:(view,event)=>{const text=event.clipboardData?.getData('text/plain');if(text===undefined)return false;event.preventDefault();view.dispatch(view.state.tr.insertText(text));return true;}},onCreate:({editor})=>{if(loaded.current!==editor)load(editor,callbacks.current.note.content);callbacks.current.onReady(editor);},onUpdate:({editor})=>{
   const used=new Map<string,number>();const blocks=(editor.getJSON().content??[]).map(node=>{if(node.type==='preservedBlock')return String(node.attrs?.source??'').trimEnd();const key=JSON.stringify(node),i=used.get(key)??0;used.set(key,i+1);return (originals.current.get(key)?.[i]??editor.markdown!.serialize({type:'doc',content:[node]})).trimEnd();});
   const source=prefix.current+blocks.join('\n\n');last.current=source;callbacks.current.onChange(source);
  }});
@@ -57,7 +59,7 @@ function BodyEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,
  useEffect(()=>{if(editor)editor.view.dom.setAttribute("inputmode",keyboardEnabled?"text":"none");},[editor,keyboardEnabled]);
  useEffect(()=>()=>callbacks.current.onReady(null),[]);
  let scoped='';try{if(fileCss)scoped=scopeFileCss(fileCss,note.id);}catch{}
- return <>{scoped&&<style>{scoped}</style>}<EditorContent editor={editor} className="preview document-editor" data-style-scope={note.id}/></>;
+ return <>{scoped&&<style>{scoped}</style>}{quickLabel&&<small role="status" className="quick-format-status">{quickLabel} active · Enter to stop</small>}<EditorContent editor={editor} className="preview document-editor" data-style-scope={note.id}/></>;
 }
 export function DocumentEditor(props:Parameters<typeof BodyEditor>[0]){
  const bodyRef=useRef<Editor|null>(null),active=useRef<'body'|'header'|'footer'>('body');
