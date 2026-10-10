@@ -1,5 +1,5 @@
 import {quickActionInputSchema,actionStem} from '../shared/quick-actions.ts';
-import {fullTemplates} from '../client/full-templates.ts';
+import {fullTemplates} from '../shared/full-templates.ts';
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
