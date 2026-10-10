@@ -8,4 +8,4 @@ Saved source uses ordinary Markdown bold/italic/strike and portable `<u>` HTML f
 
 Verification: production build, 91 unit/API tests, focused quick-format browser test and complete 97-test browser suite passed. Browser coverage exercises all four styles, exact persisted source, Enter reset, code/unknown-token protection, narrow-screen containment, simulated mobile beforeinput and save/reload. Real Android IME/device testing is not claimed.
 
-Deployment pending; source push not authorized.
+Live deployment verified at https://spire.example: running candidate image, healthy service, immutable release labels and existing read-write data volume confirmed; served HTML/JS/CSS match the tested build byte-for-byte. Application and full-volume backups passed verification and checksums; rollback image retained. Source push not authorized. Physical Android IME testing remains unverified.
