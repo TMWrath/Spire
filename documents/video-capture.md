@@ -1,6 +1,9 @@
 # Video capture
 
-## First-party video capture
+## First-party video capture — deployed
+
+Deployed as `video-51bddf3` from code revision `51bddf3d8d0ad1df90742123096c89925d8f4dea` to https://spire.example. All 133 candidate assets matched the accepted build (service-worker ordering normalized with identical logic/precache set); served HTML and entry JS/CSS matched. Healthy container, HTTPS health, anonymous snapshot 401, existing writable data volume and loopback binding verified. Anonymous live sign-in loaded without page errors. Application/full-volume backups and checksums verified at `/srv/spire/backups/video-51bddf3-20261010T123313Z`; rollback image/config retained. No source push, authenticated production editing, physical WebView acceptance or rollback drill performed.
+
 
 Media → Video capture opens local videos or accessible public video feeds. The Spire-owned interface provides playback, seeking, speed controls, approximate 1/30-second stepping, frame preview, and clips up to 30 seconds / 8 MB. Insertion preserves the file/template cursor and saves a durable attachment plus reusable Source with timestamp citation. Source and attachment persistence is atomic and capture retries are idempotent. Export/import preserves media and readable Markdown/HTML citations.
 
