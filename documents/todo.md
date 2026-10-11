@@ -1,5 +1,10 @@
 # Spire — Todo
 
+## Shared UI / theme library — future
+
+- [ ] Create a reusable Spire theme/component library preserving approved surfaces, typography, spacing, icons, controls, menus, focus states and motion.
+- [ ] Use the Source type dropdown as the canonical dropdown design; shared changes must propagate consistently.
+
 ## Quick actions — deployed
 
 - [x] Configurable empty-workspace tiles managed in Settings → Actions.

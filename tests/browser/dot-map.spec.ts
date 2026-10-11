@@ -1,3 +1,4 @@
+import {selectDropdown} from './dropdown';
 import {randomUUID} from 'node:crypto';
 import {test,expect} from './fixtures';
 test('approved original dot renderer selects actual dots and pauses rendered motion',async({page,context})=>{
@@ -24,7 +25,7 @@ test('real UUID files keep their directional map and camera across sync; opening
  await page.reload();const map=page.getByRole('region',{name:'Reliquary mind map'}),surface=map.locator('canvas');await expect(map.locator('.mind-node')).toHaveCount(2);await expect(map).toHaveAttribute('data-file-count','2');await expect(map).toHaveAttribute('data-connection-count','1');
  const before=await (await context.request.get('/api/snapshot')).json();await surface.focus();await page.keyboard.press('ArrowRight');const rotated=await surface.getAttribute('data-rotation');expect(rotated).not.toBe('1,0,0,0,1,0,0,0,1');
  const refresh=page.waitForResponse(r=>r.url().endsWith('/api/snapshot')&&r.status()===200);await page.getByRole('button',{name:'Sync now',exact:true}).focus();await page.keyboard.press('Enter');await refresh;await expect(page.locator('.sidebar')).toBeHidden();await page.getByRole('button',{name:'Toggle folders',exact:true}).click();await page.waitForTimeout(100);await expect(surface).toHaveAttribute('data-rotation',rotated!);
- await map.getByLabel('Select a file in the map').selectOption(source);await expect(map.getByText('0 references · 1 referencing files')).toBeVisible();
- await map.getByLabel('Select a file in the map').selectOption(target);await expect(map.getByText('1 references · 0 referencing files')).toBeVisible();await map.getByRole('button',{name:'Open file'}).click();await expect(page.getByRole('textbox',{name:'Document editor',exact:true})).toContainText('Source');await page.locator('.editor-tabs').getByRole('button',{name:'Source',exact:true}).click();await expect(page.getByLabel('Markdown source')).toHaveValue('[[Source]]');
+ await selectDropdown(map.getByLabel('Select a file in the map'),source);await expect(map.getByText('0 references · 1 referencing files')).toBeVisible();
+ await selectDropdown(map.getByLabel('Select a file in the map'),target);await expect(map.getByText('1 references · 0 referencing files')).toBeVisible();await map.getByRole('button',{name:'Open file'}).click();await expect(page.getByRole('textbox',{name:'Document editor',exact:true})).toContainText('Source');await page.locator('.editor-tabs').getByRole('button',{name:'Source',exact:true}).click();await expect(page.getByLabel('Markdown source')).toHaveValue('[[Source]]');
  expect(await (await context.request.get('/api/snapshot')).json()).toEqual(before);expect(errors).toEqual([]);
 });

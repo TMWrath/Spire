@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {dictionaryEntries,dictionaryFiles,relativeTermTarget,termLinkMarkdown} from '../client/dictionary.ts';
+import {appendDictionaryEntry,dictionaryEntries,dictionaryFiles,dictionaryPageMarkdown,relativeTermTarget,termLinkMarkdown} from '../client/dictionary.ts';
 import type {Note} from '../shared/model.ts';
 const note=(path:string,content:string):Note=>({id:path,path,content,rev:1,deleted:false,time:'2026-01-01T00:00:00.000Z',history:[]});
 
@@ -22,4 +22,16 @@ test('ignores the dictionary title and disambiguates duplicate heading anchors',
 test('builds portable relative markdown links and escapes labels',()=>{
  assert.equal(relativeTermTarget('Writing/Chapters/One.md','Reference/Terms.md','aphelion'),'../../Reference/Terms.md#aphelion');
  assert.equal(termLinkMarkdown('its [farthest] point','../../Reference/Terms.md#aphelion'),'[its \\[farthest\\] point](../../Reference/Terms.md#aphelion)');
+});
+
+test('creates a portable dictionary page and appends a term',()=>{
+ const page=dictionaryPageMarkdown('Story terms');
+ assert.equal(page,'---\nspire_type: dictionary\n---\n\n# Story terms\n');
+ assert.equal(appendDictionaryEntry(page,'Dragon fire','Heat breathed by a dragon.'),'---\nspire_type: dictionary\n---\n\n# Story terms\n\n## Dragon fire\nHeat breathed by a dragon.\n');
+});
+
+test('rejects duplicate or structurally unsafe dictionary terms',()=>{
+ const page=dictionaryPageMarkdown('Terms')+'\n## Echo\nFirst meaning.\n';
+ assert.throws(()=>appendDictionaryEntry(page,' echo ','Second meaning.'),/already exists/i);
+ assert.throws(()=>appendDictionaryEntry(page,'Bad\nheading','Definition'),/single line/i);
 });

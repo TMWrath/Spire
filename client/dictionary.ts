@@ -36,6 +36,19 @@ export function termLinkMarkdown(label:string,target:string){
  return `[${safeLabel}](${encodeURI(target).replace(/\(/g,'%28').replace(/\)/g,'%29')})`;
 }
 
+export function dictionaryPageMarkdown(title:string){
+ const clean=title.trim().replace(/[\r\n]+/g,' ');if(!clean)throw new Error('Enter a dictionary page name.');
+ return `---\nspire_type: dictionary\n---\n\n# ${clean}\n`;
+}
+
+export function appendDictionaryEntry(content:string,term:string,definition:string){
+ const cleanTerm=term.trim();if(!cleanTerm)throw new Error('Enter a word or term.');if(/[\r\n]/.test(cleanTerm))throw new Error('A term must stay on a single line.');
+ const file={id:'dictionary',path:'Dictionary.md',content,rev:0,deleted:false,time:'',history:[]} as Note;
+ if(dictionaryEntries(file).some(entry=>headingId(entry.term)===headingId(cleanTerm)))throw new Error('That term already exists in this dictionary.');
+ const cleanDefinition=definition.trim();if(!cleanDefinition)throw new Error('Enter a definition.');
+ return content.replace(/\s*$/,'')+`\n\n## ${cleanTerm}\n${cleanDefinition}\n`;
+}
+
 export function dictionaryEntryForLink(source:Note,target:string,heading:string,notes:Note[]){
  const clean=target.replace(/\.md$/i,'').toLowerCase(),parts=source.path.split('/').slice(0,-1);
  for(const p of target.split('/')){if(p==='..')parts.pop();else if(p!=='.')parts.push(p);}
