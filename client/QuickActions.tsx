@@ -1,6 +1,6 @@
 import {ThemedSelect} from './ThemedSelect';
 import {useRef,useState} from 'react';
-import {FilePlus,ArrowUp,ArrowDown} from 'lucide-react';
+import {FilePlus,ArrowUp,ArrowDown,ChevronRight} from 'lucide-react';
 import {type QuickAction,type QuickActionInput,quickActionInputSchema} from '../shared/quick-actions';
 import {api,engine} from './sync';
 import {fullTemplates} from './full-templates';
@@ -16,5 +16,5 @@ export function QuickActionsSettings(){
 export function QuickActionTiles({onActivate,onManage}:{onActivate:(action:QuickAction,op:string)=>Promise<unknown>;onManage:()=>void}){
  const [busy,setBusy]=useState(false),[error,setError]=useState('');const lock=useRef(false);const pending=useRef<{id:string;op:string}|null>(null);
  const activate=async(action:QuickAction)=>{if(lock.current)return;lock.current=true;setBusy(true);setError('');if(pending.current?.id!==action.id)pending.current={id:action.id,op:crypto.randomUUID()};try{await onActivate(action,pending.current.op);pending.current=null;}catch(e){setError(e instanceof Error?e.message:'File could not be created');}finally{lock.current=false;setBusy(false);}};
- return <div className="quick-actions-home"><h2>Quick actions</h2>{error&&<p role="alert">{error}</p>}<div className="quick-action-tiles">{(engine.cache.snapshot.quickActions??[]).map(action=><button key={action.id} disabled={busy} onClick={()=>void activate(action)}><FilePlus aria-hidden="true"/><strong>{action.label}</strong><small>{action.folder}</small></button>)}</div>{!(engine.cache.snapshot.quickActions??[]).length&&<p>Set up one-tap file creation for your writing.</p>}<button disabled={busy} onClick={onManage}>Manage quick actions</button></div>;
+ return <div className="quick-actions-home"><h2>Quick actions</h2>{error&&<p role="alert">{error}</p>}<div className="quick-action-tiles">{(engine.cache.snapshot.quickActions??[]).map(action=><button className="quick-action-button" key={action.id} disabled={busy} onClick={()=>void activate(action)}><span className="quick-action-icon"><FilePlus aria-hidden="true"/></span><span className="quick-action-copy"><strong>{action.label}</strong><small>{action.folder}</small></span><ChevronRight className="quick-action-chevron" aria-hidden="true"/></button>)}</div>{!(engine.cache.snapshot.quickActions??[]).length&&<p>Set up one-tap file creation for your writing.</p>}<button className="manage-quick-actions" disabled={busy} onClick={onManage}>Manage quick actions</button></div>;
 }
