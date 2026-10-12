@@ -15,8 +15,8 @@ type Device = {id:string;name:string;created:string;revoked:boolean};
 type Session = {device:string;csrf:string;expires:number};
 type Auth = {owner?:{id:string;username:string;salt:string;hash:string};devices:Device[];sessions:Record<string,Session>};
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
-export function createApp(root:string,origin:string){
- const app=express(),store=new Store(root);const url=new URL(origin);if(url.origin!==origin)throw new Error('SPIRE_ORIGIN must be an exact origin');if(url.protocol!=='https:'&&!['127.0.0.1','localhost','[::1]'].includes(url.hostname))throw new Error('Non-loopback origins require HTTPS');
+export function createApp(root:string,origin:string,options:{contentDirectory?:string;staticDirectory?:string}={}){
+ const app=express(),store=new Store(root,options);const url=new URL(origin);if(url.origin!==origin)throw new Error('SPIRE_ORIGIN must be an exact origin');if(url.protocol!=='https:'&&!['127.0.0.1','localhost','[::1]'].includes(url.hostname))throw new Error('Non-loopback origins require HTTPS');
  app.set('trust proxy',1);
  let auth:Auth=store.load('auth.json')??{devices:[],sessions:{}};const saveAuth=()=>atomic(store.file('auth.json'),JSON.stringify(auth));
  app.disable('x-powered-by');app.use(helmet({contentSecurityPolicy:{directives:{defaultSrc:["'self'"],scriptSrc:["'self'"],styleSrc:["'self'","'unsafe-inline'"],imgSrc:["'self'",'data:','blob:'],mediaSrc:["'self'",'blob:'],objectSrc:["'none'"],frameSrc:["'none'"],upgradeInsecureRequests:url.protocol==='https:'?[]:null}},strictTransportSecurity:url.protocol==='https:'?undefined:false}));
@@ -69,8 +69,8 @@ export function createApp(root:string,origin:string){
  app.post('/api/import',express.raw({type:'application/zip',limit:'25mb'}),(req,res)=>{if(!Buffer.isBuffer(req.body))throw new HttpError(400,'Expected ZIP');res.json(store.importFiles(unpack(req.body),res.locals.device.id));});
  app.get('/api/export',(_req,res)=>res.type('application/zip').attachment('spire-vault.zip').send(Buffer.from(exportVault(store))));
  app.use('/api',(_req,res)=>res.status(404).json({error:'Not found'}));
- app.use(express.static(path.resolve('dist'),{setHeaders:(res,p)=>{if(p.endsWith('sw.js')||p.endsWith('index.html'))res.setHeader('Cache-Control','no-cache');}}));
- app.get('/',(_req,res)=>res.sendFile(path.resolve('dist/index.html')));
+ app.use(express.static(path.resolve(options.staticDirectory??'dist'),{setHeaders:(res,p)=>{if(p.endsWith('sw.js')||p.endsWith('index.html'))res.setHeader('Cache-Control','no-cache');}}));
+ app.get('/',(_req,res)=>res.sendFile(path.resolve(options.staticDirectory??'dist','index.html')));
  app.use((e:unknown,_req:Request,res:Response,_next:NextFunction)=>{if(e instanceof z.ZodError)return res.status(400).json({error:e.issues.map(i=>i.message).join('; ')});if(e instanceof HttpError)return res.status(e.status).json({error:e.message,details:e.details});const status=(e as {status?:number}).status;if(status===413)return res.status(413).json({error:'Payload too large'});if(status===400)return res.status(400).json({error:'Invalid request body'});console.error('Request failed:',e instanceof Error?e.name:'unknown');res.status(500).json({error:'Storage or archive error; no success acknowledged'});});
  return{app,store};
 }

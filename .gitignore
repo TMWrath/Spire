@@ -8,3 +8,10 @@ playwright-report/
 artifacts/
 .env
 *.log
+
+# Generated desktop packages and acceptance captures
+desktop-dist/
+release-desktop/
+release-desktop-final/
+desktop-launcher.png
+windows-server.png
