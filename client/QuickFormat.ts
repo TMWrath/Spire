@@ -5,9 +5,14 @@ export const quickFormats:Record<string,{mark:string;label:string}>={
  bld:{mark:'bold',label:'Bold'},itl:{mark:'italic',label:'Italics'},
  stk:{mark:'strike',label:'Strikethrough'},und:{mark:'underline',label:'Underline'},
 };
+export const quickFormatHints=[
+ ...Object.entries(quickFormats).map(([code,format])=>({code:'@'+code,label:format.label,detail:`Type ${'@'+code} followed by Space, then keep writing. Press Enter to stop.`})),
+ ...Array.from({length:6},(_,index)=>{const level=index+1;return {code:`@hd${level}`,label:`Heading ${level}`,detail:`Type @hd${level} followed by Space, then keep writing. Press Enter to return to normal text.`};}),
+];
 /** Exact, whitespace-delimited shortcuts; escaped text stays literal. */
 export function quickFormatMatch(before:string){
- const m=/(?:^|\s)@(bld|itl|stk|und|hd[1-6])$/.exec(before);
+ const codes=[...Object.keys(quickFormats),'hd[1-6]'].join('|');
+ const m=new RegExp(`(?:^|\\s)@(${codes})$`).exec(before);
  if(!m)return null;
  return m[1].startsWith('hd')?{mark:'',heading:Number(m[1][2]),label:'Heading '+m[1][2],length:4}:{...quickFormats[m[1]],heading:0,length:m[1].length+1};
 }
