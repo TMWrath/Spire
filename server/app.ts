@@ -55,6 +55,9 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
  app.post('/api/sources',(req,res)=>res.status(201).json(store.saveSource(sourceInputSchema.parse(req.body))));
  app.put('/api/sources/:id',(req,res)=>{const body=sourceInputSchema.extend({expectedRevision:z.number().int().positive()}).parse(req.body);const {expectedRevision,...input}=body;res.json(store.saveSource(input,String(req.params.id),expectedRevision));});
  app.delete('/api/sources/:id',(req,res)=>res.json(store.deleteSource(String(req.params.id),z.coerce.number().int().positive().parse(req.query.revision))));
+ app.post('/api/local/refresh',(_req,res)=>{store.refreshDirectory();res.json({ok:true,warnings:[]});});
+ app.get('/api/local/recovery',(_req,res)=>res.json({items:store.recoveryItems()}));
+ app.post('/api/local/reconcile',(req,res)=>{const b=z.object({token:z.string().uuid(),action:z.enum(['restore','adopt'])}).parse(req.body);res.json(store.reconcileDirectory(b.token,b.action));});
  app.get('/api/snapshot',(_req,res)=>res.json({seq:store.state.seq,quickActions:store.state.quickActions??[],sources:store.state.sources??[],templates:store.state.templates??[],notes:Object.values(store.state.notes),folders:store.state.folders??[],styles:store.state.styles??{},conflicts:store.state.conflicts,attachments:store.state.attachments.map(a=>({path:a.path,size:Buffer.from(a.data,'base64').length}))}));
  app.put('/api/styles',(req,res)=>{const body=z.object({path:safePath.refine(p=>p.toLowerCase().endsWith('.css'),'Stylesheets must end in .css'),content:z.string().max(100_000)}).parse(req.body);res.json(store.putStyle(body.path,body.content));});
  app.post('/api/folders',(req,res)=>res.status(201).json(store.createFolder(z.object({path:safePath}).parse(req.body).path)));

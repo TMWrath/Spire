@@ -4,10 +4,10 @@ let editorBusy=()=>true,lastInput=0;
 export function setWorkspaceBusyCheck(check:()=>boolean){editorBusy=check;}
 export function workspaceRefreshBlocked(){return editorBusy()||mounted.busy||Date.now()-lastInput<2000;}
 export function markWorkspaceInput(){lastInput=Date.now();}
-export function androidLocalRecoveryAvailable(){return !!(globalThis as any).spireLocalWorkspace;}
+export function androidLocalRecoveryAvailable(){return true;} // Shared directory recovery API: Android, desktop and hosted Spire.
 function announce(warnings:unknown){(globalThis as any).spireWorkspaceWarnings=warnings;dispatchEvent(new Event('spire-workspace-warnings'));}
 export async function localRecoveryAction(action:'refresh'|'reconcile'|'preview',body?:{token:string;action:'adopt'|'restore'}):Promise<RecoveryItem[]>{
- if(!androidLocalRecoveryAvailable())throw Error('Recovery is available only for this Android Local folder.');
+ if(!androidLocalRecoveryAvailable())throw Error('Directory recovery is unavailable for this workspace.');
  if(workspaceRefreshBlocked())throw Error('Finish saving and close editor dialogs before refreshing or recovering Local files.');
  return localEngine.exclusive(async()=>{
   if(workspaceRefreshBlocked()||localEngine.cache.outbox.length||localEngine.cache.snapshot.conflicts.length)throw Error('Pending edits or conflicts are retained. Save, sync, and resolve them before Local recovery.');
