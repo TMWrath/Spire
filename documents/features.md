@@ -484,3 +484,25 @@ Source type picker deployed and served HTML/JS/CSS verified equal to the accepte
 
 ## Home navigation — live
 Added a Home icon beside Spire in the top header; returns from writing, Settings and Calendar to the main page, saving the current file locally first. Removed / T.M. Wrath from header and sign-in branding. Release home-navigation (implementation 7a41d44); backup home-navigation.json verified, container healthy, original writable data volume preserved, HTTPS health and exact tested/served JS equality verified. Build and 98 unit tests passed; six focused desktop/touch tests passed. Earlier broad-suite limitations remain; physical Android WebView testing not performed. Android receives this shared UI via its configured hosted WebView; no native change or APK required. No source push.
+
+## Unified Local + Server workspace — requested, not implemented
+
+the project owner requires server sign-in to remain discoverable in Settings after opening a local folder, without replacing that folder. One sidebar contains separate Local and Server trees, with one editor and cross-storage file movement. Windows (current Electron implementation in /workspace/spire/desktop, not the historical WPF preview) must match Android.
+
+Required acceptance:
+- Settings offers HTTPS server connection/sign-in while retaining the selected local folder.
+- Connected workspace displays Local and Server simultaneously, clearly labeled; same filenames in different mounts remain independent.
+- Users explicitly move files in both directions using a unified filesystem interaction; provide a touch-accessible Move action as well as desktop drag/drop.
+- Local data is never implicitly uploaded or mirrored; disconnect/sign-out does not remove local files or revoke the selected local folder.
+- Preserve the full canonical editor, local offline operation and persisted workspace configuration.
+- Verify Android and Windows parity; do not claim an updated build or live deployment from planning alone.
+
+Aphelion safety recommendations:
+- Destination write and verification precede source removal; interruption retains recoverable transfer state.
+- Conflicts never silently overwrite; pending source edits and concurrent external edits are protected.
+- Transfer linked attachments deliberately and preserve relative references; never move opaque references without acquiring and verifying their actual bytes.
+- Preserve origin-scoped credentials and limit local-folder privileges to the trusted bundled client; remote pages gain no direct SAF/filesystem bridge.
+
+the project owner selected: cache previously opened Server files for offline editing, then synchronize queued edits back with conflict protection. Local files remain independently offline-capable. Server caches do not turn local-folder files into server files, and whole-server replication is not implied. Conflicts must preserve both versions rather than silently overwriting either.
+
+Supersedes the earlier separate-choice-only UI contract, not the prohibition on implicit uploads. Implementation, tests, builds and deployment are pending.

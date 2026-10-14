@@ -8,10 +8,10 @@ let app;
 delete process.env.ELECTRON_RUN_AS_NODE;
 try{
  app=await electron.launch({executablePath:process.env.SPIRE_TEST_EXECUTABLE,args:[...(process.platform==='linux'?['--no-sandbox']:[]),...(process.env.SPIRE_TEST_EXECUTABLE?[]:[path.resolve('desktop-dist/main.cjs')]),'--user-data-dir='+path.join(root,'profile')],env:{...process.env}});
- const launcher=await app.firstWindow();await launcher.locator('#local').waitFor();
+ const launcher=await app.firstWindow();launcher.setDefaultTimeout(15000);await launcher.locator('#local').waitFor();console.log('Desktop launcher ready');
  const folder=path.join(root,'files');fs.mkdirSync(folder);fs.mkdirSync(path.join(folder,'Writing'));fs.writeFileSync(path.join(folder,'Writing','existing.md'),'Existing file preserved');
  await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},folder);
- const opened=app.waitForEvent('window');await launcher.locator('#local').click();const workspace=await opened;
+ const opened=app.waitForEvent('window');await launcher.locator('#local').click();const workspace=await opened;workspace.setDefaultTimeout(15000);console.log('Local window opened');
  await workspace.waitForLoadState('domcontentloaded');await workspace.waitForFunction(()=>document.body.innerText.includes('Spire'));
  assert.equal(await workspace.evaluate(()=>typeof window.require),'undefined');
  assert.equal(await workspace.evaluate(()=>typeof window.spireDesktop),'undefined');
@@ -24,17 +24,18 @@ try{
   const saved=await fetch('/api/mutate',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':auth.csrf},body:JSON.stringify({op:crypto.randomUUID(),id:file.id,base:file.rev,path:file.path,content:'Edited on desktop',deleted:false})});
   return {setup:setup.status,save:saved.status};
  });assert.deepEqual(result,{setup:200,save:200});assert.equal(fs.readFileSync(path.join(folder,'Writing','existing.md'),'utf8'),'Edited on desktop');
+ console.log('Local mutation verified');
  // Keep local host alive, connect through the server entry point: separate cookies/cache.
  await launcher.locator('#server').fill(origin);const remoteOpened=app.waitForEvent('window');await launcher.locator('#connect').click();const remote=await remoteOpened;await remote.waitForLoadState('domcontentloaded');
  assert.equal(await remote.evaluate(async()=> (await fetch('/api/me')).status),401);
  assert.equal(await workspace.evaluate(async()=> (await fetch('/api/me')).status),200);
- await remote.close();await workspace.close();
+ console.log('Remote cookie isolation verified');await remote.close();console.log('Remote closed');await workspace.close();console.log('Local closed');
  await launcher.waitForTimeout(200);
  const reopened=app.waitForEvent('window');await launcher.locator('#local').click();const again=await reopened;await again.waitForLoadState('domcontentloaded');assert.equal(new URL(again.url()).origin,origin);
  assert.equal(await again.evaluate(async()=> (await fetch('/api/me')).status),200);
  assert.equal(fs.readFileSync(path.join(folder,'Writing','existing.md'),'utf8'),'Edited on desktop');
  await again.close();
- const backup=path.join(root,'backup.json');
+ console.log('Local reopen verified');const backup=path.join(root,'backup.json');
  await app.evaluate(({dialog},backup)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:backup});},backup);
  await launcher.locator('#backup').click();await launcher.waitForFunction(()=>document.querySelector('#status').textContent.includes('Backup verified'));
  assert.ok(fs.existsSync(backup));

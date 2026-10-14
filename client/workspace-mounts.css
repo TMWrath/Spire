@@ -1,0 +1,12 @@
+/* Storage boundaries remain visible in the same sidebar, not separate modes. */
+.mount-tree{border-top:1px solid #333;padding:10px 0;min-width:0}
+.mount-heading{display:flex;gap:8px;align-items:center;width:100%;text-align:left;padding:8px;border:1px solid transparent}
+.active-mount>.mount-heading{border-color:#666;background:#191919}
+.mount-heading svg{width:17px;height:17px}
+.mount-status{display:block;padding:4px 8px 10px;color:#aaa;font-size:11px;overflow-wrap:anywhere}
+.mount-move{margin-left:auto;padding:3px!important;min-height:24px}
+.mount-tree summary{display:flex;align-items:center;gap:5px}
+.mount-tree .note-link{width:100%;text-align:left}
+.server-settings{border-bottom:1px solid #333;padding-bottom:24px;margin-bottom:24px}
+.server-settings form{max-width:520px}
+.mount-tree small{overflow-wrap:anywhere}

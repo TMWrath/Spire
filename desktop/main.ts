@@ -1,5 +1,7 @@
 import {app,BrowserWindow,dialog,ipcMain,Menu,shell,session} from 'electron';
 import {createBackup,restoreBackup} from '../server/backup.ts';
+import {nativeRemoteRequest} from './remote-transport';
+import {createHash} from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -10,6 +12,7 @@ let launcher:BrowserWindow;
 const hosts=new Map<string,Awaited<ReturnType<typeof startLocalWorkspace>>>();
 const windows=new Map<string,BrowserWindow>();
 const opening=new Set<string>();
+const localRenderers=new Map<number,string>();
 const root=path.resolve(__dirname,'..');
 const launcherURL=pathToFileURL(path.join(__dirname,'launcher.html')).href;
 const safeError=(error:unknown)=>error instanceof Error?error.message:'Unable to open workspace';
@@ -31,8 +34,8 @@ async function openWorkspace(kind:'local'|'server',identity:string){
   const origin=host?.origin??identity;
   if(host)hosts.set(key,host);
   const ses=session.fromPartition(key);
-  win=new BrowserWindow({width:1400,height:920,minWidth:420,minHeight:500,title:`Spire — ${kind==='local'?identity:origin}`,backgroundColor:'#090909',webPreferences:rendererPreferences(key)});
-  const owned=win;windows.set(key,owned);
+  win=new BrowserWindow({width:1400,height:920,minWidth:420,minHeight:500,title:`Spire — ${kind==='local'?identity:origin}`,backgroundColor:'#090909',webPreferences:{...rendererPreferences(key),...(host?{preload:path.join(__dirname,'mount-preload.cjs')}:{})}});
+  const owned=win;windows.set(key,owned);if(host)localRenderers.set(owned.webContents.id,origin);
   ses.setPermissionCheckHandler((contents,permission,requestOrigin)=>contents===owned.webContents&&allowsPermission(origin,requestOrigin,permission));
   ses.setPermissionRequestHandler(async(contents,permission,callback,details)=>{
    if(contents!==owned.webContents||!allowsPermission(origin,details.requestingUrl,permission)){callback(false);return;}
@@ -41,7 +44,8 @@ async function openWorkspace(kind:'local'|'server',identity:string){
   owned.webContents.on('will-navigate',(event,url)=>{if(!allowsNavigation(origin,url)){event.preventDefault();void external(url,owned);}});
   owned.webContents.on('will-redirect',(event,url)=>{if(!allowsNavigation(origin,url))event.preventDefault();});
   owned.webContents.setWindowOpenHandler(({url})=>{void external(url,owned);return {action:'deny'};});
-  owned.on('closed',()=>{windows.delete(key);void host?.close().finally(()=>hosts.delete(key));});
+  const rendererId=owned.webContents.id;
+  owned.on('closed',()=>{localRenderers.delete(rendererId);windows.delete(key);void host?.close().finally(()=>hosts.delete(key));});
   owned.webContents.on('did-fail-load',(_event,code,_description,_url,isMainFrame)=>{
    if(isMainFrame&&code!==-3&&!owned.isDestroyed())void dialog.showMessageBox(owned,{type:'error',message:'Spire could not load this workspace.',detail:'Check the server address and connection. Your local files have not been moved. Use View → Reload to retry or close this window to return to the launcher.'});
   });
@@ -56,6 +60,7 @@ function showLauncher(){if(launcher&&!launcher.isDestroyed()){launcher.show();la
  void launcher.loadURL(launcherURL);
 }
 function trusted(event:Electron.IpcMainInvokeEvent){if(event.sender!==launcher?.webContents||event.senderFrame?.url!==launcherURL)throw new Error('Untrusted desktop request');}
+ipcMain.handle('spire:mounted-request',async(event,input:unknown)=>{const expected=localRenderers.get(event.sender.id);if(!expected||event.senderFrame!==event.sender.mainFrame||new URL(event.senderFrame.url).origin!==expected)throw Error('Untrusted mounted-workspace request');return nativeRemoteRequest(input,(origin,url,options)=>session.fromPartition('persist:spire-mounted-server-'+createHash('sha256').update(origin).digest('hex')).fetch(url,options));});
 ipcMain.handle('spire:local',async event=>{trusted(event);try{const result=await dialog.showOpenDialog(launcher,{title:'Open Spire folder',properties:['openDirectory','createDirectory']});if(!result.canceled)await openWorkspace('local',result.filePaths[0]);return {ok:true};}catch(error){return {ok:false,error:safeError(error)};}});
 ipcMain.handle('spire:server',async(event,value:unknown)=>{trusted(event);try{if(typeof value!=='string'||value.length>2048)throw new Error('Invalid server address');await openWorkspace('server',value);return {ok:true};}catch(error){return {ok:false,error:safeError(error)};}});
 ipcMain.handle('spire:backup',async event=>{trusted(event);try{

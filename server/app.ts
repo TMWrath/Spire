@@ -1,5 +1,6 @@
 import {quickActionInputSchema} from '../shared/quick-actions.ts';
 import {registerVideo} from './video.ts';
+import {readTransfer,createTransfer,removeTransfer} from './transfer.ts';
 import express, { type Request, type Response, type NextFunction } from 'express';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
@@ -22,7 +23,7 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
  app.disable('x-powered-by');app.use(helmet({contentSecurityPolicy:{directives:{defaultSrc:["'self'"],scriptSrc:["'self'"],styleSrc:["'self'","'unsafe-inline'"],imgSrc:["'self'",'data:','blob:'],mediaSrc:["'self'",'blob:'],objectSrc:["'none'"],frameSrc:["'none'"],upgradeInsecureRequests:url.protocol==='https:'?[]:null}},strictTransportSecurity:url.protocol==='https:'?undefined:false}));
  app.use((req,res,next)=>{if(req.headers.host!==url.host)return res.status(403).json({error:'Host rejected'});next();});
  app.use('/api',(req,res,next)=>{res.set('Cache-Control','no-store');if(!['GET','HEAD'].includes(req.method)){const started=Date.now();res.on('finish',()=>console.info(JSON.stringify({event:'api_mutation',method:req.method,path:req.path,status:res.statusCode,durationMs:Date.now()-started})));}if(!['GET','HEAD'].includes(req.method)&&req.headers.origin!==origin)return res.status(403).json({error:'Origin rejected'});next();});
- app.use(cookieParser());app.use(express.json({limit:'2mb'}));
+ app.use(cookieParser());app.use('/api/transfers',express.json({limit:'48mb'}));app.use(express.json({limit:'2mb'}));
  app.get('/api/health',(_req,res)=>res.json({ok:!store.poisoned}));
  app.get('/api/bootstrap',(_req,res)=>res.json({setup:!auth.owner}));
  const credentials=z.object({username:z.string().trim().min(1).max(80),password:z.string().min(12).max(256),device:z.string().trim().min(1).max(80).default('Browser')});
@@ -60,6 +61,9 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
  app.delete('/api/folders',(req,res)=>{const body=z.discriminatedUnion('mode',[z.object({path:safePath,mode:z.literal('empty')}),z.object({path:safePath,mode:z.literal('trash')}),z.object({path:safePath,mode:z.literal('reassign'),destination:safePath})]).parse(req.body);res.json(store.deleteFolder(body.path,body.mode==='empty'?{mode:'empty'}:body.mode==='trash'?{mode:'trash'}:{mode:'reassign',destination:body.destination},res.locals.device.id));});
  app.get('/api/events',(req,res)=>{const after=z.coerce.number().int().nonnegative().parse(req.query.after??0);res.json(store.state.events.filter(e=>e.seq>after));});
  app.get('/api/search',(req,res)=>{const q=z.string().max(300).parse(req.query.q??'').toLowerCase();res.json(Object.values(store.state.notes).filter(n=>!n.deleted&&(n.path+'\n'+n.content).toLowerCase().includes(q)).map(n=>({id:n.id,path:n.path})));});
+ app.get('/api/transfers',(req,res)=>res.json(readTransfer(store,safePath.parse(req.query.path))));
+ app.post('/api/transfers',(req,res)=>res.json(createTransfer(store,req.body,res.locals.device.id)));
+ app.post('/api/transfers/remove',(req,res)=>res.json(removeTransfer(store,req.body,res.locals.device.id)));
  app.post('/api/mutate',(req,res)=>res.json(store.mutate(req.body,res.locals.device.id)));
  app.post('/api/restore/:id',(req,res)=>{const b=z.object({base:z.number().int(),rev:z.number().int(),op:z.string().uuid()}).parse(req.body);const n=store.state.notes[String(req.params.id)];if(!n)throw new HttpError(404,'Note not found');const revision=[...n.history,n].find(h=>h.rev===b.rev);if(!revision)throw new HttpError(404,'Revision not found');res.json(store.mutate({...revision,id:n.id,base:b.base,op:b.op,deleted:false},res.locals.device.id));});
  app.delete('/api/trash/:id',(req,res)=>{const base=z.coerce.number().int().nonnegative().parse(req.query.base);res.json(store.purge(String(req.params.id),base,res.locals.device.id));});
