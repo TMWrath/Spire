@@ -1,6 +1,21 @@
 import {metadata,type Note} from '../shared/model';
 import {buildGraph} from './mind-map-model';
 import {citations,type Source} from '../shared/sources';
+// Per-workspace, bounded to the four sidebar modes. Compare source values rather
+// than snapshot identity: polling can replace unchanged Note objects.
+export function createSidebarGraphCache(){
+ const cache=new Map<string,{files:Note[];templates:MapTemplate[];sources:Source[];graph:ReturnType<typeof buildSidebarGraph>}>();
+ return (files:Note[],templates:MapTemplate[],tab:'files'|'tags'|'templates'|'sources',sources:Source[]=[])=>{
+  const previous=cache.get(tab);
+  const sameFiles=previous&&files.length===previous.files.length&&files.every((n,i)=>{const p=previous.files[i];return n.id===p.id&&n.path===p.path&&n.content===p.content&&n.rev===p.rev&&n.time===p.time&&n.deleted===p.deleted&&JSON.stringify(n.templateIds)===JSON.stringify(p.templateIds);});
+  const sameTemplates=tab!=='templates'||JSON.stringify(templates.map(t=>[t.id,t.title]))===JSON.stringify(previous?.templates.map(t=>[t.id,t.title]));
+  const sameSources=tab!=='sources'||JSON.stringify(sources.map(s=>[s.id,s.title]))===JSON.stringify(previous?.sources.map(s=>[s.id,s.title]));
+  if(previous&&sameFiles&&sameTemplates&&sameSources)return previous.graph;
+  const graph=buildSidebarGraph(files,templates,tab,sources);
+  cache.set(tab,{files:files.map(n=>({...n,templateIds:n.templateIds?.slice()})),templates:templates.map(t=>({...t})),sources:sources.map(s=>({...s})),graph});
+  return graph;
+ };
+}
 export type MapTemplate={id:string;title:string;category:'section'|'full';content:string};
 export function buildSidebarGraph(files:Note[],templates:MapTemplate[],tab:'files'|'tags'|'templates'|'sources',sources:Source[]=[]){
  const active=files.filter(n=>!n.deleted);

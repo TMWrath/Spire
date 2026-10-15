@@ -15,12 +15,22 @@ export function layout(files,links){
  for(let step=0;step<100;step++){
   const force=points.map(()=>[0,0,0]);
   for(let i=0;i<points.length;i++)for(let j=i+1;j<points.length;j++){
-   const delta=add(points[i],mul(points[j],-1)),d=Math.max(.12,Math.hypot(...delta)),f=mul(delta,.022/(d*d*d));force[i]=add(force[i],f);force[j]=add(force[j],mul(f,-1));
+   const a=points[i],b=points[j],dx=a[0]-b[0],dy=a[1]-b[1],dz=a[2]-b[2],d=Math.max(.12,Math.hypot(dx,dy,dz)),s=.022/(d*d*d);
+   force[i][0]+=dx*s;force[i][1]+=dy*s;force[i][2]+=dz*s;
+   force[j][0]-=dx*s;force[j][1]-=dy*s;force[j][2]-=dz*s;
   }
   for(const [a,b] of edges){const delta=add(points[b],mul(points[a],-1)),d=Math.hypot(...delta)||1,f=mul(delta,.18*(d-.9)/d);force[a]=add(force[a],f);force[b]=add(force[b],mul(f,-1));}
   for(let i=0;i<points.length;i++){const tangent=add(force[i],mul(points[i],-dot(force[i],points[i]))),length=Math.hypot(...tangent);points[i]=unit(add(points[i],mul(tangent,Math.min(.06,.018*(1-step/130)*length)/(length||1))));}
  }
  return new Map(nodes.map((n,i)=>[n.id,points[i]]));
+}
+export function createLayoutCache(){
+ const cache=new Map();
+ return (files,edges)=>{
+  const key=JSON.stringify([files.map(f=>f.id).sort(),edges.map(e=>[e.source,e.target]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)))]);
+  if(cache.has(key)){const result=cache.get(key);cache.delete(key);cache.set(key,result);return result;}
+  const result=layout(files,edges);cache.set(key,result);if(cache.size>8)cache.delete(cache.keys().next().value);return result;
+ };
 }
 export const identity=()=>({axes:[[1,0,0],[0,1,0],[0,0,1]],zoom:1,x:0,y:0});
 function around(v,axis,angle){const c=Math.cos(angle),s=Math.sin(angle);return add(add(mul(v,c),mul(cross(axis,v),s)),mul(axis,dot(axis,v)*(1-c)));}

@@ -17,7 +17,7 @@ export function MindMap({files,demo,onOpen,compact=false,visible=true,graphOverr
  const [fullscreen,setFullscreen]=useState(false);
  const expandButton=useRef<HTMLButtonElement>(null);
  const [selected,setSelected]=useState<string|null>(null),[query,setQuery]=useState(''),[paused,setPaused]=useState(false),[unavailable,setUnavailable]=useState(false);
- const graphKey=JSON.stringify([graph.nodes.map(n=>[n.id,n.path]),graph.edges]);
+ const graphKey=useMemo(()=>JSON.stringify([graph.nodes.map(n=>[n.id,n.path]),graph.edges]),[graph]);
  const graphRef=useRef(graph);graphRef.current=graph;
  const canvas=useRef<HTMLCanvasElement>(null),engine=useRef<DotMapController|null>(null),open=useRef(onOpen);
  open.current=onOpen;

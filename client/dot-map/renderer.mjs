@@ -1,4 +1,5 @@
-import {layout,identity,turn,project,zoomAt,pairGesture,connectionPoint} from './core.mjs';
+import {createLayoutCache,identity,turn,project,zoomAt,pairGesture,connectionPoint} from './core.mjs';
+const layout=createLayoutCache();
 export function orderPulseEdges(edges,depth){return edges.map((e,index)=>({...e,pulseOffset:(index*.173)%1,depth:depth(e)})).sort((a,b)=>a.depth-b.depth);}
 // Production adapter for the approved isolated canvas engine. No workspace writes or requests.
 export function createDotMap(canvas,{files,edges,onSelect,onOpen=()=>{}}){
