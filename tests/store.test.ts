@@ -36,7 +36,26 @@ test('folder deletion rejects missing folders, self destinations and occupied re
 });
 test('Reliquary migration preserves notes, attachments, empty folders, state and restart recovery',()=>{let s=fresh();const n=create();s.mutate(n,'d');s.attachment('Attachments/photo.png',Buffer.from('picture'));s.createFolder('Empty');assert.throws(()=>s.moveReliquary('../outside'));assert.throws(()=>s.moveReliquary('Folder/Inside'));assert.equal(s.location().directory,'vault');s.moveReliquary('My Reliquary');assert.equal(fs.readFileSync(s.vault(n.path),'utf8'),n.content);assert.equal(fs.readFileSync(s.vault('Attachments/photo.png'),'utf8'),'picture');assert.ok(fs.statSync(s.vault('Empty')).isDirectory());assert.ok(!fs.existsSync(`${root}/vault`));assert.equal(s.moveReliquary('My Reliquary').directory,'reliquaries/My Reliquary');s=new Store(root);assert.equal(s.state.notes[n.id].content,n.content);assert.equal(fs.readFileSync(s.vault(n.path),'utf8'),n.content);s.moveReliquary('Another Place');assert.ok(fs.existsSync(s.vault('Empty')));s=new Store(root);assert.equal(s.location().directory,'reliquaries/Another Place');});
 test('portable paths reject traversal, platform hazards and hidden metadata',()=> { for(const p of ['../x.md','/x.md','a\\b.md','.spire/a.md','a/../b','a//b','NUL.md','x%2fy.md']) assert.equal(safePath.safeParse(p).success,false,p); assert.ok(safePath.safeParse('Notes/Hello world.md').success); });
-test('revision CAS, replay, delete/restore and durable conflict survive restart',()=> { let s=fresh(); const m=create(); const a=s.mutate(m,'d'); assert.equal(a.rev,1); assert.equal(s.mutate(m,'d').rev,1); assert.throws(()=>s.mutate({...m,op:randomUUID(),content:'stale'},'d'), /Conflict/); assert.equal(s.state.conflicts.length,1); const b=s.mutate({...m,op:randomUUID(),base:1,deleted:true},'d'); assert.equal(b.rev,2); assert.equal(fs.existsSync(`${root}/vault/${m.path}`),false); s=new Store(root); assert.equal(s.state.conflicts.length,1); s.mutate({...m,op:randomUUID(),base:2},'d'); assert.equal(fs.readFileSync(`${root}/vault/${m.path}`,'utf8'),'# First'); });
+test('revision CAS, replay, delete/restore and durable conflict survive restart',()=> { let s=fresh(); const m=create(); const a=s.mutate(m,'d'); assert.equal(a.rev,1); assert.equal(s.mutate(m,'d').rev,1); assert.throws(()=>s.mutate({...m,op:randomUUID(),content:'stale'},'d'), /Conflict/); assert.equal(s.state.conflicts.length,1); assert.equal(s.state.conflicts[0].baseContent,null); const b=s.mutate({...m,op:randomUUID(),base:1,deleted:true},'d'); assert.equal(b.rev,2); assert.equal(fs.existsSync(`${root}/vault/${m.path}`),false); s=new Store(root); assert.equal(s.state.conflicts.length,1); s.mutate({...m,op:randomUUID(),base:2},'d'); assert.equal(fs.readFileSync(`${root}/vault/${m.path}`,'utf8'),'# First'); });
+test('conflict choices are atomic, revisioned, and stale decisions fail closed',()=>{
+ const seed=()=>{const s=fresh(),m=create('Writing/Draft.md','shared');s.mutate(m,'server');s.mutate({...m,base:1,op:randomUUID(),content:'server'},'server');assert.throws(()=>s.mutate({...m,base:1,op:randomUUID(),content:'device'},'device'),/Conflict/);return {s,m,conflict:s.state.conflicts[0]};};
+ {
+  const {s,m,conflict}=seed(),resolved=s.resolveConflict(conflict.id,{action:'keep-device',expectedServerRevision:2},'device');
+  assert.equal(resolved.primary.content,'device');assert.equal(resolved.primary.rev,3);assert.equal(resolved.primary.history.at(-1)?.content,'server');assert.equal(s.state.conflicts.length,0);assert.equal(fs.readFileSync(s.vault(m.path),'utf8'),'device');
+  assert.throws(()=>s.resolveConflict(conflict.id,{action:'keep-server',expectedServerRevision:2},'device'),/not found/i);
+ }
+ {
+  const {s,m,conflict}=seed(),resolved=s.resolveConflict(conflict.id,{action:'keep-both',expectedServerRevision:2,path:'Writing/Draft (device).md'},'device');
+  assert.equal(resolved.primary.content,'server');assert.equal(resolved.copy?.content,'device');assert.equal(resolved.copy?.path,'Writing/Draft (device).md');assert.notEqual(resolved.copy?.id,m.id);assert.equal(s.state.conflicts.length,0);
+ }
+ {
+  const {s,conflict}=seed(),resolved=s.resolveConflict(conflict.id,{action:'merge',expectedServerRevision:2,content:'server\n\ndevice'},'device');
+  assert.equal(resolved.primary.content,'server\n\ndevice');assert.equal(resolved.primary.rev,3);assert.equal(s.state.conflicts.length,0);
+ }
+ {
+  const {s,conflict}=seed();s.mutate({...s.state.notes[conflict.mutation.id],base:2,op:randomUUID(),content:'newer server'},'server');assert.throws(()=>s.resolveConflict(conflict.id,{action:'keep-device',expectedServerRevision:2},'device'),/changed/i);assert.equal(s.state.conflicts.length,1);
+ }
+});
 test('rename updates wiki and relative Markdown references as a transaction',()=>{const s=fresh();const a=create('Folder/First.md');s.mutate(a,'d');const b=create('Other.md','[[First#Top|label]] [link](Folder/First.md#Top) `[[First]]`');s.mutate(b,'d');s.mutate({...a,base:1,op:randomUUID(),path:'New/Renamed.md'},'d'); assert.equal(s.state.notes[b.id].content,'[[New/Renamed#Top|label]] [link](New/Renamed.md#Top) `[[First]]`');assert.equal(s.state.notes[b.id].rev,2);assert.equal(fs.existsSync(`${root}/vault/Folder/First.md`),false);});
 test('adjacent stylesheets are portable, follow file renames, and unmatched styles remain in place',()=>{
  let s=fresh();const file=create('Writing/First.md');s.mutate(file,'d');

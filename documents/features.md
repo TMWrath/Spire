@@ -1,5 +1,9 @@
 # Spire — Features
 
+## Server-origin identity return — partial prototype only
+
+Shared domain prototype and regression tests model owner/workspace/origin-scoped moved-away receipts across restart. Not connected to real move/return, durable platform metadata, transport/API, links, attachments, conflicts, UI, Electron or Android. Not an available feature; parity and acceptance are unverified. See `identity-return-status.md`.
+
 ## Quick actions — deployed
 
 Configurable empty-workspace tiles managed in Settings → Actions: label, folder, optional template and filename pattern. Activation creates a collision-safe Markdown file and opens it without prompting. Actions synchronize with the account and survive backup recovery; creation requires a connection. No arbitrary action limit.

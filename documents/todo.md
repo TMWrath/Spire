@@ -82,7 +82,7 @@
 - [ ] Shared Vaults and collaboration
 - [ ] Safe plugin, automation, and theming systems
 
-## Unified Local + Server workspace — requested, not implemented
+## Unified Local + Server workspace — implemented and verified
 
 the project owner requires server sign-in to remain discoverable in Settings after opening a local folder, without replacing that folder. One sidebar contains separate Local and Server trees, with one editor and cross-storage file movement. Windows (current Electron implementation in /workspace/spire/desktop, not the historical WPF preview) must match Android.
 
@@ -102,4 +102,13 @@ Aphelion safety recommendations:
 
 the project owner selected: cache previously opened Server files for offline editing, then synchronize queued edits back with conflict protection. Local files remain independently offline-capable. Server caches do not turn local-folder files into server files, and whole-server replication is not implied. Conflicts must preserve both versions rather than silently overwriting either.
 
-Supersedes the earlier separate-choice-only UI contract, not the prohibition on implicit uploads. Implementation, tests, builds and deployment are pending.
+Implementation, automated tests, isolated production build, Electron acceptance, Android browser/SAF acceptance, and Android buildbox `test lint assembleDebug` are complete. No deployment was requested or performed.
+
+# Server-origin identity return
+- [x] Persist origin/account/workspace-scoped identity metadata through explicit Local ↔ original Server moves; legacy records fail closed.
+- [x] Retain stable Server identity through Local edit, rename and restart; reject restored, changed, deleted and colliding destinations without removing Local bytes.
+- [x] Preserve attachments, styles and empty folders through verified resumable transfers.
+- [x] Provide atomic Keep mine, Keep Server, Keep both and Merge conflict actions with shared-ancestor context and stale-decision rejection.
+- [x] Preserve File History, Compare and Restore; restores remain new revisions.
+- [x] Pass TypeScript, 166 Node tests, production-renderer acceptance, Electron acceptance, Android browser/SAF tests, isolated production build, and Android buildbox test/lint/assemble.
+- [ ] Perform physical Android WebView/device acceptance when an unlocked authorized device is available.

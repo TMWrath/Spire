@@ -1,5 +1,13 @@
 export type MountScope={kind:'local'|'server';origin:string;account:string;workspace:string};
 export type CachedServerFile={path:string;base:number;content:string;pending:boolean;conflict?:{content:string;rev:number}};
+/** Receipt for an explicitly moved Server file. It tracks identity, not sync permission. */
+export type MovedServerFile={id:string;path:string;origin:MountScope;revision:number;bytes:string;state:'moved-away'};
+export type MovedReturnCheck=
+ |{kind:'unmatched'}
+ |{kind:'collision'}
+ |{kind:'unchanged';serverPath:string;revision:number}
+ |{kind:'conflict';reason:'remote-edited'|'server-deleted';serverPath:string;revision:number;localBytes:string;serverBytes:string};
+export type ServerReturnSnapshot={id:string;path:string;revision:number;bytes:string;deleted:boolean};
 function checked(scope:MountScope):MountScope{
  if(!scope.account||!scope.workspace||!scope.origin)throw new Error('Incomplete mount identity');
  if(scope.kind==='server'){
@@ -10,6 +18,7 @@ function checked(scope:MountScope):MountScope{
  if(scope.kind!=='local')throw new Error('Invalid mount kind');
  return {...scope};
 }
+function validSnapshot(file:ServerReturnSnapshot):boolean{return typeof file.id==='string'&&!!file.id&&typeof file.bytes==='string'&&typeof file.deleted==='boolean'&&Number.isSafeInteger(file.revision)&&file.revision>=0&&(()=>{try{checkedPath(file.path);return true;}catch{return false;}})();}
 function checkedPath(path:string):string{
  if(!path||path.startsWith('/')||path.includes('\\')||path.includes('\0')||path.split('/').some(p=>!p||p==='.'||p==='..'))throw new Error('Invalid mounted path');
  return path;
@@ -24,6 +33,7 @@ export class MountedWorkspace{
  readonly local:MountScope;
  private server?:MountScope;
  private files=new Map<string,CachedServerFile>();
+ private moved=new Map<string,MovedServerFile>();
  constructor(local:MountScope){this.local=checked(local);if(local.kind!=='local')throw new Error('Local mount required');}
  get mounts():MountScope[]{return [structuredClone(this.local),...(this.server?[structuredClone(this.server)]:[])];}
  connect(scope:MountScope):void{if(scope.kind!=='server')throw new Error('Server mount required');this.server=checked(scope);}
@@ -47,12 +57,31 @@ export class MountedWorkspace{
   this.files.set(key,{...file,base:rev,pending:file.content!==content});
  }
  serverFile(path:string):CachedServerFile|undefined{const file=this.files.get(this.key(path));return file?structuredClone(file):undefined;}
+ private movedKey(scope:MountScope,id:string):string{const s=checked(scope);if(s.kind!=='server'||!id)throw new Error('Invalid moved-file identity');return JSON.stringify([s.kind,s.origin,s.account,s.workspace,id]);}
+ rememberMovedServerFile(file:MovedServerFile):void{
+  const origin=checked(file.origin);if(origin.kind!=='server'||file.state!=='moved-away'||!Number.isSafeInteger(file.revision)||file.revision<0||typeof file.bytes!=='string')throw new Error('Invalid moved-file receipt');
+  const key=this.movedKey(origin,file.id);const old=this.moved.get(key);
+  if(old&&old.path!==file.path)throw new Error('Moved-file identity collision');
+  this.moved.set(key,structuredClone({...file,origin}));
+ }
+ updateMovedServerFile(file:MovedServerFile):void{const key=this.movedKey(file.origin,file.id);if(!this.moved.has(key))throw new Error('Unknown moved-file identity');const origin=checked(file.origin);if(origin.kind!=='server'||file.state!=='moved-away'||!Number.isSafeInteger(file.revision)||file.revision<0||typeof file.bytes!=='string')throw new Error('Invalid moved-file receipt');this.moved.set(key,structuredClone({...file,origin}));}
+ findMovedServerFile(scope:MountScope,id:string):MovedServerFile|undefined{const file=this.moved.get(this.movedKey(scope,id));return file?structuredClone(file):undefined;}
+ /** Classifies an explicit return using the origin-scoped stable ID and exact acknowledged revision.
+  * A match never authorizes a write; callers must resolve conflicts or explicitly transfer. */
+ checkMovedReturn(scope:MountScope,id:string,server:ServerReturnSnapshot):MovedReturnCheck{
+  const receipt=this.findMovedServerFile(scope,id);if(!receipt)return {kind:'unmatched'};
+  if(server.id!==receipt.id)return {kind:'collision'};
+  if(!validSnapshot(server))throw new Error('Invalid Server return snapshot');
+  if(server.deleted)return {kind:'conflict',reason:'server-deleted',serverPath:server.path,revision:server.revision,localBytes:receipt.bytes,serverBytes:server.bytes};
+  if(server.revision===receipt.revision&&server.bytes===receipt.bytes)return {kind:'unchanged',serverPath:server.path,revision:server.revision};
+  return {kind:'conflict',reason:'remote-edited',serverPath:server.path,revision:server.revision,localBytes:receipt.bytes,serverBytes:server.bytes};
+ }
  pending(scope:MountScope):{path:string;base:number;content:string}[]{
   const s=checked(scope);return [...this.files.entries()].filter(([key,file])=>file.pending&&!file.conflict&&key===scopeKey(s,file.path)).map(([,file])=>({path:file.path,base:file.base,content:file.content}));
  }
- serialize():string{return JSON.stringify({version:1,local:this.local,server:this.server,files:[...this.files.entries()]});}
+ serialize():string{return JSON.stringify({version:2,local:this.local,server:this.server,files:[...this.files.entries()],moved:[...this.moved.entries()]});}
  static restore(serialized:string):MountedWorkspace{
-  const data=JSON.parse(serialized);if(data.version!==1||!Array.isArray(data.files))throw new Error('Invalid mounted cache');
+  const data=JSON.parse(serialized);if(![1,2].includes(data.version)||!Array.isArray(data.files)||(data.version===2&&!Array.isArray(data.moved)))throw new Error('Invalid mounted cache');
   const state=new MountedWorkspace(data.local);if(data.server)state.connect(data.server);
   for(const [key,file] of data.files){
    const tuple=JSON.parse(key);if(!Array.isArray(tuple)||tuple.length!==5)throw new Error('Invalid cache identity');
@@ -61,6 +90,8 @@ export class MountedWorkspace{
     (file.conflict&&(typeof file.conflict.content!=='string'||!Number.isSafeInteger(file.conflict.rev)||file.conflict.rev<0)))throw new Error('Invalid cached file');
    state.files.set(key,structuredClone(file));
   }
+  // Version 1 clients had no durable provenance: deliberately do not infer it by path.
+  for(const [key,file] of data.moved??[]){const origin=checked(file.origin);if(origin.kind!=='server'||key!==state.movedKey(origin,file.id)||file.state!=='moved-away'||typeof file.path!=='string'||typeof file.bytes!=='string'||!Number.isSafeInteger(file.revision)||file.revision<0)throw new Error('Invalid moved-file receipt');state.moved.set(key,structuredClone(file));}
   return state;
  }
 }

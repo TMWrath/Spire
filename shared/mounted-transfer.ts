@@ -1,4 +1,4 @@
-export type TransferBundle={path:string;version:string;pending:boolean;files:{path:string;bytes:Uint8Array}[]};
+export type TransferBundle={path:string;version:string;pending:boolean;files:{path:string;bytes:Uint8Array;id?:string;revision?:number}[]};
 /** create MUST be atomic create-only, not upsert. read MUST acquire actual linked
  * attachment bytes. removeIfUnchanged MUST atomically check version, full bytes,
  * pending edits and permissions before removal. This interface is not yet wired
