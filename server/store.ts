@@ -147,6 +147,19 @@ export class Store {
   const saved={...input,title:input.title.trim(),id:randomUUID(),created:new Date().toISOString()};const next=structuredClone(this.state);next.templates=[...templates,saved];next.seq++;this.commit(next);return saved;
  }
  createFolder(p:string){safePath.parse(p);if((this.state.folders??[]).some(f=>f.toLowerCase()===p.toLowerCase()))throw new HttpError(409,'Folder already exists');const paths=[...Object.values(this.state.notes).filter(n=>!n.deleted).map(n=>n.path),...this.state.attachments.map(a=>a.path)];if(paths.some(q=>q.toLowerCase()===p.toLowerCase()||p.toLowerCase().startsWith(q.toLowerCase()+'/')))throw new HttpError(409,'A file occupies this folder path');if(fs.existsSync(this.vault(p))&&!fs.statSync(this.vault(p)).isDirectory())throw new HttpError(409,'Path occupied');const next=structuredClone(this.state);next.folders=[...(next.folders??[]),p];next.seq++;this.commit(next);return {path:p};}
+ moveFolder(folder:string,destination:string,device:string){
+  const source=safePath.parse(folder),parent=safePath.parse(destination);this.guardLocalFolder(source);const sourceLower=source.toLowerCase(),parentLower=parent.toLowerCase();
+  if(parentLower===sourceLower||parentLower.startsWith(sourceLower+'/'))throw new HttpError(409,'A folder cannot be moved inside itself');
+  const inside=(p:string)=>p.toLowerCase()===sourceLower||p.toLowerCase().startsWith(sourceLower+'/');
+  const folders=this.state.folders??[];if(!folders.some(inside))throw new HttpError(404,'Folder not found');
+  const name=source.split('/').at(-1)!;const target=parent+'/'+name,translate=(p:string)=>target+p.slice(source.length);
+  const movingNotes=Object.values(this.state.notes).filter(n=>!n.deleted&&inside(n.path));const movingAttachments=this.state.attachments.filter(a=>inside(a.path));const movingStyles=Object.entries(this.state.styles??{}).filter(([p])=>inside(p));
+  const stationaryFolders=folders.filter(f=>!inside(f)).map(p=>p.toLowerCase()),stationaryFiles=[...Object.values(this.state.notes).filter(n=>!n.deleted&&!inside(n.path)).map(n=>n.path),...this.state.attachments.filter(a=>!inside(a.path)).map(a=>a.path),...Object.keys(this.state.styles??{}).filter(p=>!inside(p))].map(p=>p.toLowerCase());
+  for(const p of [target,...movingNotes.map(n=>translate(n.path)),...movingAttachments.map(a=>translate(a.path)),...movingStyles.map(([p])=>translate(p))]){const lower=p.toLowerCase();if(stationaryFolders.some(q=>q===lower||q.startsWith(lower+'/'))||stationaryFiles.some(q=>q===lower||q.startsWith(lower+'/')||lower.startsWith(q+'/')))throw new HttpError(409,`Destination path is occupied: ${p}`);}
+  const next=structuredClone(this.state),original=Object.values(this.state.notes);for(const n of movingNotes)this.revise(next,n.id,{path:translate(n.path),content:n.content,deleted:false},device);
+  for(const current of Object.values(next.notes).filter(n=>!n.deleted)){let content=current.content;const sourceNote=original.find(n=>n.id===current.id)??current;for(const moved of movingNotes)content=refactor({...sourceNote,content},original,moved.id,translate(moved.path));if(content!==current.content)this.revise(next,current.id,{path:current.path,content,deleted:false},device);}
+  next.folders=[...new Set([...folders.filter(f=>!inside(f)),...folders.filter(inside).map(translate)])];next.attachments=next.attachments.map(a=>inside(a.path)?{...a,path:translate(a.path)}:a);next.styles=Object.fromEntries(Object.entries(next.styles??{}).map(([p,css])=>[inside(p)?translate(p):p,css]));this.commit(next);return {path:target,moved:movingNotes.length};
+ }
  deleteFolder(folder:string,action:{mode:'empty'}|{mode:'trash'}|{mode:'reassign';destination:string},device:string){
   const source=safePath.parse(folder);this.guardLocalFolder(source);const sourceLower=source.toLowerCase();const folders=this.state.folders??[];
   const inside=(p:string)=>p.toLowerCase().startsWith(sourceLower+'/');
