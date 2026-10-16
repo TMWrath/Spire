@@ -1,5 +1,13 @@
 # Spire unified workspace
 
+## Bidirectional mounted-tree drag transfer — deployed
+
+Files and folders can now be dragged from either visible mounted tree to the other mount, regardless of which workspace is active. Drag state records the actual source mount and routes Local → Server and Server → Local through the existing explicit confirmation and verified move protocol. Destination acknowledgement and byte verification still precede source removal.
+
+Verification on 2026-10-16: TypeScript and production build passed; 167/167 unit/API tests passed; 120/120 browser scenarios passed; focused production-renderer drag acceptance reached the correct confirmation in both directions. The Android shared bundle was refreshed; 23 local-runtime tests, 6/6 download-adapter checks and bundled-editor Chromium acceptance passed. Buildbox `test lint assembleDebug` passed, and the final signed APK contains 135/135 expected web assets byte-for-byte.
+
+Deployed implementation `9aa3180c9f79f9b1590ca62ce2514ab8c4f54512` as immutable release `20261016T081500Z-drag-9aa3180`. The application backup and checksum passed; the container is healthy with the original read/write data volume and Compose identity. HTTPS health, homepage, anonymous API rejection, feature markers, and exact live JS/CSS equality to the accepted build passed. Physical Android WebView/device acceptance was not performed. Source commits remain local and unpushed.
+
 ## Unified Local + Server workspace — verified; live runtime already current
 
 Local and Server workspaces are integrated in the production UI with explicit bidirectional file/folder transfer, distinct ownership, opened-file offline cache, resumable verified transfers and conflict preservation. This completion pass repaired production-browser test assumptions and added open-file movement acceptance. The test selects the destination mount before browsing it; after transfer the app focuses that destination and lazily renders only the active mount's tree. Verified cancellation leaves both stores unchanged; both directions preserve Markdown and linked attachment bytes; source enters Trash only after verification. Lost acknowledgement safely resumes; opened-only offline access and conflict copies are covered.
