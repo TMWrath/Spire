@@ -510,3 +510,12 @@ Aphelion safety recommendations:
 the project owner selected: cache previously opened Server files for offline editing, then synchronize queued edits back with conflict protection. Local files remain independently offline-capable. Server caches do not turn local-folder files into server files, and whole-server replication is not implied. Conflicts must preserve both versions rather than silently overwriting either.
 
 Supersedes the earlier separate-choice-only UI contract, not the prohibition on implicit uploads. Implementation, tests, builds and deployment are pending.
+
+
+## Image quick formats — verified live 2026-10-16
+
+`@img`, `@imgl`, `@imgc`, and `@imgr` followed by Space open the native image picker immediately in the shared visual editor. Plain images use standard Markdown; aligned images retain portable HTML `<div align="…"><img …></div>` (rendering support varies in other readers). Uploads use relative attachment links with UUID-prefixed filenames. Cancellation preserves the command; changed/closed/deleted editor state prevents stale insertion.
+
+Acceptance: TypeScript, 168/168 unit/API tests, 121/121 browser tests, focused image/format tests, production build and packaged Docker startup passed. Browser coverage includes all four commands, nested paths/Unicode names, cancellation, stale-content guard, alignment source/editor round-trip and save/reload. The rich-editor test now clears through select-all/delete rather than DOM-only fill around preserved atomic blocks.
+
+Deployed implementation: `1f23f2a0c42d895d28002856ed563b262c432924`. Immutable release `20261016T133218Z-image-1f23f2a`. Application-consistent backup `20261016T133218Z-image-1f23f2a.json` verified before cutover. Docker healthy, persistent volume retained, private HTTPS index 200 and health OK; served JS/CSS match the tested build exactly. Release pointer reconciled. No source push, Android bundle refresh, or physical Android acceptance.
