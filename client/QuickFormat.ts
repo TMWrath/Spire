@@ -5,15 +5,18 @@ export const quickFormats:Record<string,{mark:string;label:string}>={
  bld:{mark:'bold',label:'Bold'},itl:{mark:'italic',label:'Italics'},
  stk:{mark:'strike',label:'Strikethrough'},und:{mark:'underline',label:'Underline'},
 };
+export const quickImages:Record<string,'left'|'center'|'right'|undefined>={img:undefined,imgl:'left',imgc:'center',imgr:'right'};
 export const quickFormatHints=[
  ...Object.entries(quickFormats).map(([code,format])=>({code:'@'+code,label:format.label,detail:`Type ${'@'+code} followed by Space, then keep writing. Press Enter to stop.`})),
  ...Array.from({length:6},(_,index)=>{const level=index+1;return {code:`@hd${level}`,label:`Heading ${level}`,detail:`Type @hd${level} followed by Space, then keep writing. Press Enter to return to normal text.`};}),
+ ...Object.entries(quickImages).map(([code,alignment])=>({code:'@'+code,label:alignment?`Image (${alignment})`:'Image',detail:`Type @${code} followed by Space to open the image picker${alignment?` with ${alignment} alignment`:''}.`})),
 ];
 /** Exact, whitespace-delimited shortcuts; escaped text stays literal. */
 export function quickFormatMatch(before:string){
- const codes=[...Object.keys(quickFormats),'hd[1-6]'].join('|');
+ const codes=[...Object.keys(quickFormats),'hd[1-6]',...Object.keys(quickImages)].join('|');
  const m=new RegExp(`(?:^|\\s)@(${codes})$`).exec(before);
  if(!m)return null;
+ if(m[1] in quickImages)return {image:true,alignment:quickImages[m[1]],length:m[1].length+1};
  return m[1].startsWith('hd')?{mark:'',heading:Number(m[1][2]),label:'Heading '+m[1][2],length:4}:{...quickFormats[m[1]],heading:0,length:m[1].length+1};
 }
 const key=new PluginKey<string[]>('quickFormat');
@@ -47,6 +50,7 @@ export const QuickFormat=Extension.create({
      const match=quickFormatMatch($from.parent.textBetween(0,$from.parentOffset));
      if(!match)return false;
      const active=key.getState(view.state)??[];
+     if('image' in match){view.dom.dispatchEvent(new CustomEvent('spire:quick-image',{bubbles:true,detail:{alignment:match.alignment,start:from-match.length,end:from,doc:view.state.doc}}));return true;}
      if(match.heading){const heading=view.state.schema.nodes.heading;if(!heading||!heading.spec.group?.includes('block'))return false;const parent=$from.node($from.depth-1);const index=$from.index($from.depth-1);if(!parent.canReplaceWith(index,index+1,heading))return false;view.dispatch(view.state.tr.delete(from-match.length,from).setNodeMarkup($from.before(),heading,{level:match.heading}).setMeta(key,[...active.filter(name=>!name.startsWith('hd')),'hd'+match.heading]));return true;}
      const mark=view.state.schema.marks[match.mark];if(!mark)return false;
      view.dispatch(view.state.tr.delete(from-match.length,from).addStoredMark(mark.create()).setMeta(key,Array.from(new Set([...active,match.mark]))));

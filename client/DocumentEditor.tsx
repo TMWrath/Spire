@@ -19,6 +19,7 @@ import {capitalizeCell} from './rich-capitalization';
 import type {FormatKind} from './FormattingToolbar';
 import type {Note} from '../shared/model';
 import {scopeFileCss} from './style-css';
+import {api,engine} from './sync';
 const PortableUnderline=Underline.extend({renderMarkdown:(node,h)=>`<u>${h.renderChildren(node)}</u>`,markdownTokenizer:{name:'underline',level:'inline',start:src=>src.indexOf('<u>'),tokenize:(src,_tokens,lexer)=>{const m=/^<u>([\s\S]+?)<\/u>/.exec(src);if(m)return {type:'underline',raw:m[0],tokens:lexer.inlineTokens(m[1])};}}});
 
 /** Unsupported dialect blocks are rendered, but their exact portable source is retained. */
@@ -53,13 +54,34 @@ function BodyEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,
   const used=new Map<string,number>();const blocks=(editor.getJSON().content??[]).map(node=>{if(node.type==='preservedBlock')return String(node.attrs?.source??'').trimEnd();const key=JSON.stringify(node),i=used.get(key)??0;used.set(key,i+1);return (originals.current.get(key)?.[i]??editor.markdown!.serialize({type:'doc',content:[node]})).trimEnd();});
   const source=prefix.current+blocks.join('\n\n');last.current=source;callbacks.current.onChange(source);
  }});
+ const [imageError,setImageError]=React.useState('');
+ useEffect(()=>{
+  if(!editor)return;
+  const input=document.createElement('input');input.type='file';input.accept='image/*';input.hidden=true;input.setAttribute('aria-label','Choose image');editor.view.dom.parentElement!.append(input);
+  let pending:{start:number;end:number;doc:typeof editor.state.doc;id:string;content:string;path:string;alignment?:'left'|'center'|'right'}|null=null;
+  const valid=(target:NonNullable<typeof pending>)=>!editor.isDestroyed&&editor.isEditable&&editor.view.dom.isConnected&&!callbacks.current.note.deleted&&callbacks.current.note.id===target.id&&callbacks.current.note.path===target.path&&callbacks.current.note.content===target.content&&editor.state.doc.eq(target.doc);
+  const cancel=()=>{pending=null;input.value='';};
+  const open=(event:Event)=>{const detail=(event as CustomEvent).detail;if(!editor.isEditable||callbacks.current.note.deleted||!detail||!editor.state.doc.eq(detail.doc))return;const current=callbacks.current.note;pending={...detail,id:current.id,content:current.content,path:current.path};setImageError('');input.value='';input.click();};
+  const choose=async()=>{const target=pending,file=input.files?.[0];cancel();if(!target||!file||!valid(target))return;
+   try{if(!file.type.startsWith('image/'))throw new Error('Choose an image file.');const path=`Attachments/${crypto.randomUUID()}-${file.name.replace(/[\\/]/g,'_')}`;
+    await api('/attachments?path='+encodeURIComponent(path),{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:file},engine.cache.identity!.csrf);await engine.sync();
+    if(!valid(target))throw new Error('The file changed during upload. The image is saved in Attachments but was not inserted.');
+    const src=('../'.repeat(target.path.split('/').length-1)+path).split('/').map(part=>encodeURIComponent(part).replace(/\(/g,'%28').replace(/\)/g,'%29')).join('/');
+    const escape=(text:string)=>text.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const alt=file.name.replace(/[\[\]\\\r\n]/g,'');const markup=target.alignment?`<div align="${target.alignment}"><img src="${escape(src)}" alt="${escape(alt)}"></div>`:`![${alt}](${src})`;
+    editor.commands.insertContentAt({from:target.start,to:target.end},{type:'preservedBlock',attrs:{source:markup}});
+   }catch(error){if(!editor.isDestroyed)setImageError((error as Error).message);}
+  };
+  input.addEventListener('cancel',cancel);input.addEventListener('change',choose);editor.view.dom.addEventListener('spire:quick-image',open);
+  return()=>{cancel();input.removeEventListener('cancel',cancel);input.removeEventListener('change',choose);editor.view.dom.removeEventListener('spire:quick-image',open);input.remove();};
+ },[editor]);
  useEffect(()=>{if(editor&&(loaded.current!==editor||note.content!==last.current))load(editor,note.content);},[editor,note.content]);
  useEffect(()=>{mediaViews.current.forEach(refresh=>refresh());},[attachments,note.path]);
  useEffect(()=>{editor?.setEditable(!note.deleted,false);},[editor,note.deleted]);
  useEffect(()=>{if(editor)editor.view.dom.setAttribute("inputmode",keyboardEnabled?"text":"none");},[editor,keyboardEnabled]);
  useEffect(()=>()=>callbacks.current.onReady(null),[]);
  let scoped='';try{if(fileCss)scoped=scopeFileCss(fileCss,note.id);}catch{}
- return <>{scoped&&<style>{scoped}</style>}{quickLabel&&<small role="status" className="quick-format-status">{quickLabel} active · Enter to stop</small>}<EditorContent editor={editor} className="preview document-editor" data-style-scope={note.id}/></>;
+ return <>{imageError&&<p role="alert">{imageError}</p>}{scoped&&<style>{scoped}</style>}{quickLabel&&<small role="status" className="quick-format-status">{quickLabel} active · Enter to stop</small>}<EditorContent editor={editor} className="preview document-editor" data-style-scope={note.id}/></>;
 }
 export function DocumentEditor(props:Parameters<typeof BodyEditor>[0]){
  const bodyRef=useRef<Editor|null>(null),active=useRef<'body'|'header'|'footer'>('body');
