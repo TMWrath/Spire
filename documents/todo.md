@@ -1,5 +1,13 @@
 # Spire — Todo
 
+## File-operation responsiveness — implemented
+
+- [x] Hosted storage skips atomic rewrites when an existing file already has the intended bytes.
+- [x] Android Local sends only affected file entries across the WebView/native bridge instead of complete before/after file maps.
+- [x] Preserve provider-confirmed saves, stale-source and collision checks, destination-before-source moves, external-content folder protection, and unrelated files.
+- [x] Add hosted inode/mtime and Android compact-payload/native safety regressions.
+- [ ] Record physical Android SAF/WebView timings after the project owner tests the delivered APK.
+
 ## Shared UI / theme library — future
 
 - [ ] Create a reusable Spire theme/component library preserving approved surfaces, typography, spacing, icons, controls, menus, focus states and motion.
