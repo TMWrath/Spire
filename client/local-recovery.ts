@@ -4,7 +4,7 @@ let editorBusy=()=>true,lastInput=0;
 export function setWorkspaceBusyCheck(check:()=>boolean){editorBusy=check;}
 export function workspaceRefreshBlocked(){return editorBusy()||mounted.busy||Date.now()-lastInput<2000;}
 export function markWorkspaceInput(){lastInput=Date.now();}
-export function androidLocalRecoveryAvailable(){return true;} // Shared directory recovery API: Android, desktop and hosted Spire.
+export function androidLocalRecoveryAvailable(){return !globalThis.spireLocalManual;} // Shared directory recovery API: Android, desktop and hosted Spire.
 function announce(warnings:unknown){(globalThis as any).spireWorkspaceWarnings=warnings;dispatchEvent(new Event('spire-workspace-warnings'));}
 export async function localRecoveryAction(action:'refresh'|'reconcile'|'preview',body?:{token:string;action:'adopt'|'restore'}):Promise<RecoveryItem[]>{
  if(!androidLocalRecoveryAvailable())throw Error('Directory recovery is unavailable for this workspace.');
@@ -26,16 +26,18 @@ export async function localRecoveryAction(action:'refresh'|'reconcile'|'preview'
   return result.items??[];
  });
 }
-// Only an actual return to foreground requests a rescan; polling does not scan SAF.
-// Busy/dirty editors defer that single request until idle, rather than losing it.
+// Reconcile a cached native startup once in the background. Routine app focus
+// changes do not rescan the provider; Settings offers an explicit refresh.
+// Busy/dirty editors defer the startup check until idle.
 export function installLocalForegroundRefresh(){
- let pending=false,running=false,lastScan=0,disposed=false;
+ if(globalThis.spireLocalManual)return ()=>{};
+ let pending=!!globalThis.spireLocalWorkspace,running=false,lastScan=0,disposed=false;
  const attempt=async()=>{
   if(disposed||!pending||running||document.visibilityState!=='visible'||!androidLocalRecoveryAvailable()||workspaceRefreshBlocked()||Date.now()-lastScan<30000)return;
   running=true;
   try{await localRecoveryAction('refresh');pending=false;lastScan=Date.now();}catch{/* Retain the request for a later idle opportunity; never auto-choose a version. */}finally{running=false;}
  };
- const visibility=()=>{if(document.visibilityState==='visible'){pending=true;void attempt();}};
+ const visibility=()=>{if(document.visibilityState==='visible')void attempt();};
  document.addEventListener('visibilitychange',visibility);document.addEventListener('beforeinput',markWorkspaceInput,true);
  const timer=window.setInterval(()=>{void attempt();},5000);
  return()=>{disposed=true;clearInterval(timer);document.removeEventListener('visibilitychange',visibility);document.removeEventListener('beforeinput',markWorkspaceInput,true);};

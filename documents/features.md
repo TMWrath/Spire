@@ -519,3 +519,13 @@ Supersedes the earlier separate-choice-only UI contract, not the prohibition on 
 Acceptance: TypeScript, 168/168 unit/API tests, 121/121 browser tests, focused image/format tests, production build and packaged Docker startup passed. Browser coverage includes all four commands, nested paths/Unicode names, cancellation, stale-content guard, alignment source/editor round-trip and save/reload. The rich-editor test now clears through select-all/delete rather than DOM-only fill around preserved atomic blocks.
 
 Deployed implementation: `1f23f2a0c42d895d28002856ed563b262c432924`. Immutable release `20261016T133218Z-image-1f23f2a`. Application-consistent backup `20261016T133218Z-image-1f23f2a.json` verified before cutover. Docker healthy, persistent volume retained, private HTTPS index 200 and health OK; served JS/CSS match the tested build exactly. Release pointer reconciled. No source push, Android bundle refresh, or physical Android acceptance.
+
+
+## Workspace loading and per-file saving — implementation in progress
+
+the project owner authorized selected-folder loading reuse, per-file autosave, idle-delayed writes and Save / Discard changes / Cancel before leaving unsaved work. Initial two-second delay is Aphelion’s approved recommendation. Preserve all existing files, app data and recovery journals. Build, regression, Android artifact and deployment acceptance remain pending.
+
+
+## File/folder gesture separation — requested, implementation in progress
+
+the project owner requested one coherent interaction replacement: Trash icon starts deletion; hold and move the item icon starts drag/move; holding its name opens rename. Ordinary taps retain file-open/folder-expand behavior. Hold gestures must never delete. Cancellation, scrolling, collisions, selected-file edits and cross-workspace transfer safeguards remain protected. Verify hosted and Android bundled surfaces; physical-device access is not authorized by this source task.

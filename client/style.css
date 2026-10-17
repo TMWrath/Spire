@@ -59,6 +59,14 @@
 /* Nested folders retain their full data-folder path for drag/drop and deletion. */
 .sidebar nav details > details{margin-left:16px;border-left:1px solid var(--border,#333);padding-left:6px}
 .sidebar nav summary{overflow-wrap:anywhere}
+/* Gesture ownership: only icons suppress native panning. Names/rows retain vertical scrolling. */
+.sidebar nav summary{display:flex;align-items:center;gap:6px;width:100%;min-width:0}
+.sidebar .tree-file-row{display:flex;align-items:center;min-width:0}
+.sidebar .tree-file-row>.note-link{flex:1;min-width:0;width:auto}
+.sidebar .item-drag-handle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 32px;min-width:32px;min-height:38px;touch-action:none;user-select:none;-webkit-touch-callout:none;cursor:grab}
+.sidebar .item-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;touch-action:pan-y;user-select:none;-webkit-touch-callout:none}
+.sidebar .tree-trash{flex:0 0 36px;min-width:36px;min-height:38px;padding:6px;border:0;background:transparent;color:inherit;opacity:.7}
+.sidebar .tree-trash:hover,.sidebar .tree-trash:focus-visible{opacity:1;background:var(--hover,#333)}
 .folder-drag-handle{display:inline-flex;align-items:center;justify-content:flex-start;gap:7px;min-width:0;min-height:0;padding:0;border:0;border-radius:0;background:transparent;color:inherit;user-select:none;touch-action:none}
 
 .save-template-actions{display:flex;flex-direction:column;gap:.6rem;margin:1rem 0}.save-template-actions button{width:100%;white-space:normal}
@@ -75,3 +83,5 @@
 
 /* Help owns its layout; do not inherit the app navigation header geometry. */
 .quick-format-help>header{position:static;inset:auto;height:auto;min-height:0;padding:0;margin:0 0 12px;display:flex;align-items:flex-start;flex-wrap:nowrap;background:transparent;border:0;line-height:1.5}.quick-format-help>header>div{min-width:0;flex:1}.quick-format-help>header small{display:block;position:static;line-height:1.5}.quick-format-help>header h2{position:static;line-height:1.3;margin:4px 0 8px}.quick-format-help>header p{position:static;white-space:normal;line-height:1.5}.quick-format-help>header>button{flex:0 0 auto;position:static}
+
+.file-autosave{display:inline-flex;flex-direction:row;align-items:center;gap:.4rem;white-space:nowrap;flex-shrink:0;font-size:.8rem}.file-autosave input{width:auto;margin:0;accent-color:#ddd}

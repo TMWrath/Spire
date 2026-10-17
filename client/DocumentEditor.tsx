@@ -42,7 +42,7 @@ function BodyEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,
    if(parsed.length===1){const key=JSON.stringify(parsed[0]);originals.current.set(key,[...(originals.current.get(key)??[]),raw]);}
    content.push(...parsed);
   }
-  editor.commands.setContent({type:'doc',content:content.length?content:[{type:'paragraph'}]},{emitUpdate:false});resetQuickFormat(editor);last.current=source;loaded.current=editor;
+  const next={type:'doc',content:content.length?content:[{type:'paragraph'}]};if(!editor.state.doc.eq(editor.schema.nodeFromJSON(next))){editor.commands.setContent(next,{emitUpdate:false});resetQuickFormat(editor);}last.current=source;loaded.current=editor;
  };
  const Preserved=Node.create({name:'preservedBlock',group:'block',atom:true,selectable:true,draggable:false,addAttributes:()=>({source:{default:'',rendered:false}}),parseHTML:()=>[],renderHTML:()=>['div',{'data-preserved-block':'true'}],renderMarkdown:node=>String(node.attrs?.source??'').trimEnd(),addNodeView:()=>({node})=>{
   const dom=document.createElement('div');dom.className='preserved-document-block';dom.contentEditable='false';

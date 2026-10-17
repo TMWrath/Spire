@@ -1,7 +1,7 @@
 export type NativeRequest={origin:string;path:string;method:string;headers:Record<string,string>;body?:string;binary?:boolean};
 export type NativeResponse={status:number;type:string;body:string};
 export type RemoteTransport={request(input:NativeRequest):Promise<NativeResponse>};
-declare global {var spireRemoteTransport:RemoteTransport|undefined;var spireLocalWorkspace:boolean|undefined;var spireLocalIdentity:import('./sync').Identity|undefined;}
+declare global {var spireRemoteTransport:RemoteTransport|undefined;var spireLocalWorkspace:boolean|undefined;var spireLocalManual:boolean|undefined;var spireLocalIdentity:import('./sync').Identity|undefined;}
 export function remoteOrigin(value:string):string{const u=new URL(value.trim());if(u.protocol!=='https:'||u.username||u.password||u.pathname!=='/'||u.search||u.hash)throw Error('Use an HTTPS server origin without a path or embedded credentials.');return u.origin;}
 export const bytesFromBase64=(data:string)=>Uint8Array.from(atob(data),c=>c.charCodeAt(0));
 export function base64FromBytes(data:Uint8Array){let text='';for(let i=0;i<data.length;i+=8192)text+=String.fromCharCode(...data.subarray(i,i+8192));return btoa(text);}
