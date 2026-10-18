@@ -10,3 +10,14 @@
 .server-settings{border-bottom:1px solid #333;padding-bottom:24px;margin-bottom:24px}
 .server-settings form{max-width:520px}
 .mount-tree small{overflow-wrap:anywhere}
+.mount-grid.has-server{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:8px;min-width:0}
+.mount-grid.has-server>.mount-tree{min-width:0;min-height:0;max-height:min(58dvh,560px);overflow:auto;border:1px solid #303030;padding:6px}
+.mount-grid.has-server .mount-heading{position:sticky;top:-6px;z-index:1;background:#111;border-bottom:1px solid #333}
+.mount-grid.has-server .mount-status{font-size:10px;line-height:1.35;padding:5px 6px 8px}
+.mount-grid.has-server .mount-tree nav{min-width:0}
+.mount-grid.has-server .mount-tree summary{gap:3px;padding-left:2px;font-size:12px}
+.mount-grid.has-server .mount-tree summary .item-drag-handle{flex-basis:24px;min-width:24px}
+.mount-grid.has-server .mount-tree .tree-trash{flex-basis:28px;min-width:28px}
+.mount-grid.has-server .mount-tree .mount-move{padding:2px!important;min-width:27px}
+.mount-grid.has-server .mount-tree .note-link{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:6px 3px;font-size:11px}
+.mount-grid.has-server .mount-tree .tree-file-row>.tree-trash{flex-basis:26px;min-width:26px}
