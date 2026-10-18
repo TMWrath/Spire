@@ -1,5 +1,9 @@
 # Spire — Features
 
+## Compact Local and Server headings — implementation
+
+The Local and Server workspace columns retain their selectable labeled heading buttons, distinct file trees, and explicit transfer controls. The secondary status copy directly beneath those buttons has been removed to give the narrow Android sidebar more room: Local no longer shows “On this device · never uploaded automatically,” and Server no longer repeats its URL and synchronization state there. Global synchronization state remains in the bottom status bar, and connection details remain available in Settings.
+
 ## Server-origin identity return — partial prototype only
 
 Shared domain prototype and regression tests model owner/workspace/origin-scoped moved-away receipts across restart. Not connected to real move/return, durable platform metadata, transport/API, links, attachments, conflicts, UI, Electron or Android. Not an available feature; parity and acceptance are unverified. See `identity-return-status.md`.

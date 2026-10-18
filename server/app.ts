@@ -12,12 +12,13 @@ import { Store, HttpError, atomic } from './store.ts';
 import { unpack, exportVault } from './archive.ts';
 import {sourceInputSchema} from '../shared/sources.ts';
 import { safePath,templateInputSchema } from '../shared/model.ts';
+import {DeviceWorkspaces} from './device-workspaces.ts';
 type Device = {id:string;name:string;created:string;revoked:boolean};
 type Session = {device:string;csrf:string;expires:number};
 type Auth = {owner?:{id:string;username:string;salt:string;hash:string};devices:Device[];sessions:Record<string,Session>};
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 export function createApp(root:string,origin:string,options:{contentDirectory?:string;staticDirectory?:string}={}){
- const app=express(),store=new Store(root,options);const url=new URL(origin);if(url.origin!==origin)throw new Error('SPIRE_ORIGIN must be an exact origin');if(url.protocol!=='https:'&&!['127.0.0.1','localhost','[::1]'].includes(url.hostname))throw new Error('Non-loopback origins require HTTPS');
+ const app=express(),store=new Store(root,options),deviceWorkspaces=new DeviceWorkspaces(root);const url=new URL(origin);if(url.origin!==origin)throw new Error('SPIRE_ORIGIN must be an exact origin');if(url.protocol!=='https:'&&!['127.0.0.1','localhost','[::1]'].includes(url.hostname))throw new Error('Non-loopback origins require HTTPS');
  app.set('trust proxy',1);
  let auth:Auth=store.load('auth.json')??{devices:[],sessions:{}};const saveAuth=()=>atomic(store.file('auth.json'),JSON.stringify(auth));
  app.disable('x-powered-by');app.use(helmet({contentSecurityPolicy:{directives:{defaultSrc:["'self'"],scriptSrc:["'self'"],styleSrc:["'self'","'unsafe-inline'"],imgSrc:["'self'",'data:','blob:'],mediaSrc:["'self'",'blob:'],objectSrc:["'none'"],frameSrc:["'none'"],upgradeInsecureRequests:url.protocol==='https:'?[]:null}},strictTransportSecurity:url.protocol==='https:'?undefined:false}));
@@ -26,8 +27,8 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
  app.use(cookieParser());app.use('/api/transfers',express.json({limit:'48mb'}));app.use(express.json({limit:'2mb'}));
  app.get('/api/health',(_req,res)=>res.json({ok:!store.poisoned}));
  app.get('/api/bootstrap',(_req,res)=>res.json({setup:!auth.owner}));
- const credentials=z.object({username:z.string().trim().min(1).max(80),password:z.string().min(12).max(256),device:z.string().trim().min(1).max(80).default('Browser')});
- const issue=(res:Response,name:string)=>{const device:Device={id:randomUUID(),name,created:new Date().toISOString(),revoked:false};const token=randomBytes(32).toString('hex');const csrf=randomBytes(32).toString('hex');auth.devices.push(device);auth.sessions[hash(token)]={device:device.id,csrf,expires:Date.now()+30*24*3600*1000};for(const [key,s]of Object.entries(auth.sessions))if(s.expires<Date.now())delete auth.sessions[key];saveAuth();res.cookie('spire_session',token,{httpOnly:true,secure:url.protocol==='https:',sameSite:'strict',path:'/',maxAge:30*24*3600*1000});res.json({owner:auth.owner!.id,username:auth.owner!.username,device,csrf});};
+ const credentials=z.object({username:z.string().trim().min(1).max(80),password:z.string().min(12).max(256),device:z.string().trim().min(1).max(80)});
+ const issue=(res:Response,name:string)=>{if(auth.devices.some(d=>!d.revoked&&d.name.trim().toLocaleLowerCase()===name.trim().toLocaleLowerCase()))throw new HttpError(409,'Device name already in use');name=name.trim();const device:Device={id:randomUUID(),name,created:new Date().toISOString(),revoked:false};const token=randomBytes(32).toString('hex');const csrf=randomBytes(32).toString('hex');auth.devices.push(device);auth.sessions[hash(token)]={device:device.id,csrf,expires:Date.now()+30*24*3600*1000};for(const [key,s]of Object.entries(auth.sessions))if(s.expires<Date.now())delete auth.sessions[key];saveAuth();res.cookie('spire_session',token,{httpOnly:true,secure:url.protocol==='https:',sameSite:'strict',path:'/',maxAge:30*24*3600*1000});res.json({owner:auth.owner!.id,username:auth.owner!.username,device,csrf});};
  app.use(['/api/setup','/api/login'],rateLimit({windowMs:15*60*1000,limit:20,standardHeaders:'draft-8',legacyHeaders:false}));
  app.post('/api/setup',(req,res)=>{if(auth.owner)throw new HttpError(409,'Owner already exists');const c=credentials.extend({reliquary:z.string().trim().min(1).max(100)}).parse(req.body);const salt=randomBytes(16).toString('hex');const owner={id:randomUUID(),username:c.username,salt,hash:scryptSync(c.password,salt,64,{N:32768,r:8,p:1,maxmem:64*1024*1024}).toString('hex')};store.moveReliquary(c.reliquary);auth.owner=owner;issue(res,c.device);});
  app.post('/api/login',(req,res)=>{const c=credentials.parse(req.body);const owner=auth.owner;const computed=scryptSync(c.password,owner?.salt??'no-owner',64,{N:32768,r:8,p:1,maxmem:64*1024*1024});if(!owner||!timingSafeEqual(computed,Buffer.from(owner.hash,'hex'))||c.username!==owner.username)throw new HttpError(401,'Invalid credentials');issue(res,c.device);});
@@ -45,6 +46,11 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
  app.post('/api/logout',(req,res)=>{delete auth.sessions[hash(req.cookies.spire_session)];saveAuth();res.clearCookie('spire_session',{path:'/'});res.json({ok:true});});
  app.get('/api/devices',(_req,res)=>res.json(auth.devices));
  app.delete('/api/devices/:id',(req,res)=>{const d=auth.devices.find(d=>d.id===req.params.id);if(!d)throw new HttpError(404,'Device not found');d.revoked=true;for(const[k,s]of Object.entries(auth.sessions))if(s.device===d.id)delete auth.sessions[k];saveAuth();res.json({ok:true});});
+ app.get('/api/device-workspaces',(_req,res)=>res.json(auth.devices.filter(d=>!d.revoked).map(d=>({...d,published:deviceWorkspaces.has(d.id)}))));
+ app.put('/api/device-workspaces/self/snapshot',(req,res)=>{const body=z.object({base:z.number().int().nonnegative(),snapshot:z.unknown()}).parse(req.body);res.json(deviceWorkspaces.publish(res.locals.device.id,body.base,body.snapshot));});
+ app.get('/api/device-workspaces/self/changes',(req,res)=>{z.coerce.number().int().nonnegative().parse(req.query.after??0);res.json(deviceWorkspaces.read(res.locals.device.id));});
+ app.get('/api/device-workspaces/:id/snapshot',(req,res)=>{const device=auth.devices.find(d=>d.id===req.params.id&&!d.revoked);if(!device)throw new HttpError(404,'Device not found');res.json(deviceWorkspaces.read(device.id));});
+ app.post('/api/device-workspaces/:id/mutate',(req,res)=>{const device=auth.devices.find(d=>d.id===req.params.id&&!d.revoked);if(!device)throw new HttpError(404,'Device not found');const body=z.object({workspaceRevision:z.number().int().nonnegative(),mutation:z.unknown()}).parse(req.body),result=deviceWorkspaces.mutate(device.id,body.workspaceRevision,body.mutation);res.json({workspaceRevision:result.revision,snapshot:result.snapshot});});
  app.post('/api/quick-actions',(req,res)=>res.status(201).json(store.saveQuickAction(req.body)));
  app.put('/api/quick-actions/order',(req,res)=>{const body=z.object({ids:z.array(z.string().uuid()),expected:z.array(z.string().uuid())}).parse(req.body);res.json(store.reorderQuickActions(body.ids,body.expected));});
  app.put('/api/quick-actions/:id',(req,res)=>{const body=quickActionInputSchema.extend({revision:z.number().int().positive()}).parse(req.body);res.json(store.saveQuickAction(body,String(req.params.id),body.revision));});

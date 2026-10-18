@@ -6,7 +6,7 @@ test('video capture auth, CSRF, atomic save, replay, reuse, portability and SSRF
  const source={kind:'video',title:'Local film',author:'Author',description:'Local file: own-film.webm',url:''};const id=randomUUID(),route='/video/capture?id='+id+'&extension=jpg&source='+encodeURIComponent(JSON.stringify(source)),bytes=Buffer.from([255,216,255,10,11,12]);
  try{
   assert.equal((await request('/video/resolve',{url:'https://example.com/video.mp4'})).status,401);assert.equal((await request('/video/stream/nope')).status,401);assert.equal((await request(route,bytes)).status,401);
-  const setup=await request('/setup',{username:'owner',password:'disposable-video-password',reliquary:'Video test'});cookie=setup.headers.get('set-cookie')!.split(';')[0];csrf=(await setup.json()).csrf;
+  const setup=await request('/setup',{username:'owner',password:'disposable-video-password',reliquary:'Video test',device:'Video test browser'});cookie=setup.headers.get('set-cookie')!.split(';')[0];csrf=(await setup.json()).csrf;
   assert.equal((await request(route,bytes,{'X-CSRF-Token':'wrong'})).status,403);
   const before=store.state.seq;assert.equal((await request(route,Buffer.from('not an image'))).status,400);assert.equal(store.state.seq,before);
   const result=await request(route,bytes);assert.equal(result.status,200);const saved=await result.json();assert.equal(store.state.sources?.length,1);assert.equal(store.state.attachments.length,1);const seq=store.state.seq;

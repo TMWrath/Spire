@@ -3,17 +3,21 @@
 .mount-heading{display:flex;gap:8px;align-items:center;width:100%;text-align:left;padding:8px;border:1px solid transparent}
 .active-mount>.mount-heading{border-color:#666;background:#191919}
 .mount-heading svg{width:17px;height:17px}
-.mount-status{display:block;padding:4px 8px 10px;color:#aaa;font-size:11px;overflow-wrap:anywhere}
 .mount-move{margin-left:auto;padding:3px!important;min-height:24px}
 .mount-tree summary{display:flex;align-items:center;gap:5px}
 .mount-tree .note-link{width:100%;text-align:left}
 .server-settings{border-bottom:1px solid #333;padding-bottom:24px;margin-bottom:24px}
+.device-workspace-selector{display:grid;gap:7px;padding:10px 0;border-bottom:1px solid #333}
+.device-workspace-selector>span{font-size:12px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.08em}
+.device-workspace-selector>div{display:flex;gap:6px;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin;padding:1px 0 6px}
+.device-workspace-selector button{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;max-width:190px;min-height:34px;padding:6px 10px;border:1px solid #3a3a3a;border-radius:8px;background:#151515;color:#ddd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.device-workspace-selector button[aria-pressed="true"]{border-color:#888;background:#242424;color:#fff}
+.device-workspace-selector button:disabled{opacity:.5}
 .server-settings form{max-width:520px}
 .mount-tree small{overflow-wrap:anywhere}
 .mount-grid.has-server{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:8px;min-width:0}
 .mount-grid.has-server>.mount-tree{min-width:0;min-height:0;max-height:min(58dvh,560px);overflow:auto;border:1px solid #303030;padding:6px}
 .mount-grid.has-server .mount-heading{position:sticky;top:-6px;z-index:1;background:#111;border-bottom:1px solid #333}
-.mount-grid.has-server .mount-status{font-size:10px;line-height:1.35;padding:5px 6px 8px}
 .mount-grid.has-server .mount-tree nav{min-width:0}
 .mount-grid.has-server .mount-tree summary{gap:3px;padding-left:2px;font-size:12px}
 .mount-grid.has-server .mount-tree summary .item-drag-handle{flex-basis:24px;min-width:24px}
