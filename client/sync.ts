@@ -75,7 +75,8 @@ export class DeviceWorkspaceEngine extends Engine{
 export let engine=localEngine;
 type Journal={id:string;source:string;destination:string;path:string;phase:'prepared'|'acknowledged'|'verified'|'done'|'interrupted';message?:string;bundle?:WireBundle;time:string};
 export const mounted={
- remote:undefined as Engine|undefined,deviceEngines:[] as DeviceWorkspaceEngine[],journals:[] as Journal[],busy:false,
+ remote:undefined as Engine|undefined,deviceEngines:[] as DeviceWorkspaceEngine[],journals:[] as Journal[],busy:false,sharingFlight:undefined as Promise<void>|undefined,
+ async refreshSharing(){if(this.busy)return;if(this.sharingFlight)return this.sharingFlight;const flight=this.supported?this.reconcileDeviceWorkspace():this.refreshDevices();this.sharingFlight=flight;try{await flight;}finally{if(this.sharingFlight===flight)this.sharingFlight=undefined;}},
  get supported(){return !!globalThis.spireRemoteTransport;},
  get engines(){return [localEngine,...(this.remote?[this.remote]:[])];},
  get visibleEngines(){return [...this.engines,...this.deviceEngines];},
