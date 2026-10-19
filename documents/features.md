@@ -2,7 +2,7 @@
 
 ## Storage settings: Local recovery export and Server connection
 
-The Storage tab contains separate Local and Server sections. Local recovery export is shown under Storage only; Activity log remains independent and focused on workspace warnings. Server connection controls live under the Server subsection without merging the two storage systems or changing upload, synchronization, recovery, or workspace-safety behavior. The Android WebView receives this shared interface from the hosted app; physical WebView acceptance is tracked separately.
+The Storage tab contains separate Local and Server sections. Local recovery export is shown under Storage only; Activity log remains independent and focused on workspace warnings. Server connection controls live under the Server subsection without merging the two storage systems or changing upload, synchronization, recovery, or workspace-safety behavior. Hosted implementation `bdf405c9f844ea9e3cbe1e71f1a6d13d2528030d` is deployed as `20261019T125310Z-storage-bdf405c`. Candidate runtime smoke, application-backup checksum verification, full-volume archive verification, Docker health, HTTPS health/index, and exact served entry JS/CSS hashes passed; the existing writable data volume is preserved. Unit/API tests passed 190/190. Settings browser assertions passed, but the broader unified-workspace browser flow failed later during file transfer and is not reported green. Android APK was not rebuilt; bundled-asset parity and physical WebView acceptance remain unverified. No push.
 
 ## Compact Local and Server headings — implementation
 
