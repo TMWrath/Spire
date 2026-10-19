@@ -1,0 +1,31 @@
+import {test,expect} from '@playwright/test';
+import {randomUUID} from 'node:crypto';
+const credentials={username:'owner',password:'disposable-long-password'};
+test.beforeEach(async({request})=>{await request.post('/__test/reset');});
+test('browser sessions show only real published storage and preserve server identity across logout and cookie clearing',async({page,playwright})=>{
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('/');await expect(page.getByLabel('Device name',{exact:true})).toHaveCount(0);
+ await page.getByLabel('Username',{exact:true}).fill(credentials.username);await page.getByLabel('Password',{exact:true}).fill(credentials.password);
+ await page.getByRole('button',{name:'Create Reliquary',exact:true}).click();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
+ const me=await page.request.get('/api/me');const identity=await me.json();expect(identity.browser).toBe(true);expect(identity.device).toBeUndefined();expect(await(await page.request.get('/api/devices')).json()).toEqual([]);
+ const native=await playwright.request.newContext({baseURL:'http://127.0.0.1:4179',extraHTTPHeaders:{Origin:'http://127.0.0.1:4179'}});
+ try{
+  const login=await native.post('/api/login',{data:{...credentials,device:'Test phone',installation:{id:randomUUID(),secret:randomUUID()+randomUUID()}}});expect(login.ok()).toBeTruthy();const client=await login.json();
+  const id=randomUUID(),snapshot={seq:0,notes:[{id,path:'Writing/Shared.md',content:'Phone original',deleted:false,rev:1,history:[],modified:new Date().toISOString(),templateIds:[]}],folders:['Writing'],styles:{},conflicts:[],attachments:[]};
+  expect((await native.put('/api/device-workspaces/self/snapshot',{headers:{'X-CSRF-Token':client.csrf},data:{base:0,snapshot}})).ok()).toBeTruthy();
+  await page.reload();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
+  if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+  await expect(page.getByRole('group',{name:'Device Local workspaces'})).toContainText('Test phone');
+  await expect(page.getByRole('group',{name:'Device Local workspaces'})).not.toContainText('Browser');
+  await expect(page.getByRole('region',{name:'Server files',exact:true})).toBeVisible();
+  await expect(page.getByRole('region',{name:'Local files',exact:true})).toHaveCount(0);
+  await page.getByRole('group',{name:'Device Local workspaces'}).getByRole('button',{name:'Test phone',exact:true}).click();
+  await expect(page.getByRole('region',{name:'Test phone Local files'})).toBeVisible();
+  const revision=(await(await native.get('/api/device-workspaces/self/changes')).json()).revision;
+  const edit=await page.request.post('/api/device-workspaces/'+client.device.id+'/mutate',{headers:{Origin:'http://127.0.0.1:4179','X-CSRF-Token':identity.csrf},data:{workspaceRevision:revision,mutation:{op:randomUUID(),id,base:1,path:'Writing/Shared.md',content:'Edited through browser',deleted:false,templateIds:[]}}});expect(edit.ok()).toBeTruthy();
+  expect((await(await native.get('/api/device-workspaces/self/changes')).json()).snapshot.notes[0].content).toBe('Edited through browser');
+  await page.request.post('/api/logout',{headers:{Origin:'http://127.0.0.1:4179','X-CSRF-Token':identity.csrf}});await page.context().clearCookies();
+  const again=await page.request.post('/api/login',{headers:{Origin:'http://127.0.0.1:4179'},data:credentials});expect(again.ok()).toBeTruthy();expect((await again.json()).server.id).toBe(identity.server.id);
+  expect((await(await page.request.get('/api/devices')).json()).length).toBe(1);expect(errors).toEqual([]);
+ }finally{await native.dispose();}
+});

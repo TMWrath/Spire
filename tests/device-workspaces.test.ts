@@ -19,7 +19,7 @@ async function start(t:any){
 
 test('device names are required and unique case-insensitively without creating a duplicate session',async t=>{
  const {session}=await start(t),owner=session();
- assert.equal((await owner.request('/setup','POST',{username:'owner',password:'long-enough-password',reliquary:'Vault'})).status,400);
+ assert.equal((await owner.request('/setup','POST',{username:'owner',password:'long-enough-password',reliquary:'Vault',device:''})).status,400);
  const setup=await owner.request('/setup','POST',{username:'owner',password:'long-enough-password',reliquary:'Vault',device:'Pixel Fold'});assert.equal(setup.status,200);await owner.adopt(setup);
  const duplicate=session(),response=await duplicate.request('/login','POST',{username:'owner',password:'long-enough-password',device:'  pixel fold  '});
  assert.equal(response.status,409);assert.match((await response.json()).error,/device name.*already/i);assert.equal(response.headers.get('set-cookie'),null);
@@ -45,3 +45,14 @@ test('revoked devices cannot publish or pull their mirrored local workspace',asy
  assert.equal((await owner.request('/devices/'+identity.device.id,'DELETE')).status,200);
  assert.equal((await owner.request('/device-workspaces/self/changes?after=0')).status,401);
 });
+
+ test('installation proof reuses device identity after logout',async t=>{
+ const {session}=await start(t),client=session();
+ const body={username:'owner',password:'long-enough-password',device:'Stable phone',installation:{id:randomUUID(),secret:randomUUID()+randomUUID()}};
+ const setup=await client.request('/setup','POST',{...body,reliquary:'Writing'});await client.adopt(setup);const first=await setup.clone().json();
+ await client.request('/logout','POST');
+ const login=await client.request('/login','POST',body);assert.equal(login.status,200);await client.adopt(login);
+ assert.equal((await login.clone().json()).device.id,first.device.id);
+ assert.equal((await(await client.request('/devices')).json()).length,1);
+ const forged=await client.request('/login','POST',{...body,installation:{...body.installation,secret:randomUUID()+randomUUID()}});assert.equal(forged.status,403);
+ });

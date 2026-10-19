@@ -14,6 +14,12 @@
 .device-workspace-selector button[aria-pressed="true"]{border-color:#888;background:#242424;color:#fff}
 .device-workspace-selector button:disabled{opacity:.5}
 .server-settings form{max-width:520px}
+/* Move reviews are content cards, not horizontal application notice bars. */
+.move-review{display:flex;flex-direction:column;align-items:stretch;gap:12px;min-width:0;max-width:100%;margin-top:16px;padding:16px;border:1px solid #444;border-radius:6px;background:#202020;overflow-wrap:anywhere}
+.move-review h3,.move-review p{margin:0;min-width:0}
+.move-review h3{order:-1;font-size:16px}
+.move-review button{align-self:flex-start;max-width:100%;white-space:normal;min-height:44px}
+.move-review button:disabled{opacity:.55;cursor:not-allowed}
 .mount-tree small{overflow-wrap:anywhere}
 .mount-grid.has-server{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:8px;min-width:0}
 .mount-grid.has-server>.mount-tree{min-width:0;min-height:0;max-height:min(58dvh,560px);overflow:auto;border:1px solid #303030;padding:6px}
