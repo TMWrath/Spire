@@ -15,13 +15,21 @@ async function setup(page:Page){
  await selectDropdown(page.getByLabel('Save in folder'),'__new__');await page.getByLabel('New folder path').fill('Writing');await page.getByRole('button',{name:'Create file',exact:true}).click();
  await page.getByRole('button',{name:'Source',exact:true}).click();await page.getByLabel('Markdown source',{exact:true}).fill('Keep my writing.');
 }
-async function show(page:Page,kind:'file'|'dictate'='file'){
- const name=kind==='file'?'Transcribe audio to file':'Dictate into file';await page.getByRole('button',{name:'Media',exact:true}).click();await page.getByRole('button',{name,exact:true}).click();return page.getByRole('dialog',{name,exact:true});
+async function show(page:Page){
+ await page.getByRole('button',{name:'Create from file',exact:true}).click();await page.getByRole('button',{name:'From audio',exact:false}).click();return page.getByRole('dialog',{name:'Transcribe audio to file',exact:true});
 }
 async function fakeSpeech(page:Page,text='Spire heading one A new chapter. Spire new paragraph The house was silent.',failure=false){
  await page.addInitScript(({text,failure})=>{const NativeWorker=window.Worker;window.Worker=class extends NativeWorker{constructor(url:URL|string,options?:WorkerOptions){if(!String(url).includes('voice.worker')){super(url,options);return;}const mock:{onmessage:((event:{data:unknown})=>void)|null;onerror:null;terminated:boolean;postMessage:()=>void;terminate:()=>void}={onmessage:null,onerror:null,terminated:false,postMessage(){setTimeout(()=>{if(!mock.terminated)mock.onmessage?.({data:failure?{error:'Test speech engine unavailable'}:{result:{text}}});},30);},terminate(){mock.terminated=true;}};return mock as unknown as Worker;}} as typeof Worker;},{text,failure});
 }
-async function liveMic(page:Page){await page.evaluate(()=>{Object.defineProperty(navigator.mediaDevices,'getUserMedia',{configurable:true,value:async()=>{const c=new AudioContext(),d=c.createMediaStreamDestination(),o=c.createOscillator();o.connect(d);o.start();await c.resume();(window as any).__liveStream=d.stream;return d.stream;}});});}
+async function liveMic(page:Page){await page.evaluate(()=>{Object.defineProperty(navigator.mediaDevices,'getUserMedia',{configurable:true,value:async()=>{const c=new AudioContext(),d=c.createMediaStreamDestination(),o=c.createOscillator();const gain=c.createGain();o.connect(gain);gain.connect(d);o.start();await c.resume();(window as any).__liveGain=gain;(window as any).__liveStream=d.stream;return d.stream;}});});}
+test('editor waveform follows microphone sound, flattens in silence and disappears on stop',async({page})=>{
+ await fakeSpeech(page);await setup(page);await page.setViewportSize({width:390,height:844});await liveMic(page);await page.getByRole('button',{name:'Start dictation',exact:true}).click();
+ const wave=page.getByRole('img',{name:'Microphone audio waveform'});await expect(wave).toBeVisible();await expect(wave.locator('span')).toHaveCount(28);
+ const peak=()=>wave.locator('span').evaluateAll(nodes=>Math.max(...nodes.map(n=>parseFloat((n as HTMLElement).style.height))));
+ await expect.poll(peak).toBeGreaterThan(12);await page.evaluate(()=>(window as any).__liveGain.gain.value=0);await expect.poll(peak,{timeout:5000}).toBeLessThan(5);
+ const dock=page.getByRole('region',{name:'Active dictation'});await expect(dock).toBeVisible();const bounds=await dock.boundingBox();expect(bounds).not.toBeNull();expect(bounds!.y+bounds!.height).toBeGreaterThan(800);expect(bounds!.y+bounds!.height).toBeLessThanOrEqual(844);expect(await dock.evaluate(e=>e.parentElement===document.body)).toBe(true);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.getByRole('button',{name:'Stop recording',exact:true}).click();await expect(wave).toHaveCount(0);await expect(dock).toHaveCount(0);
+});
 test('editor mic inserts directly and drains final audio without a review dialog',async({page})=>{
  await fakeSpeech(page,'Fresh spoken words.');await setup(page);await liveMic(page);
  await page.getByLabel('Markdown source',{exact:true}).evaluate((e:HTMLTextAreaElement)=>e.setSelectionRange(e.value.length,e.value.length));
@@ -37,7 +45,7 @@ test('holding editor mic latches command mode with help and inserts into rich ed
  await expect(page.locator('.tiptap')).toContainText('A new chapter.');await page.getByRole('button',{name:'Source',exact:true}).click();await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue(/# A new chapter/);
 });
 test('editing a file during dictation rejects delayed text',async({page})=>{
- await fakeSpeech(page,'Do not overwrite.');await setup(page);await liveMic(page);await page.getByRole('button',{name:'Start dictation',exact:true}).click();await page.waitForTimeout(900);await page.getByLabel('Markdown source',{exact:true}).fill('My newer writing.');await page.getByRole('button',{name:'Stop dictation',exact:true}).click();await expect(page.locator('.live-dictation-status summary')).toContainText('details');await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue('My newer writing.');
+ await fakeSpeech(page,'Do not overwrite.');await setup(page);await liveMic(page);await page.getByRole('button',{name:'Start dictation',exact:true}).click();await page.waitForTimeout(900);await page.getByLabel('Markdown source',{exact:true}).fill('My newer writing.');await page.getByRole('button',{name:'Stop dictation',exact:true}).click();await expect(page.locator('.editor-tabs .live-dictation-status')).toHaveCount(0);await page.getByRole('button',{name:'Toggle context',exact:true}).click();await page.locator('.context .dictation-context-details summary').click();await expect(page.locator('.context .dictation-context-details [role=alert]')).toBeVisible();await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue('My newer writing.');
 });
 test('microphone capture pauses, resumes, retains playable audio and stops its tracks',async({page})=>{
  await setup(page);
@@ -53,8 +61,8 @@ async function transcribe(page:Page,dialog:ReturnType<Page['getByRole']>){
  await expect(dialog.getByLabel('Raw transcript',{exact:true}).or(dialog.getByRole('alert'))).toBeVisible({timeout:240000});
  await expect(dialog.getByRole('alert')).toHaveCount(0);
 }
-test('voice dialog preserves source on cancellation and exposes local processing and credits',async({page})=>{
- await setup(page);const dialog=await show(page,'dictate');await expect(dialog).toContainText('Audio stays on this device');await expect(dialog.getByRole('checkbox',{name:'Spoken formatting commands'})).not.toBeChecked();
+test('voice import preserves source on cancellation and exposes local processing and credits',async({page})=>{
+ await setup(page);const dialog=await show(page);await expect(dialog).toContainText('Audio stays on this device');
  await dialog.getByText('Open-source credits',{exact:true}).click();await expect(dialog).toContainText('Apache-2.0');await dialog.getByRole('button',{name:'Close',exact:true}).click();await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue('Keep my writing.');
 });
 test('real audio is transcribed locally and creates a separate portable file',async({page,context})=>{
@@ -72,11 +80,11 @@ test('imported audio survives close and recovery without upload or source change
  await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue('Keep my writing.');dialog=await show(page);await dialog.getByRole('button',{name:'Recover voice draft'}).click();await expect(dialog.getByRole('button',{name:'Download original audio'})).toBeVisible();expect(uploads).toEqual([]);
 });
 test('review edits never replace the preserved raw transcript',async({page})=>{
- await fakeSpeech(page,'Um, here is my complete original story.');await setup(page);const dialog=await show(page);await transcribe(page,dialog);await dialog.getByLabel('Transcript mode').selectOption('clean');await expect(dialog.getByLabel('Review Markdown')).toHaveValue(/Original transcript/);await dialog.getByLabel('Review Markdown').fill('# Edited reading copy\n\nOnly a reading copy.');await dialog.getByRole('button',{name:'Create transcript file',exact:true}).click();await expect(dialog).toHaveCount(0);
+ await fakeSpeech(page,'Um, here is my complete original story.');await setup(page);const dialog=await show(page);await transcribe(page,dialog);await dialog.getByLabel('Transcript mode').selectOption('clean');await expect(dialog.getByLabel('Review Markdown')).toHaveValue(/Original transcript/);await dialog.getByLabel('Review Markdown').fill('# Edited reading copy\n\nOnly a reading copy.');await dialog.getByRole('button',{name:'Create transcript file',exact:true}).click();await page.getByRole('dialog',{name:'Unsaved changes',exact:true}).getByRole('button',{name:'Save',exact:true}).click();await expect(dialog).toHaveCount(0);
  const snapshot=await (await page.request.get('/api/snapshot')).json();expect(snapshot.notes.find((n:any)=>n.path.includes('Voice source ')).content).toContain('Um, here is my complete original story.');expect(snapshot.notes.find((n:any)=>n.path==='Writing/Transcript.md').content).toContain('Edited reading copy');
 });
-test('explicit spoken commands insert at the captured source selection with a recoverable original',async({page})=>{
- await fakeSpeech(page);await setup(page);await page.getByLabel('Markdown source',{exact:true}).evaluate((field:HTMLTextAreaElement)=>field.setSelectionRange(5,7));const dialog=await show(page,'dictate');await transcribe(page,dialog);await expect(dialog.getByLabel('Review Markdown')).toHaveValue(/^Spire heading one/);await dialog.getByRole('checkbox',{name:'Spoken formatting commands'}).check();await expect(dialog.getByLabel('Review Markdown')).toHaveValue(/^# A new chapter\./);await dialog.getByRole('button',{name:'Insert reviewed dictation'}).click();await expect(dialog).toHaveCount(0);await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue(/^Keep # A new chapter\./);await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue(/ writing\.$/);
+test('Media no longer duplicates Create audio conversion or live dictation',async({page})=>{
+ await setup(page);await page.getByRole('button',{name:'Media',exact:true}).click();await expect(page.getByRole('button',{name:'Dictate into file',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Transcribe audio to file',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Record audio',exact:true})).toBeVisible();
 });
 test('speech failure retains original audio, offers retry, and never changes the source',async({page})=>{
  await fakeSpeech(page,'',true);await setup(page);const dialog=await show(page);await dialog.getByLabel('Audio file',{exact:true}).setInputFiles(fixture);await dialog.getByRole('button',{name:'Transcribe on this device'}).click();await expect(dialog.getByRole('alert')).toContainText('Test speech engine unavailable');await expect(dialog.getByRole('button',{name:'Download original audio'})).toBeVisible();await expect(dialog.getByRole('button',{name:'Transcribe on this device'})).toBeEnabled();await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue('Keep my writing.');

@@ -30,12 +30,12 @@ export class LocalTranscriber {
 export class VoiceCapture {
  private context:AudioContext|null=null;private stream:MediaStream|null=null;private node:ScriptProcessorNode|null=null;private source:MediaStreamAudioSourceNode|null=null;
  private chunks:Float32Array[]=[];private batch:Float32Array[]=[];private batchLength=0;private count=0;private closed=false;
- async start(onChunk:(samples:Float32Array,seconds:number)=>void,onLimit:()=>void){
+ async start(onChunk:(samples:Float32Array,seconds:number)=>void,onLimit:()=>void,onLevel?:(level:number)=>void){
   if(!navigator.mediaDevices?.getUserMedia)throw new Error('Microphone capture requires HTTPS and a supported browser.');
   const stream=await navigator.mediaDevices.getUserMedia({audio:true});if(this.closed){stream.getTracks().forEach(t=>t.stop());return;}
   this.stream=stream;const context=new AudioContext({sampleRate:VOICE_RATE});this.context=context;await context.resume();
   this.source=context.createMediaStreamSource(stream);this.node=context.createScriptProcessor(4096,1,1);
-  this.node.onaudioprocess=event=>{const samples=resampleMono(event.inputBuffer.getChannelData(0),context.sampleRate);this.chunks.push(samples);this.batch.push(samples);this.batchLength+=samples.length;this.count+=samples.length;if(this.batchLength>=VOICE_RATE*8){onChunk(joinSamples(this.batch),this.count/VOICE_RATE);this.batch=[];this.batchLength=0;}if(this.count>=300*VOICE_RATE)onLimit();};
+  this.node.onaudioprocess=event=>{const samples=resampleMono(event.inputBuffer.getChannelData(0),context.sampleRate);let energy=0;for(const sample of samples)energy+=sample*sample;onLevel?.(Math.min(1,Math.sqrt(energy/Math.max(1,samples.length))*8));this.chunks.push(samples);this.batch.push(samples);this.batchLength+=samples.length;this.count+=samples.length;if(this.batchLength>=VOICE_RATE*8){onChunk(joinSamples(this.batch),this.count/VOICE_RATE);this.batch=[];this.batchLength=0;}if(this.count>=300*VOICE_RATE)onLimit();};
   this.source.connect(this.node);this.node.connect(context.destination);
  }
  async pause(paused:boolean){this.stream?.getTracks().forEach(t=>t.enabled=!paused);if(paused)await this.context?.suspend();else await this.context?.resume();}
