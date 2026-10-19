@@ -7,7 +7,9 @@ COPY client ./client
 COPY server ./server
 COPY shared ./shared
 COPY public ./public
-RUN npm run build
+COPY scripts/prepare-voice-assets.mjs ./scripts/prepare-voice-assets.mjs
+COPY documents/voice-assets.lock.json ./documents/voice-assets.lock.json
+RUN npm run prepare:voice && npm run build
 
 FROM node:22-alpine
 ENV NODE_ENV=production PORT=4173 HOST=0.0.0.0 SPIRE_DATA=/data SPIRE_ORIGIN=http://localhost:4173

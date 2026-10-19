@@ -1,4 +1,6 @@
 node_modules/
+# Verified speech binaries are reproducibly staged, never committed
+/public/voice/
 dist/
 research/
 runtime/

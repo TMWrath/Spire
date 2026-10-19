@@ -11,7 +11,8 @@
   },
   "scripts": {
     "dev": "tsx server/index.ts",
-    "build": "tsc --noEmit && vite build",
+    "prepare:voice": "node scripts/prepare-voice-assets.mjs",
+    "build": "node scripts/prepare-voice-assets.mjs --verify-only && tsc --noEmit && vite build",
     "start": "tsx server/index.ts",
     "test": "tsx --test tests/*.test.ts",
     "test:browser": "playwright test",
@@ -22,6 +23,7 @@
     "test:desktop": "node tests/desktop-electron.mjs"
   },
   "dependencies": {
+    "@huggingface/transformers": "4.3.1",
     "@noble/hashes": "2.0.1",
     "@tiptap/extension-list": "^3.31.4",
     "@tiptap/extension-underline": "3.31.4",
