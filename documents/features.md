@@ -1,5 +1,9 @@
 # Spire — Features
 
+## Storage settings: Local recovery export and Server connection
+
+The Storage tab contains separate Local and Server sections. Local recovery export is shown under Storage only; Activity log remains independent and focused on workspace warnings. Server connection controls live under the Server subsection without merging the two storage systems or changing upload, synchronization, recovery, or workspace-safety behavior. The Android WebView receives this shared interface from the hosted app; physical WebView acceptance is tracked separately.
+
 ## Compact Local and Server headings — implementation
 
 The Local and Server workspace columns retain their selectable labeled heading buttons, distinct file trees, and explicit transfer controls. The secondary status copy directly beneath those buttons has been removed to give the narrow Android sidebar more room: Local no longer shows “On this device · never uploaded automatically,” and Server no longer repeats its URL and synchronization state there. Global synchronization state remains in the bottom status bar, and connection details remain available in Settings.
