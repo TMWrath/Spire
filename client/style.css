@@ -41,6 +41,11 @@
 .context-tabs{display:flex;overflow-x:auto;gap:.35rem;margin-bottom:1rem;border-bottom:1px solid var(--line)}
 .context-tabs button{flex-shrink:0;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;padding:.65rem .8rem}
 .context-tabs button[aria-selected="true"]{border-bottom-color:var(--fg)}
+.context:has(.context-revisions){position:absolute;right:0;top:64px;bottom:30px;z-index:4;width:100%;max-width:none;transition:width .18s ease}
+.context:has(.context-revisions) .note-context-card{min-height:100%}
+.context-revisions .history-shell{height:auto;min-height:calc(100dvh - 160px)}
+.context-revisions .history-workspace{min-height:0}
+@media(max-width:760px){.context:has(.context-revisions){top:58px;width:100%;padding:12px}.context-revisions .history-workspace{flex-direction:column}.context-revisions .history-timeline{width:100%;flex-direction:row;flex-shrink:0;border-right:0;border-bottom:1px solid #333;padding:10px 16px;max-height:100px}.context-revisions .history-timeline button{flex:0 0 auto;min-width:155px;padding:10px}}
 .file-css{display:grid;gap:.8rem}.file-css code,.style-file{overflow-wrap:anywhere}.file-css textarea{min-height:16rem;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;resize:vertical}
 .virtual-styles{margin-top:.7rem;border-top:1px solid var(--line);padding-top:.65rem}.virtual-styles summary{font-weight:700}.style-file{padding:.45rem 1.75rem;color:var(--muted);font-size:.84rem}
 
