@@ -128,7 +128,12 @@ export class Store {
  resolveConflict(id:string,choice:{action:'keep-server'|'keep-device'|'keep-both'|'merge';expectedServerRevision:number;path?:string;content?:string},device:string){
   const conflict=this.state.conflicts.find(c=>c.id===id);if(!conflict)throw new HttpError(404,'Conflict not found');
   const current=this.state.notes[conflict.mutation.id];if(!current||current.rev!==choice.expectedServerRevision||current.rev!==conflict.current)throw new HttpError(409,'Server file changed since this conflict was opened');
-  const next=structuredClone(this.state);next.conflicts=next.conflicts.filter(c=>c.id!==id);let primary=next.notes[current.id],copy:Note|undefined;
+  const next=structuredClone(this.state);
+  // A retried stale save may have produced duplicate conflicts. Resolving the
+  // selected mutation resolves byte-identical siblings too, while preserving
+  // genuinely different edits for separate review.
+  next.conflicts=next.conflicts.filter(c=>c.id!==id&&!(c.mutation.id===conflict.mutation.id&&c.mutation.path===conflict.mutation.path&&c.mutation.content===conflict.mutation.content&&c.mutation.deleted===conflict.mutation.deleted));
+  let primary=next.notes[current.id],copy:Note|undefined;
   if(choice.action==='keep-device'||choice.action==='merge'){
    const content=choice.action==='merge'?choice.content:conflict.mutation.content;if(typeof content!=='string')throw new HttpError(400,'Merged content is required');
    this.assertFree(conflict.mutation.path,current.id,conflict.mutation.deleted);primary=this.revise(next,current.id,{path:conflict.mutation.path,content,deleted:conflict.mutation.deleted,templateIds:conflict.mutation.templateIds},device);

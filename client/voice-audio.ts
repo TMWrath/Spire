@@ -1,3 +1,4 @@
+import type {DetectedVoiceLanguage,VoiceLanguage} from './voice-language';
 export const VOICE_RATE=16000,MAX_VOICE_SECONDS=15*60;
 export function joinSamples(chunks:Float32Array[]):Float32Array {const result=new Float32Array(chunks.reduce((n,c)=>n+c.length,0));let offset=0;for(const c of chunks){result.set(c,offset);offset+=c.length;}return result;}
 export function resampleMono(input:Float32Array,rate:number):Float32Array {
@@ -15,14 +16,25 @@ export async function decodeVoice(blob:Blob):Promise<Float32Array> {
  if(blob.size>10_000_000)throw new Error('Choose audio smaller than 10 MB.');
  const context=new AudioContext();try{const audio=await context.decodeAudioData(await blob.arrayBuffer());if(audio.duration>MAX_VOICE_SECONDS)throw new Error('Audio is limited to 15 minutes per transcription. Split longer recordings first.');const mono=new Float32Array(audio.length);for(let ch=0;ch<audio.numberOfChannels;ch++){const source=audio.getChannelData(ch);for(let i=0;i<mono.length;i++)mono[i]+=source[i]/audio.numberOfChannels;}return resampleMono(mono,audio.sampleRate);}finally{await context.close();}
 }
-export type VoiceResult={text:string;chunks?:{text:string;timestamp:[number,number|null]}[]};
+export type VoiceResult={text:string;language?:DetectedVoiceLanguage;engine?:'whistle'|'whisper-fallback';chunks?:{text:string;timestamp:[number,number|null]}[]};
+export type VoiceTranscriptionOptions={language:VoiceLanguage;keywords:string[]};
 export class LocalTranscriber {
  private worker:Worker|null=null;
  private reject:((error:Error)=>void)|null=null;
- async transcribe(samples:Float32Array,onStatus:(status:string)=>void):Promise<VoiceResult>{
+ private run(samples:Float32Array,options:VoiceTranscriptionOptions,onStatus:(status:string)=>void,fallback=false):Promise<VoiceResult>{
+  const worker=fallback
+   ?new Worker(new URL('./voice-whisper.worker.ts',import.meta.url),{type:'module'})
+   :new Worker(new URL('./voice.worker.ts',import.meta.url),{type:'module'});
+  this.worker=worker;
+  return new Promise((resolve,reject)=>{this.reject=reject;worker.onmessage=event=>{if(event.data.status)onStatus(event.data.status);if(event.data.error){this.reject=null;reject(new Error(event.data.error));}else if(event.data.result){this.reject=null;resolve(event.data.result);}};worker.onerror=()=>{this.reject=null;worker.terminate();if(this.worker===worker)this.worker=null;reject(new Error('The on-device speech engine could not start. Check speech assets and available memory.'));};worker.postMessage({samples,language:options.language==='auto'?undefined:options.language,keywords:options.keywords});});
+ }
+ async transcribe(samples:Float32Array,onStatus:(status:string)=>void,options:VoiceTranscriptionOptions={language:'auto',keywords:[]}):Promise<VoiceResult>{
   if(this.reject)throw new Error('Transcription is already running.');
-  this.worker??=new Worker(new URL('./voice.worker.ts',import.meta.url),{type:'module'});
-  return new Promise((resolve,reject)=>{this.reject=reject;const worker=this.worker!;worker.onmessage=event=>{if(event.data.status)onStatus(event.data.status);if(event.data.error){this.reject=null;reject(new Error(event.data.error));}else if(event.data.result){this.reject=null;resolve(event.data.result);}};worker.onerror=()=>{this.reject=null;worker.terminate();this.worker=null;reject(new Error('The on-device speech engine could not start. Check speech assets and available memory.'));};worker.postMessage({samples});});
+  try{return await this.run(samples,options,onStatus);}catch(primary){
+   if(!this.worker)throw primary;this.worker.terminate();this.worker=null;
+   onStatus('Whistle could not start. Retrying with the temporary English fallback…');
+   try{return await this.run(samples,options,onStatus,true);}catch(fallback){throw new Error(`Whistle failed (${primary instanceof Error?primary.message:String(primary)}). English fallback failed (${fallback instanceof Error?fallback.message:String(fallback)}).`);}
+  }
  }
  cancel(){this.worker?.terminate();this.worker=null;this.reject?.(new Error('Transcription cancelled. Your audio is retained for retry.'));this.reject=null;}
 }

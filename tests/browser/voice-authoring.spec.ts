@@ -19,16 +19,26 @@ async function show(page:Page){
  await page.getByRole('button',{name:'Create from file',exact:true}).click();await page.getByRole('button',{name:'From audio',exact:false}).click();return page.getByRole('dialog',{name:'Transcribe audio to file',exact:true});
 }
 async function fakeSpeech(page:Page,text='Spire heading one A new chapter. Spire new paragraph The house was silent.',failure=false){
- await page.addInitScript(({text,failure})=>{const NativeWorker=window.Worker;window.Worker=class extends NativeWorker{constructor(url:URL|string,options?:WorkerOptions){if(!String(url).includes('voice.worker')){super(url,options);return;}const mock:{onmessage:((event:{data:unknown})=>void)|null;onerror:null;terminated:boolean;postMessage:()=>void;terminate:()=>void}={onmessage:null,onerror:null,terminated:false,postMessage(){setTimeout(()=>{if(!mock.terminated)mock.onmessage?.({data:failure?{error:'Test speech engine unavailable'}:{result:{text}}});},30);},terminate(){mock.terminated=true;}};return mock as unknown as Worker;}} as typeof Worker;},{text,failure});
+ await page.addInitScript(({text,failure})=>{window.Worker=class{onmessage:((event:{data:unknown})=>void)|null=null;onerror:null=null;terminated=false;constructor(_url:URL|string,_options?:WorkerOptions){}postMessage(request:unknown){(window as any).__voiceRequest=request;setTimeout(()=>{if(!this.terminated)this.onmessage?.({data:failure?{error:'Test speech engine unavailable'}:{result:{text,language:'es',engine:'whistle'}}});},30);}terminate(){this.terminated=true;}} as unknown as typeof Worker;},{text,failure});
 }
 async function liveMic(page:Page){await page.evaluate(()=>{Object.defineProperty(navigator.mediaDevices,'getUserMedia',{configurable:true,value:async()=>{const c=new AudioContext(),d=c.createMediaStreamDestination(),o=c.createOscillator();const gain=c.createGain();o.connect(gain);gain.connect(d);o.start();await c.resume();(window as any).__liveGain=gain;(window as any).__liveStream=d.stream;return d.stream;}});});}
+test('dictation, conflict, and revision history each have their own Context tab',async({page})=>{
+ await setup(page);await page.getByRole('button',{name:'Toggle context',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Revision history'})).toHaveCount(0);
+ await page.getByRole('tab',{name:'Revisions',exact:true}).click();const revisions=page.getByRole('tabpanel',{name:'Revision history'});await expect(revisions).toBeVisible();await expect(revisions.getByRole('button',{name:'Revision history'})).toBeVisible();
+ await page.getByRole('tab',{name:'Dictation',exact:true}).click();const dictation=page.getByRole('tabpanel',{name:'Dictation audio and transcript'});await expect(dictation).toBeVisible();await expect(dictation.locator('details')).toHaveCount(0);await expect(dictation.getByRole('heading',{name:'Dictation audio and transcript'})).toBeVisible();
+ await page.getByRole('tab',{name:/^Conflicts/}).click();const conflicts=page.getByRole('tabpanel',{name:'Resolve conflicts'});await expect(conflicts).toBeVisible();await expect(conflicts.locator('details')).toHaveCount(0);await expect(conflicts.getByRole('heading',{name:'Resolve Conflicts'})).toBeVisible();
+});
 test('editor waveform follows microphone sound, flattens in silence and disappears on stop',async({page})=>{
  await fakeSpeech(page);await setup(page);await page.setViewportSize({width:390,height:844});await liveMic(page);await page.getByRole('button',{name:'Start dictation',exact:true}).click();
  const wave=page.getByRole('img',{name:'Microphone audio waveform'});await expect(wave).toBeVisible();await expect(wave.locator('span')).toHaveCount(28);
  const peak=()=>wave.locator('span').evaluateAll(nodes=>Math.max(...nodes.map(n=>parseFloat((n as HTMLElement).style.height))));
  await expect.poll(peak).toBeGreaterThan(12);await page.evaluate(()=>(window as any).__liveGain.gain.value=0);await expect.poll(peak,{timeout:5000}).toBeLessThan(5);
- const dock=page.getByRole('region',{name:'Active dictation'});await expect(dock).toBeVisible();const bounds=await dock.boundingBox();expect(bounds).not.toBeNull();expect(bounds!.y+bounds!.height).toBeGreaterThan(800);expect(bounds!.y+bounds!.height).toBeLessThanOrEqual(844);expect(await dock.evaluate(e=>e.parentElement===document.body)).toBe(true);
+ const dock=page.getByRole('region',{name:'Active dictation'});await expect(dock).toBeVisible();await expect(dock.getByLabel('Active dictation language')).toBeVisible();const bounds=await dock.boundingBox();expect(bounds).not.toBeNull();expect(bounds!.y+bounds!.height).toBeGreaterThan(800);expect(bounds!.y+bounds!.height).toBeLessThanOrEqual(844);expect(await dock.evaluate(e=>e.parentElement===document.body)).toBe(true);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.getByRole('button',{name:'Stop recording',exact:true}).click();await expect(wave).toHaveCount(0);await expect(dock).toHaveCount(0);
+});
+test('dictation language selector is absent from the editor toolbar',async({page})=>{
+ await setup(page);await page.setViewportSize({width:390,height:844});await expect(page.getByLabel('Live dictation language')).toHaveCount(0);await expect(page.getByRole('button',{name:'Start dictation',exact:true})).toBeVisible();
 });
 test('editor mic inserts directly and drains final audio without a review dialog',async({page})=>{
  await fakeSpeech(page,'Fresh spoken words.');await setup(page);await liveMic(page);
@@ -45,7 +55,7 @@ test('holding editor mic latches command mode with help and inserts into rich ed
  await expect(page.locator('.tiptap')).toContainText('A new chapter.');await page.getByRole('button',{name:'Source',exact:true}).click();await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue(/# A new chapter/);
 });
 test('editing a file during dictation rejects delayed text',async({page})=>{
- await fakeSpeech(page,'Do not overwrite.');await setup(page);await liveMic(page);await page.getByRole('button',{name:'Start dictation',exact:true}).click();await page.waitForTimeout(900);await page.getByLabel('Markdown source',{exact:true}).fill('My newer writing.');await page.getByRole('button',{name:'Stop dictation',exact:true}).click();await expect(page.locator('.editor-tabs .live-dictation-status')).toHaveCount(0);await page.getByRole('button',{name:'Toggle context',exact:true}).click();await page.locator('.context .dictation-context-details summary').click();await expect(page.locator('.context .dictation-context-details [role=alert]')).toBeVisible();await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue('My newer writing.');
+ await fakeSpeech(page,'Do not overwrite.');await setup(page);await liveMic(page);await page.getByRole('button',{name:'Start dictation',exact:true}).click();await page.waitForTimeout(900);await page.getByLabel('Markdown source',{exact:true}).fill('My newer writing.');await page.getByRole('button',{name:'Stop dictation',exact:true}).click();await expect(page.locator('.editor-tabs .live-dictation-status')).toHaveCount(0);await page.getByRole('button',{name:'Toggle context',exact:true}).click();await page.getByRole('tab',{name:'Dictation',exact:true}).click();await expect(page.locator('.context .dictation-context-details [role=alert]')).toBeVisible();await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue('My newer writing.');
 });
 test('microphone capture pauses, resumes, retains playable audio and stops its tracks',async({page})=>{
  await setup(page);
@@ -61,6 +71,19 @@ async function transcribe(page:Page,dialog:ReturnType<Page['getByRole']>){
  await expect(dialog.getByLabel('Raw transcript',{exact:true}).or(dialog.getByRole('alert'))).toBeVisible({timeout:240000});
  await expect(dialog.getByRole('alert')).toHaveCount(0);
 }
+test('voice import offers persistent multilingual transcription and keyword hints',async({page})=>{
+ await fakeSpeech(page,'Hola clase.');await setup(page);let dialog=await show(page);await expect(dialog).toContainText('Audio stays on this device');
+ await expect(dialog.getByLabel('Transcription language')).toHaveValue('auto');await dialog.getByLabel('Transcription language').selectOption('es');await dialog.getByLabel('Vocabulary hints').fill('Siobhán, cálculo');
+ await dialog.getByRole('button',{name:'Close',exact:true}).click();dialog=await show(page);await expect(dialog.getByLabel('Transcription language')).toHaveValue('es');
+ await dialog.getByLabel('Audio file',{exact:true}).setInputFiles(fixture);await dialog.getByRole('button',{name:'Transcribe on this device'}).click();await expect(dialog.getByLabel('Raw transcript')).toHaveValue('Hola clase.');
+ await expect.poll(()=>page.evaluate(()=>(window as any).__voiceRequest)).toMatchObject({language:'es',keywords:['Siobhán','cálculo']});
+});
+test('bundled Whistle performs real offline English inference',async({page})=>{
+ await setup(page);const dialog=await show(page);await dialog.getByLabel('Transcription language').selectOption('en');
+ await page.route('https://**/*',route=>route.abort());
+ await dialog.getByLabel('Audio file',{exact:true}).setInputFiles(fixture);await dialog.getByRole('button',{name:'Transcribe on this device'}).click();
+ await expect(dialog.getByLabel('Raw transcript')).toHaveValue(/house|silent|door|morning|story/i,{timeout:120000});await expect(dialog).toContainText('Whistle');
+});
 test('voice import preserves source on cancellation and exposes local processing and credits',async({page})=>{
  await setup(page);const dialog=await show(page);await expect(dialog).toContainText('Audio stays on this device');
  await dialog.getByText('Open-source credits',{exact:true}).click();await expect(dialog).toContainText('Apache-2.0');await dialog.getByRole('button',{name:'Close',exact:true}).click();await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue('Keep my writing.');

@@ -7,4 +7,16 @@ const file=(id:string,content='',deleted=false):Note=>({id,path:`Writing/${id}.m
 test('reference pulses flow from referenced file to referencing file, deduplicated',()=>{const g=buildGraph([file('A','[[B]] [[B]]'),file('B')]);assert.deepEqual(g.edges,[{source:'B',target:'A'}]);});
 test('mutual references remain directional; deleted, external, unresolved and code links excluded',()=>{const g=buildGraph([file('A','[[B]] [[Gone]] [[Missing]] `[[C]]` [web](https://example.com)'),file('B','[[A]]'),file('C'),file('Gone','',true)]);assert.equal(g.nodes.length,3);assert.deepEqual(g.edges,[{source:'B',target:'A'},{source:'A',target:'B'}]);});
 test('relative and alias links resolve without folder nodes or attachments',()=>{const g=buildGraph([file('A','[b](B.md#hi) [[Alias]] ![image](a.png)'),file('B'),{...file('C'),content:'---\naliases: [Alias]\n---\n'}]);assert.equal(g.nodes.length,3);assert.equal(g.edges.length,2);});
+test('large graph resolves aliases through one workspace index instead of rescanning every file per link',()=>{
+ let bodyReads=0;
+ const notes=Array.from({length:1_000},(_,index)=>{
+  const value=file(String(index));
+  const body=index<200?'[[Shared Alias]]':index===999?'---\naliases: [Shared Alias]\n---\n':'';
+  Object.defineProperty(value,'content',{enumerable:true,get(){bodyReads++;return body;}});
+  return value;
+ });
+ const graph=buildGraph(notes);
+ assert.equal(graph.edges.length,200);
+ assert.ok(bodyReads<=2_100,`graph read file bodies ${bodyReads} times; expected a bounded indexing pass`);
+});
 test('demo is deterministic presentation-only data with real relationships',()=>{assert.ok(demoFiles.length>=12);assert.ok(buildGraph(demoFiles).edges.length>=15);assert.ok(demoFiles.every(n=>n.path.startsWith('Demo/')&&n.rev===1&&!n.deleted));assert.equal(demoFiles.length,28);});
