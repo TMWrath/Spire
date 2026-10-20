@@ -27,7 +27,10 @@ test('dictation, conflict, and revision history each have their own Context tab'
  const context=page.locator('aside.context');const normalWidth=(await context.boundingBox())!.width;
  await expect(page.getByRole('button',{name:'Revision history'})).toHaveCount(0);
  await page.getByRole('tab',{name:'Revisions',exact:true}).click();const revisions=page.getByRole('tabpanel',{name:'Revision history'});await expect(revisions).toBeVisible();await expect(revisions.getByRole('navigation',{name:'Revisions'})).toBeVisible();await expect(revisions.getByRole('heading',{name:/Revision \d+/})).toBeVisible();await expect(revisions.getByRole('button',{name:'Revision history'})).toHaveCount(0);expect((await context.boundingBox())!.width).toBeGreaterThan(normalWidth*2);
- await page.getByRole('tab',{name:'Details',exact:true}).click();await expect.poll(async()=>(await context.boundingBox())!.width).toBeLessThanOrEqual(normalWidth+2);
+ await page.getByRole('tab',{name:'Details',exact:true}).click();
+ const closingTransition=await context.evaluate(element=>{const style=getComputedStyle(element);return {property:style.transitionProperty,duration:style.transitionDuration,timing:style.transitionTimingFunction};});
+ expect(closingTransition.property).toContain('width');expect(closingTransition.duration).toBe('0.18s');expect(closingTransition.timing).toBe('ease');
+ await expect.poll(async()=>(await context.boundingBox())!.width).toBeLessThanOrEqual(normalWidth+2);
  await page.getByRole('tab',{name:'Dictation',exact:true}).click();const dictation=page.getByRole('tabpanel',{name:'Dictation audio and transcript'});await expect(dictation).toBeVisible();await expect(dictation.locator('details')).toHaveCount(0);await expect(dictation.getByRole('heading',{name:'Dictation audio and transcript'})).toBeVisible();
  await page.getByRole('tab',{name:/^Conflicts/}).click();const conflicts=page.getByRole('tabpanel',{name:'Resolve conflicts'});await expect(conflicts).toBeVisible();await expect(conflicts.locator('details')).toHaveCount(0);await expect(conflicts.getByRole('heading',{name:'Resolve Conflicts'})).toBeVisible();
 });
