@@ -1,5 +1,14 @@
 # Spire — Todo
 
+## Local + Server storage redesign — planned
+
+- [ ] On Android first launch, let the user choose a parent directory; create `Spire/Spire Local` inside it for device-local files.
+- [ ] When the user connects a server, create `Spire/Server` for files accessed from that server.
+- [ ] Replace routine whole-workspace synchronization with Git-style change comparison and selective file/change transfer.
+- [ ] Detect conflicting edits and present Git-like choices: keep either version or merge; never silently overwrite.
+- [ ] Merge from the latest version, applying non-overlapping changes in their corresponding nearby lines; leave overlapping/ambiguous hunks for the user to resolve.
+- [ ] Define durable revision/change tracking, offline behavior, and recovery while preserving existing files and identities.
+
 ## File-operation responsiveness — implemented
 
 - [x] Hosted storage skips atomic rewrites when an existing file already has the intended bytes.
