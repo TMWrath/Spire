@@ -137,6 +137,9 @@ export class Store {
   if(choice.action==='keep-device'||choice.action==='merge'){
    const content=choice.action==='merge'?choice.content:conflict.mutation.content;if(typeof content!=='string')throw new HttpError(400,'Merged content is required');
    this.assertFree(conflict.mutation.path,current.id,conflict.mutation.deleted);primary=this.revise(next,current.id,{path:conflict.mutation.path,content,deleted:conflict.mutation.deleted,templateIds:conflict.mutation.templateIds},device);
+   // Resolving one queued variant advances the canonical revision. Rebase the
+   // remaining variants for this file so every card stays resolvable.
+   next.conflicts=next.conflicts.map(c=>c.mutation.id===current.id?{...c,current:primary.rev}:c);
   }else if(choice.action==='keep-both'){
    if(!choice.path)throw new HttpError(400,'Choose a path for the device copy');this.assertFree(choice.path);copy=this.revise(next,randomUUID(),{path:choice.path,content:conflict.mutation.content,deleted:false,templateIds:conflict.mutation.templateIds},device);
   }else if(choice.action!=='keep-server')throw new HttpError(400,'Unsupported conflict choice');
