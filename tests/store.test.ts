@@ -58,6 +58,16 @@ test('conflict choices are atomic, revisioned, and stale decisions fail closed',
   const {s,conflict}=seed();s.mutate({...s.state.notes[conflict.mutation.id],base:2,op:randomUUID(),content:'newer server'},'server');assert.throws(()=>s.resolveConflict(conflict.id,{action:'keep-device',expectedServerRevision:2},'device'),/changed/i);assert.equal(s.state.conflicts.length,1);
  }
 });
+test('resolving one of several file conflicts leaves the others resolvable',()=>{
+ const s=fresh(),m=create('Writing/Draft.md','shared');s.mutate(m,'server');
+ s.mutate({...m,base:1,op:randomUUID(),content:'server'},'server');
+ assert.throws(()=>s.mutate({...m,base:1,op:randomUUID(),content:'device one'},'device'),/Conflict/);
+ assert.throws(()=>s.mutate({...m,base:1,op:randomUUID(),content:'device two'},'device'),/Conflict/);
+ const first=s.state.conflicts[0];s.resolveConflict(first.id,{action:'keep-device',expectedServerRevision:2},'device');
+ assert.equal(s.state.conflicts.length,1);assert.equal(s.state.conflicts[0].current,3);
+ s.resolveConflict(s.state.conflicts[0].id,{action:'keep-server',expectedServerRevision:3},'device');
+ assert.equal(s.state.conflicts.length,0);
+});
 test('rename updates wiki and relative Markdown references as a transaction',()=>{const s=fresh();const a=create('Folder/First.md');s.mutate(a,'d');const b=create('Other.md','[[First#Top|label]] [link](Folder/First.md#Top) `[[First]]`');s.mutate(b,'d');s.mutate({...a,base:1,op:randomUUID(),path:'New/Renamed.md'},'d'); assert.equal(s.state.notes[b.id].content,'[[New/Renamed#Top|label]] [link](New/Renamed.md#Top) `[[First]]`');assert.equal(s.state.notes[b.id].rev,2);assert.equal(fs.existsSync(`${root}/vault/Folder/First.md`),false);});
 test('adjacent stylesheets are portable, follow file renames, and unmatched styles remain in place',()=>{
  let s=fresh();const file=create('Writing/First.md');s.mutate(file,'d');

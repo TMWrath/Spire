@@ -1,3 +1,4 @@
+import {OperationLog} from './OperationLog';
 import {useEffect,useState} from 'react';
 import './workspace-diagnostics.css';
 import {installLocalForegroundRefresh} from './local-recovery';
@@ -17,7 +18,7 @@ export function WorkspaceDiagnostics({log=false}:{log?:boolean}){
   };
   receive();addEventListener('spire-workspace-warnings',receive);return()=>removeEventListener('spire-workspace-warnings',receive);
  },[]);
- if(log)return <section role="tabpanel" id="settings-log" aria-label="Activity log"><h2>Activity log</h2><p>Unavailable folders and files are skipped, not deleted. Restore access and use Refresh Local folder to retry on Android. Historical entries stay here after recovery. This device retains the latest 200 entries; dismissing a notice does not clear this log.</p>{!entries.length?<p>No workspace warnings recorded.</p>:<><button onClick={()=>{localStorage.removeItem(key);setEntries([]);}}>Clear activity log</button><ul>{entries.map((e,i)=><li key={i}><strong>{e.kind}: {e.path}</strong><p>{e.message}</p><small>{e.time} · {e.workspace}</small></li>)}</ul></>}</section>;
+ if(log)return <section role="tabpanel" id="settings-log" aria-label="Activity log"><h2>Activity log</h2><OperationLog/><p>Unavailable folders and files are skipped, not deleted. Restore access and use Refresh Local folder to retry on Android. Historical entries stay here after recovery. This device retains the latest 200 entries; dismissing a notice does not clear this log.</p>{!entries.length?<p>No workspace warnings recorded.</p>:<><button onClick={()=>{localStorage.removeItem(key);setEntries([]);}}>Clear activity log</button><ul>{entries.map((e,i)=><li key={i}><strong>{e.kind}: {e.path}</strong><p>{e.message}</p><small>{e.time} · {e.workspace}</small></li>)}</ul></>}</section>;
  if(!notice)return null;
  return <div role="status" className="workspace-warning"><span>Some folders or files were skipped. You can keep writing. Details are in Settings → Activity log.</span><button onClick={()=>setNotice(false)} aria-label="Dismiss workspace warning">Dismiss</button></div>;
 }

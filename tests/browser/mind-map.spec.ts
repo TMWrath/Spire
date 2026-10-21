@@ -27,3 +27,9 @@ test('3D orbit and pan survive rapid release and cancellation without blanking t
  await surface.focus();await page.keyboard.press('ArrowRight');await expect(surface).not.toHaveAttribute('data-rotation','1,0,0,0,1,0,0,0,1');await page.keyboard.press('Home');await expect(surface).toHaveAttribute('data-rotation','1,0,0,0,1,0,0,0,1');
  await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth)).toBe(true);
 });
+
+test('mind map checkboxes sit directly beside and align with their option labels',async({page})=>{
+ await page.goto('/');await page.getByLabel('Username',{exact:true}).fill('tester');await page.getByLabel('Password',{exact:true}).fill('disposable-test-password');await page.getByRole('button',{name:/^(Create Reliquary|Sign in)$/}).click();
+ await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'Settings',exact:true}).click();await page.getByRole('tab',{name:'Mind map',exact:true}).click();
+ for(const name of ['Enable mind map','Show demo data']){const label=page.locator('.mind-demo-setting').filter({hasText:name}),box=await label.getByRole('checkbox').boundingBox(),text=await label.locator('.mind-demo-label').boundingBox();expect(box).not.toBeNull();expect(text).not.toBeNull();expect(text!.x-(box!.x+box!.width)).toBeLessThanOrEqual(12);expect(Math.abs((box!.y+box!.height/2)-(text!.y+text!.height/2))).toBeLessThanOrEqual(2);}
+});

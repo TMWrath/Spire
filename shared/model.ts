@@ -48,12 +48,25 @@ export function links(content: string): Link[] {
 const stem = (p: string) => p.replace(/\.md$/i, '');
 function relative(from: string, to: string) { const parts = from.split('/').slice(0, -1); for (const p of to.split('/')) { if (p === '..') parts.pop(); else if (p !== '.') parts.push(p); } return parts.join('/'); }
 export function resolveLink(link: Link, source: Note, notes: Note[]): Note | undefined {
- if (!link.target) return source;
- const target = stem(link.target).toLowerCase(); const active = notes.filter(n => !n.deleted);
- const exact = active.find(n => stem(n.path).toLowerCase() === stem(relative(source.path, link.target)).toLowerCase()) ?? active.find(n => stem(n.path).toLowerCase() === target);
- if (exact) return exact;
- const candidates = active.filter(n => stem(n.path.split('/').at(-1)!).toLowerCase() === target || metadata(n.content).aliases.some(a => a.toLowerCase() === target));
- return candidates.length === 1 ? candidates[0] : undefined;
+ return createLinkResolver(notes)(link,source);
+}
+/** Build once for graph/backlink passes so each file's metadata is parsed once, not once per link. */
+export function createLinkResolver(notes:Note[]){
+ const active=notes.filter(n=>!n.deleted),byPath=new Map<string,Note>(),candidates=new Map<string,Map<string,Note>>();
+ const add=(key:string,note:Note)=>{const normalized=key.toLowerCase(),group=candidates.get(normalized)??new Map<string,Note>();group.set(note.id,note);candidates.set(normalized,group);};
+ for(const note of active){
+  const path=stem(note.path).toLowerCase();if(!byPath.has(path))byPath.set(path,note);
+  add(stem(note.path.split('/').at(-1)!),note);
+  for(const alias of metadata(note.content).aliases)add(alias,note);
+ }
+ return (link:Link,source:Note):Note|undefined=>{
+  if(!link.target)return source;
+  const target=stem(link.target).toLowerCase();
+  const exact=byPath.get(stem(relative(source.path,link.target)).toLowerCase())??byPath.get(target);
+  if(exact)return exact;
+  const matches=[...(candidates.get(target)?.values()??[])];
+  return matches.length===1?matches[0]:undefined;
+ };
 }
 export function refactor(source: Note, notes: Note[], targetId: string, newPath: string): string {
  let text = source.content;

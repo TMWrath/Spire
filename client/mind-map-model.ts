@@ -1,10 +1,10 @@
 import {spherePoints} from './mind-camera';
 import {files as demoNodes,edges as demoEdges} from './dot-map/demo.mjs';
-import {links,metadata,resolveLink,type Note} from '../shared/model';
+import {createLinkResolver,links,metadata,type Note} from '../shared/model';
 export function buildGraph(files:Note[]){
- const nodes=files.filter(n=>!n.deleted);const edges:{source:string;target:string}[]=[];const seen=new Set<string>();
+ const nodes=files.filter(n=>!n.deleted),resolve=createLinkResolver(nodes);const edges:{source:string;target:string}[]=[];const seen=new Set<string>();
  for(const file of nodes)for(const link of links(metadata(file.content).body)){
-  const source=resolveLink(link,file,nodes);if(!source||source.id===file.id)continue;
+  const source=resolve(link,file);if(!source||source.id===file.id)continue;
   const key=JSON.stringify([source.id,file.id]);if(seen.has(key))continue;seen.add(key);edges.push({source:source.id,target:file.id});
  }
  return {nodes,edges};
