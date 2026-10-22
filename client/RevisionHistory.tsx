@@ -5,15 +5,22 @@ import type {Note,Revision} from '../shared/model';
 import {renderMarkdown} from './markdown';
 import {revisionChanges} from './revision-diff';
 
-export function RevisionHistory({note,restore}:{note:Note;restore:(rev:number)=>void}){
- const revisions=[...note.history,note].sort((a,b)=>a.rev-b.rev);
+export function RevisionHistory({note,restore,loadHistory,loadParents}:{note:Note;restore:(rev:number)=>void;loadHistory?:()=>Promise<Revision[]>;loadParents?:()=>Promise<NonNullable<Note['mergeParents']>>}){
+ const [loaded,setLoaded]=useState<{id:string;rev:number;history:Revision[]}|null>(null),[error,setError]=useState(''),[retry,setRetry]=useState(0);
+ useEffect(()=>{let active=true;setError('');if(loadHistory)void loadHistory().then(history=>{if(active)setLoaded({id:note.id,rev:note.rev,history});},e=>{if(active)setError(e instanceof Error?e.message:'History unavailable');});return()=>{active=false;};},[note.id,note.rev,retry]);
+ const [parents,setParents]=useState(note.mergeParents??[]);useEffect(()=>{let active=true;if(loadParents)void loadParents().then(value=>{if(active)setParents(value);},()=>{});return()=>{active=false;};},[note.id,note.rev]);
+ const ready=!loadHistory||loaded?.id===note.id&&loaded.rev===note.rev;
+ const revisions=[...(loadHistory?(ready?loaded!.history:[]):note.history),note].sort((a,b)=>a.rev-b.rev);
  const [selected,setSelected]=useState(note.rev),[view,setView]=useState<'changes'|'preview'|'source'>('changes');
  useEffect(()=>setSelected(note.rev),[note.id,note.rev]);
  const index=revisions.findIndex(r=>r.rev===selected),current=revisions[index]??note,previous=revisions[index-1];
  const d=revisionChanges(previous,current);
  const preview=view==='preview'?DOMPurify.sanitize(renderMarkdown({...current,id:note.id,history:[]},[],[]),{FORBID_TAGS:['style','iframe','form','input','button'],FORBID_ATTR:['style']}):'';
+ if(error)return <div role="alert">{error}<button onClick={()=>setRetry(n=>n+1)}>Retry history</button></div>;
+ if(!ready)return <p role="status">Loading this file’s revision history…</p>;
  return <div className="history-shell history-inline">
   <header className="history-header"><div><span className="history-eyebrow">DOCUMENT HISTORY</span><h2>{note.path.split('/').at(-1)}</h2><p>{note.path}</p></div></header>
+  {parents.length>0&&<details className="history-branches"><summary>Retained merge versions ({parents.length})</summary><p>Original branch versions are identified separately; equal revision numbers do not mean equal content.</p>{parents.map(parent=><details key={parent.hash}><summary>{parent.revision.path} · original revision {parent.revision.rev} · {parent.hash.slice(0,12)}</summary><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{parent.revision.content}</pre></details>)}</details>}
   <div className="history-workspace">
    <nav className="history-timeline" aria-label="Revisions">{[...revisions].reverse().map(r=><button key={r.rev} aria-pressed={r.rev===current.rev} onClick={()=>setSelected(r.rev)}><strong>Revision {r.rev}{r.rev===note.rev&&<span className="history-current">Current</span>}</strong><time>{new Date(r.time).toLocaleString()}</time></button>)}</nav>
    <main className="history-detail">

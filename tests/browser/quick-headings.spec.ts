@@ -5,7 +5,7 @@ test('quick headings 1–6 stop at Enter and persist portable structure',async({
  const editor=page.getByRole('textbox',{name:'Document editor',exact:true});
 
  for(let level=1;level<=6;level++){
-  await editor.fill('');await editor.pressSequentially('@hd'+level+' ');
+  await page.getByRole('button',{name:'Source',exact:true}).click();await page.getByLabel('Markdown source',{exact:true}).fill('');await page.getByRole('button',{name:'Editor',exact:true}).click();await expect(editor.locator('h1,h2,h3,h4,h5,h6')).toHaveCount(0);await editor.pressSequentially('@hd'+level+' ');
   await expect(page.getByText('Heading '+level+' active · Enter to stop',{exact:true})).toBeVisible();
   await editor.pressSequentially('Heading words');await expect(editor.locator('h'+level)).toHaveText('Heading words');
   await editor.press('Enter');await editor.pressSequentially('Body words');await expect(editor.locator('p').filter({hasText:'Body words'})).toHaveText('Body words');await expect(editor.locator('h'+level)).toHaveCount(1);await expect(page.locator('.quick-format-status')).toHaveCount(0);

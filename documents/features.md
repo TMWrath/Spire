@@ -537,3 +537,10 @@ the project owner authorized selected-folder loading reuse, per-file autosave, i
 ## File/folder gesture separation — requested, implementation in progress
 
 the project owner requested one coherent interaction replacement: Trash icon starts deletion; hold and move the item icon starts drag/move; holding its name opens rename. Ordinary taps retain file-open/folder-expand behavior. Hold gestures must never delete. Cancellation, scrolling, collisions, selected-file edits and cross-workspace transfer safeguards remain protected. Verify hosted and Android bundled surfaces; physical-device access is not authorized by this source task.
+
+
+## Markdown three-way synchronization — 0.2.93 candidate
+
+Exact per-file acknowledged ancestors are separate from the cached Server head. Markdown is compared line by line without trimming blank lines, spaces, CRLF, or Unicode. Non-overlapping changes merge; overlapping sections remain explicit Local/Server/both/custom choices. Unrelated files continue synchronizing. Changed-file line patches verify base/result SHA-256 and optimistic revisions, with idempotent receipts and immutable prior-publication archives. Branch histories retain their original revision identities plus content hashes. Missing/unloaded files are never deletion commands.
+
+The real Chromium reconciliation harness is repaired (native capability and exact storage key), and covers independent upload/pull, conflict isolation, provider failures, lost replies, incremental downloads and stale review rejection. Focused unit/API/section-review checks pass. Final browser, Android buildbox, delivery, deployment and physical-device acceptance are pending; this section is not a completion claim. Existing Hello World conflict must remain unchosen.

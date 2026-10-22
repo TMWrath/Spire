@@ -120,3 +120,9 @@ Implementation, automated tests, isolated production build, Electron acceptance,
 - [x] Preserve File History, Compare and Restore; restores remain new revisions.
 - [x] Pass TypeScript, 166 Node tests, production-renderer acceptance, Electron acceptance, Android browser/SAF tests, isolated production build, and Android buildbox test/lint/assemble.
 - [ ] Perform physical Android WebView/device acceptance when an unlocked authorized device is available.
+
+## Markdown three-way synchronization — 0.2.93 candidate
+
+Exact per-file acknowledged ancestors are separate from the cached Server head. Markdown is compared line by line without trimming blank lines, spaces, CRLF, or Unicode. Non-overlapping changes merge; overlapping sections remain explicit Local/Server/both/custom choices. Unrelated files continue synchronizing. Changed-file line patches verify base/result SHA-256 and optimistic revisions, with idempotent receipts and immutable prior-publication archives. Branch histories retain their original revision identities plus content hashes. Missing/unloaded files are never deletion commands.
+
+The real Chromium reconciliation harness is repaired (native capability and exact storage key), and covers independent upload/pull, conflict isolation, provider failures, lost replies, incremental downloads and stale review rejection. Focused unit/API/section-review checks pass. Final browser, Android buildbox, delivery, deployment and physical-device acceptance are pending; this section is not a completion claim. Existing Hello World conflict must remain unchosen.

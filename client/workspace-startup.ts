@@ -1,5 +1,6 @@
 export type WorkspaceStartup = {
   cachedLocal: boolean;
+  hasCachedWorkspace?: () => boolean;
   initLocal: () => Promise<void>;
   restoreConnections: () => Promise<void>;
   refreshDevices: () => Promise<void>;
@@ -23,7 +24,7 @@ export async function initializeWorkspace(steps: WorkspaceStartup): Promise<void
     await steps.refreshBootstrap();
   };
 
-  if (steps.cachedLocal) {
+  if (steps.cachedLocal || steps.hasCachedWorkspace?.()) {
     steps.reveal();
     void finish().catch(steps.failed);
     return;

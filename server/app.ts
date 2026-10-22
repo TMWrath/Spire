@@ -1,3 +1,5 @@
+import {workspaceIndex,workspaceCompare,workspaceSnapshot} from './workspace-index.ts';
+import {workspaceDirectory} from '../shared/workspace-directory.ts';
 import {quickActionInputSchema} from '../shared/quick-actions.ts';
 import {registerVideo} from './video.ts';
 import {readTransfer,createTransfer,removeTransfer} from './transfer.ts';
@@ -61,6 +63,8 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
  app.delete('/api/devices/:id',(req,res)=>{const d=auth.devices.find(d=>d.id===req.params.id);if(!d)throw new HttpError(404,'Device not found');d.revoked=true;for(const[k,s]of Object.entries(auth.sessions))if(s.device===d.id)delete auth.sessions[k];saveAuth();res.json({ok:true});});
  app.get('/api/device-workspaces',(_req,res)=>res.json(auth.devices.filter(d=>!d.revoked).map(d=>({id:d.id,name:d.name,created:d.created,revoked:d.revoked,published:deviceWorkspaces.has(d.id)}))));
  app.put('/api/device-workspaces/self/snapshot',(req,res)=>{if(res.locals.session.browser)throw new HttpError(403,'Browser sessions have no Local workspace');const body=z.object({base:z.number().int().nonnegative(),snapshot:z.unknown()}).parse(req.body);res.json(deviceWorkspaces.publish(res.locals.device.id,body.base,body.snapshot));});
+ app.post('/api/device-workspaces/self/patch',(req,res)=>{if(res.locals.session.browser)throw new HttpError(403,'Browser sessions have no Local workspace');res.json(deviceWorkspaces.publishPatch(res.locals.device.id,req.body));});
+ app.get('/api/device-workspaces/self/delta',(req,res)=>{if(res.locals.session.browser)throw new HttpError(403,'Browser sessions have no Local workspace');const after=z.coerce.number().int().nonnegative().parse(req.query.after??0);res.json(deviceWorkspaces.changes(res.locals.device.id,after));});
  app.get('/api/device-workspaces/self/changes',(req,res)=>{if(res.locals.session.browser)throw new HttpError(403,'Browser sessions have no Local workspace');z.coerce.number().int().nonnegative().parse(req.query.after??0);res.json(deviceWorkspaces.read(res.locals.device.id));});
  app.get('/api/device-workspaces/:id/snapshot',(req,res)=>{const device=auth.devices.find(d=>d.id===req.params.id&&!d.revoked);if(!device)throw new HttpError(404,'Device not found');res.json(deviceWorkspaces.read(device.id));});
  app.post('/api/device-workspaces/:id/mutate',(req,res)=>{const device=auth.devices.find(d=>d.id===req.params.id&&!d.revoked);if(!device)throw new HttpError(404,'Device not found');const body=z.object({workspaceRevision:z.number().int().nonnegative(),mutation:z.unknown()}).parse(req.body),result=deviceWorkspaces.mutate(device.id,body.workspaceRevision,body.mutation);res.json({workspaceRevision:result.revision,snapshot:result.snapshot});});
@@ -77,7 +81,18 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
  app.post('/api/local/refresh',(_req,res)=>{store.refreshDirectory();res.json({ok:true,warnings:[]});});
  app.get('/api/local/recovery',(_req,res)=>res.json({items:store.recoveryItems()}));
  app.post('/api/local/reconcile',(req,res)=>{const b=z.object({token:z.string().uuid(),action:z.enum(['restore','adopt'])}).parse(req.body);res.json(store.reconcileDirectory(b.token,b.action));});
- app.get('/api/snapshot',(_req,res)=>res.json({seq:store.state.seq,quickActions:store.state.quickActions??[],sources:store.state.sources??[],templates:store.state.templates??[],notes:Object.values(store.state.notes),folders:store.state.folders??[],styles:store.state.styles??{},conflicts:store.state.conflicts,attachments:store.state.attachments.map(a=>({path:a.path,size:Buffer.from(a.data,'base64').length}))}));
+ app.get('/api/workspace/manifest',(_req,res)=>{
+  const directory=workspaceDirectory(store.state),snapshot=workspaceSnapshot(store);
+  res.json({index:workspaceIndex(store),snapshot:{seq:directory.seq,notes:directory.files.map(n=>({...n,content:'',history:[],contentLoaded:false})),folders:directory.folders,attachments:snapshot.attachments,styles:{},conflicts:snapshot.conflicts,templates:snapshot.templates,sources:snapshot.sources,quickActions:snapshot.quickActions}});
+ });
+ app.get('/api/workspace/directory',(_req,res)=>res.json(workspaceDirectory(store.state)));
+ app.get('/api/workspace/files/:id/content',(req,res)=>{const note=store.state.notes[String(req.params.id)];if(!note||note.deleted&&req.query.deleted!=='true')throw new HttpError(404,'File unavailable');const metadata=workspaceDirectory({seq:store.state.seq,notes:{[note.id]:note},attachments:[]}).files[0];res.json({...metadata,content:note.content});});
+ app.get('/api/workspace/files/:id/history',(req,res)=>{const note=store.state.notes[String(req.params.id)];if(!note)throw new HttpError(404,'File unavailable');res.json(note.history);});
+ app.get('/api/workspace/files/:id',(req,res)=>{const note=store.state.notes[String(req.params.id)];if(!note||note.deleted)throw new HttpError(404,'File unavailable');res.json(note);});
+ app.get('/api/workspace/head',(_req,res)=>res.json({version:1,revision:workspaceIndex(store).revision}));
+ app.get('/api/workspace/index',(_req,res)=>res.json(workspaceIndex(store)));
+ app.post('/api/workspace/compare',(req,res)=>res.json(workspaceCompare(store,req.body.index)));
+ app.get('/api/snapshot',(_req,res)=>res.json(workspaceSnapshot(store)));
  app.put('/api/styles',(req,res)=>{const body=z.object({path:safePath.refine(p=>p.toLowerCase().endsWith('.css'),'Stylesheets must end in .css'),content:z.string().max(100_000)}).parse(req.body);res.json(store.putStyle(body.path,body.content));});
  app.post('/api/folders',(req,res)=>res.status(201).json(store.createFolder(z.object({path:safePath}).parse(req.body).path)));
  app.post('/api/folders/move',(req,res)=>{const body=z.object({path:safePath,destination:safePath}).parse(req.body);res.json(store.moveFolder(body.path,body.destination,res.locals.device.id));});
