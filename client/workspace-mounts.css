@@ -31,3 +31,20 @@
 .mount-grid.has-server .mount-tree .mount-move{padding:2px!important;min-width:27px}
 .mount-grid.has-server .mount-tree .note-link{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:6px 3px;font-size:11px}
 .mount-grid.has-server .mount-tree .tree-file-row>.tree-trash{flex-basis:26px;min-width:26px}
+
+/* Keep the hierarchy continuous: depth comes from one quiet guide, never stacked row cards. */
+.mount-tree details,
+.mount-tree summary,
+.mount-tree .tree-file-row,
+.mount-tree .note-link,
+.mount-tree summary:hover,
+.mount-tree summary:focus-visible,
+.mount-tree .note-link:hover,
+.mount-tree .note-link:focus-visible,
+.mount-tree .note-link.active,
+.mount-tree summary.selected-folder{background:transparent}
+.mount-tree details>.tree-file-row,
+.mount-tree details>details{margin-left:16px;border-left:1px solid #3a3a3a;padding-left:6px}
+.mount-tree details>details{margin-left:16px}
+.mount-tree .note-link.active{color:#fff;border-left:2px solid #e8e8e8;padding-left:4px}
+.mount-tree summary.selected-folder{color:#fff;border-left-color:#e8e8e8}
