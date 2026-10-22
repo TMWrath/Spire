@@ -28,3 +28,18 @@ test('remote edits retain revision history and reject duplicate active paths',t=
  const bad={...result.snapshot,notes:[...result.snapshot.notes,{...note('other'),id:randomUUID(),path:'writing/file.md'}]};assert.throws(()=>store.publishPatch(id,{base:2,operation:randomUUID(),patch:makePublicationPatch(result.snapshot,bad)}),/path/i);
  assert.equal(store.read(id).revision,2);
 });
+
+test('undefined metadata survives JSON transport explicitly and legacy 0.2.93 omissions remain hash verified',()=>{
+ const before:{version?:number;purged?:unknown[];transferReceipts?:object}&ReturnType<typeof snap>={...snap('old'),version:1,purged:[],transferReceipts:{}};
+ const after={...before,version:undefined,purged:undefined,transferReceipts:undefined};
+ const patch=JSON.parse(JSON.stringify(makePublicationPatch(before,after)));
+ assert.equal(snapshotHash(applyPublicationPatch(before,patch)),snapshotHash(after));
+ delete patch.removedMetadata;
+ assert.equal(snapshotHash(applyPublicationPatch(before,patch)),snapshotHash(after));
+ patch.resultHash='0'.repeat(64);assert.throws(()=>applyPublicationPatch(before,patch),/integrity/i);
+});
+test('legacy compatibility never removes files or arbitrary workspace fields',()=>{
+ const before:{privateMetadata?:string}&ReturnType<typeof snap>={...snap('old'),privateMetadata:'retained'};const after={...before,privateMetadata:undefined};
+ const patch=JSON.parse(JSON.stringify(makePublicationPatch(before,after)));delete patch.removedMetadata;
+ assert.throws(()=>applyPublicationPatch(before,patch),/integrity/i);
+});
