@@ -1,5 +1,11 @@
 # Spire — Features
 
+## Persistent mobile caret and text selection — implementation
+
+When a mobile action row, formatting gallery, or picker takes interaction focus, Source and visual Editor modes keep the last valid insertion point visible inside the writing surface. A collapsed selection is represented by a blinking synthetic caret; a range remains visibly highlighted over the selected characters. The logical selection remains authoritative for formatting, direct taps return to native editing visuals, and toolbar use does not refocus the editor or summon the keyboard. Markers are scoped to the current editor document and disappear when native editor focus returns.
+
+Verification includes a production TypeScript/Vite build, 279/279 unit/API tests, and touch-browser coverage for Source and visual Editor range/caret persistence, formatting at the retained range, direct-tap restoration, and no action-row refocus. Physical Android WebView acceptance remains pending until the project owner tests the delivered client.
+
 ## Seamless nested file tree
 
 Local and Server file trees now use one continuous transparent surface instead of giving active files or selected folders separate dark row backgrounds. A quiet vertical guide and consistent indentation communicate folder depth for both subfolders and contained files; the active item remains identifiable by a slim light edge and brighter label. Drag/drop target feedback remains distinct because it is a transient interaction state rather than persistent row decoration. Production build and the focused published-storage browser scenario pass; physical Android WebView acceptance remains pending.
