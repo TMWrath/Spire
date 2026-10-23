@@ -156,3 +156,19 @@
 .mount-tree nav .tree-file-row:has(>.note-link.active){color:#fff;background:#2a2a2a!important;box-shadow:none!important;border-radius:4px!important}
 .sidebar nav .tree-file-row>.note-link.active,
 .mount-tree nav .tree-file-row>.note-link.active{color:#fff;background:transparent!important;box-shadow:none!important;border-radius:0!important}
+
+/* Two mobile mount panes leave very little horizontal room. Keep the disclosure
+ * gutter and both row actions inside each pane instead of clipping them at its
+ * overflow boundary. The content icon/label columns remain aligned for files
+ * and folders. */
+@media(max-width:700px){
+ .mount-grid.has-server .mount-tree nav summary,
+ .mount-grid.has-server .mount-tree nav .tree-file-row{grid-template-columns:38px minmax(0,1fr)!important;padding-right:60px!important}
+ .mount-grid.has-server .mount-tree nav .tree-file-row>.note-link{grid-template-columns:38px minmax(0,1fr)!important}
+ .mount-grid.has-server .mount-tree nav .item-drag-handle{width:38px!important;min-width:38px!important;padding-left:18px!important;box-sizing:border-box!important}
+ .mount-grid.has-server .mount-tree nav .item-drag-handle-file svg{transform:none}
+ .mount-grid.has-server .mount-tree nav .tree-disclosure{left:2px}
+ .mount-grid.has-server .mount-tree nav .tree-trash{right:30px!important;width:28px!important;min-width:28px!important;max-width:28px!important;height:32px!important;padding:4px!important}
+ .mount-grid.has-server .mount-tree nav .mount-move,
+ .mount-grid.has-server .mount-tree nav .mount-move-spacer{width:28px!important;min-width:28px!important;max-width:28px!important}
+}
