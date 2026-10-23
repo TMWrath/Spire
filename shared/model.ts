@@ -23,7 +23,10 @@ export const safePath = z.string().min(1).max(240).refine(p => !/[\\\x00-\x1f<>:
 export const mutationSchema = z.object({ op: z.string().uuid(), id: z.string().uuid(), base: z.number().int().nonnegative(), path: safePath.refine(p => p.endsWith('.md'), 'Notes must end in .md'), content: z.string().max(1_000_000), deleted: z.boolean().default(false), templateIds:z.array(z.string().max(100).regex(/^[a-zA-Z0-9_-]+$/)).max(100).optional() });
 export type Mutation = z.infer<typeof mutationSchema>;
 export type Revision = { rev: number; path: string; content: string; deleted: boolean; time: string; templateIds?: string[] };
-export type Note = Revision & { id: string; history: Revision[] };
+export type NavigationIndex = {aliases:string[];tags:string[];links:Link[]};
+export function navigationIndex(content:string):NavigationIndex {const m=metadata(content);return {aliases:m.aliases,tags:m.tags,links:links(m.body)};}
+export function noteNavigation(note:Note):NavigationIndex {return note.contentLoaded===false ? (note.navigation??{aliases:[],tags:[],links:[]}) : navigationIndex(note.content);}
+export type Note = Revision & { id: string; history: Revision[]; mergeParents?: {hash:string;revision:Revision}[]; contentLoaded?: boolean; navigation?:NavigationIndex };
 export type Conflict = { id: string; mutation: Mutation; current: number; time: string; /** Exact shared ancestor when retained; null means legacy data could not prove it. */ baseContent?: string | null };
 export type Attachment = { path: string; data: string };
 export const templateInputSchema=z.object({title:z.string().trim().min(1).max(100),category:z.enum(['section','full']),content:z.string().max(1_000_000),sourcePath:safePath});
@@ -57,7 +60,7 @@ export function createLinkResolver(notes:Note[]){
  for(const note of active){
   const path=stem(note.path).toLowerCase();if(!byPath.has(path))byPath.set(path,note);
   add(stem(note.path.split('/').at(-1)!),note);
-  for(const alias of metadata(note.content).aliases)add(alias,note);
+  for(const alias of noteNavigation(note).aliases)add(alias,note);
  }
  return (link:Link,source:Note):Note|undefined=>{
   if(!link.target)return source;

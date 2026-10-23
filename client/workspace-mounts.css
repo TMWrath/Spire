@@ -1,11 +1,8 @@
-/* Storage boundaries remain visible in the same sidebar, not separate modes. */
+/* Workspace boundaries */
 .mount-tree{border-top:1px solid #333;padding:10px 0;min-width:0}
 .mount-heading{display:flex;gap:8px;align-items:center;width:100%;text-align:left;padding:8px;border:1px solid transparent}
 .active-mount>.mount-heading{border-color:#666;background:#191919}
 .mount-heading svg{width:17px;height:17px}
-.mount-move{margin-left:auto;padding:3px!important;min-height:24px}
-.mount-tree summary{display:flex;align-items:center;gap:5px}
-.mount-tree .note-link{width:100%;text-align:left}
 .server-settings{border-bottom:1px solid #333;padding-bottom:24px;margin-bottom:24px}
 .device-workspace-selector{display:grid;gap:7px;padding:10px 0;border-bottom:1px solid #333}
 .device-workspace-selector>span{font-size:12px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.08em}
@@ -14,7 +11,6 @@
 .device-workspace-selector button[aria-pressed="true"]{border-color:#888;background:#242424;color:#fff}
 .device-workspace-selector button:disabled{opacity:.5}
 .server-settings form{max-width:520px}
-/* Move reviews are content cards, not horizontal application notice bars. */
 .move-review{display:flex;flex-direction:column;align-items:stretch;gap:12px;min-width:0;max-width:100%;margin-top:16px;padding:16px;border:1px solid #444;border-radius:6px;background:#202020;overflow-wrap:anywhere}
 .move-review h3,.move-review p{margin:0;min-width:0}
 .move-review h3{order:-1;font-size:16px}
@@ -24,10 +20,140 @@
 .mount-grid.has-server{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:8px;min-width:0}
 .mount-grid.has-server>.mount-tree{min-width:0;min-height:0;max-height:min(58dvh,560px);overflow:auto;border:1px solid #303030;padding:6px}
 .mount-grid.has-server .mount-heading{position:sticky;top:-6px;z-index:1;background:#111;border-bottom:1px solid #333}
-.mount-grid.has-server .mount-tree nav{min-width:0}
-.mount-grid.has-server .mount-tree summary{gap:3px;padding-left:2px;font-size:12px}
-.mount-grid.has-server .mount-tree summary .item-drag-handle{flex-basis:24px;min-width:24px}
-.mount-grid.has-server .mount-tree .tree-trash{flex-basis:28px;min-width:28px}
-.mount-grid.has-server .mount-tree .mount-move{padding:2px!important;min-width:27px}
-.mount-grid.has-server .mount-tree .note-link{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:6px 3px;font-size:11px}
-.mount-grid.has-server .mount-tree .tree-file-row>.tree-trash{flex-basis:26px;min-width:26px}
+@media(max-width:700px){.mount-grid.has-server{display:block}.mount-grid.has-server>.mount-tree{max-height:none;overflow:visible}}
+
+/*
+ * One tree-row contract.
+ *
+ * Every row keeps the full nav width. Hierarchy changes only the content inset;
+ * it never shortens the row or moves Delete/Move. Delete is anchored 38px from
+ * the shared right edge and Move occupies the final 32px.
+ */
+.sidebar nav,
+.mount-tree nav{min-width:0}
+.sidebar nav details,
+.mount-tree nav details{display:block!important;width:100%!important;min-width:0!important;margin:0!important;padding:0!important;border:0!important;box-sizing:border-box!important}
+.sidebar nav summary,
+.sidebar nav .tree-file-row,
+.mount-tree nav summary,
+.mount-tree nav .tree-file-row{
+ position:relative!important;
+ display:grid!important;
+ grid-template-columns:32px minmax(0,1fr)!important;
+ align-items:center!important;
+ column-gap:6px!important;
+ width:100%!important;
+ min-width:0!important;
+ min-height:38px!important;
+ margin:0!important;
+ padding-top:0!important;
+ padding-right:74px!important;
+ padding-bottom:0!important;
+ box-sizing:border-box!important;
+ border:0!important;
+ background:transparent;
+}
+.sidebar nav .tree-file-row.note-link,
+.mount-tree nav .tree-file-row.note-link{border:0!important;box-shadow:none!important;transition:none!important}
+.sidebar nav summary,
+.mount-tree nav summary{list-style:none}
+.sidebar nav summary::-webkit-details-marker,
+.mount-tree nav summary::-webkit-details-marker{display:none}
+.sidebar nav summary::marker,
+.mount-tree nav summary::marker{content:""}
+.sidebar nav .tree-file-row>.note-link,
+.mount-tree nav .tree-file-row>.note-link{
+ display:grid!important;
+ grid-template-columns:32px minmax(0,1fr)!important;
+ grid-column:1/3!important;
+ align-items:center!important;
+ column-gap:6px!important;
+ width:100%!important;
+ min-width:0!important;
+ min-height:38px!important;
+ margin:0!important;
+ padding:0!important;
+ border:0!important;
+ border-radius:0!important;
+ background:transparent!important;
+ box-shadow:none!important;
+ box-sizing:border-box!important;
+ overflow:hidden;
+}
+.sidebar nav .item-drag-handle,
+.mount-tree nav .item-drag-handle{display:flex!important;align-items:center!important;justify-content:flex-start!important;width:32px!important;min-width:32px!important;margin:0!important;padding:0!important}
+.sidebar nav .item-drag-handle svg,
+.mount-tree nav .item-drag-handle svg{display:block;width:16px!important;height:16px!important;margin:0!important}
+.sidebar nav .item-drag-handle-file svg,
+.mount-tree nav .item-drag-handle-file svg{transform:translateX(-3px)}
+.sidebar nav .item-name,
+.mount-tree nav .item-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Identical absolute action coordinates for every file/folder and every depth. */
+.sidebar nav .tree-trash,
+.mount-tree nav .tree-trash{
+ position:absolute!important;
+ top:50%!important;
+ right:38px!important;
+ transform:translateY(-50%)!important;
+ display:flex!important;
+ align-items:center!important;
+ justify-content:center!important;
+ width:36px!important;
+ min-width:36px!important;
+ max-width:36px!important;
+ height:36px!important;
+ margin:0!important;
+ padding:6px!important;
+ box-sizing:border-box!important;
+}
+.sidebar nav .tree-trash svg,
+.mount-tree nav .tree-trash svg{display:block!important;width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important;margin:0!important}
+.sidebar nav .mount-move,
+.sidebar nav .mount-move-spacer,
+.mount-tree nav .mount-move,
+.mount-tree nav .mount-move-spacer{
+ position:absolute!important;
+ top:50%!important;
+ right:0!important;
+ transform:translateY(-50%)!important;
+ display:flex!important;
+ align-items:center!important;
+ justify-content:center!important;
+ width:32px!important;
+ min-width:32px!important;
+ max-width:32px!important;
+ height:32px!important;
+ margin:0!important;
+ padding:4px!important;
+ box-sizing:border-box!important;
+}
+
+/* Disclosure occupies the hierarchy gutter, never a content/action column. */
+.sidebar nav .tree-disclosure,
+.mount-tree nav .tree-disclosure{position:absolute;left:-13px;top:50%;width:12px;height:12px;margin-top:-6px;background:currentColor;clip-path:polygon(25% 12%,25% 88%,82% 50%);transform:rotate(0);transition:transform .14s ease;opacity:.72}
+.sidebar nav details[open]>summary>.tree-disclosure,
+.mount-tree nav details[open]>summary>.tree-disclosure{transform:rotate(90deg)}
+
+/* Depth affects content only. Row/action right edges remain fixed. */
+.sidebar nav summary,.sidebar nav .tree-file-row,
+.mount-tree nav summary,.mount-tree nav .tree-file-row{--tree-inset:0px;padding-left:var(--tree-inset)!important}
+.sidebar nav>details>.tree-file-row,.mount-tree nav>details>.tree-file-row,
+.sidebar nav>details>details>summary,.mount-tree nav>details>details>summary{--tree-inset:22px}
+.sidebar nav>details>details>.tree-file-row,.mount-tree nav>details>details>.tree-file-row,
+.sidebar nav>details>details>details>summary,.mount-tree nav>details>details>details>summary{--tree-inset:44px}
+.sidebar nav>details>details>details>.tree-file-row,.mount-tree nav>details>details>details>.tree-file-row,
+.sidebar nav>details>details>details>details>summary,.mount-tree nav>details>details>details>details>summary{--tree-inset:66px}
+.sidebar nav>details>details>details>details>.tree-file-row,.mount-tree nav>details>details>details>details>.tree-file-row,
+.sidebar nav>details>details>details>details>details>summary,.mount-tree nav>details>details>details>details>details>summary{--tree-inset:88px}
+.sidebar nav>details>details>details>details>details>.tree-file-row,.mount-tree nav>details>details>details>details>details>.tree-file-row{--tree-inset:110px}
+
+/* Selection paints the complete row, including its action columns. */
+.sidebar nav summary.selected-folder,
+.mount-tree nav summary.selected-folder,
+.sidebar nav .tree-file-row.selected-row,
+.mount-tree nav .tree-file-row.selected-row,
+.sidebar nav .tree-file-row:has(>.note-link.active),
+.mount-tree nav .tree-file-row:has(>.note-link.active){color:#fff;background:#2a2a2a!important;box-shadow:none!important;border-radius:4px!important}
+.sidebar nav .tree-file-row>.note-link.active,
+.mount-tree nav .tree-file-row>.note-link.active{color:#fff;background:transparent!important;box-shadow:none!important;border-radius:0!important}

@@ -1,5 +1,9 @@
 # Spire — Features
 
+## Seamless nested file tree
+
+Local and Server file trees now use one continuous transparent surface instead of giving active files or selected folders separate dark row backgrounds. A quiet vertical guide and consistent indentation communicate folder depth for both subfolders and contained files; the active item remains identifiable by a slim light edge and brighter label. Drag/drop target feedback remains distinct because it is a transient interaction state rather than persistent row decoration. Production build and the focused published-storage browser scenario pass; physical Android WebView acceptance remains pending.
+
 ## Storage settings: Local recovery export and Server connection
 
 The Storage tab contains separate Local and Server sections. Local recovery export is shown under Storage only; Activity log remains independent and focused on workspace warnings. Server connection controls live under the Server subsection without merging the two storage systems or changing upload, synchronization, recovery, or workspace-safety behavior. Hosted implementation `bdf405c9f844ea9e3cbe1e71f1a6d13d2528030d` is deployed as `20261019T125310Z-storage-bdf405c`. Candidate runtime smoke, application-backup checksum verification, full-volume archive verification, Docker health, HTTPS health/index, and exact served entry JS/CSS hashes passed; the existing writable data volume is preserved. Unit/API tests passed 190/190. Settings browser assertions passed, but the broader unified-workspace browser flow failed later during file transfer and is not reported green. Android APK was not rebuilt; bundled-asset parity and physical WebView acceptance remain unverified. No push.
@@ -537,3 +541,10 @@ the project owner authorized selected-folder loading reuse, per-file autosave, i
 ## File/folder gesture separation — requested, implementation in progress
 
 the project owner requested one coherent interaction replacement: Trash icon starts deletion; hold and move the item icon starts drag/move; holding its name opens rename. Ordinary taps retain file-open/folder-expand behavior. Hold gestures must never delete. Cancellation, scrolling, collisions, selected-file edits and cross-workspace transfer safeguards remain protected. Verify hosted and Android bundled surfaces; physical-device access is not authorized by this source task.
+
+
+## Markdown three-way synchronization — 0.2.93 candidate
+
+Exact per-file acknowledged ancestors are separate from the cached Server head. Markdown is compared line by line without trimming blank lines, spaces, CRLF, or Unicode. Non-overlapping changes merge; overlapping sections remain explicit Local/Server/both/custom choices. Unrelated files continue synchronizing. Changed-file line patches verify base/result SHA-256 and optimistic revisions, with idempotent receipts and immutable prior-publication archives. Branch histories retain their original revision identities plus content hashes. Missing/unloaded files are never deletion commands.
+
+The real Chromium reconciliation harness is repaired (native capability and exact storage key), and covers independent upload/pull, conflict isolation, provider failures, lost replies, incremental downloads and stale review rejection. Focused unit/API/section-review checks pass. Final browser, Android buildbox, delivery, deployment and physical-device acceptance are pending; this section is not a completion claim. Existing Hello World conflict must remain unchosen.

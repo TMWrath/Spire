@@ -108,3 +108,16 @@ test('permanent deletion requires a trashed note at its current revision and era
  assert.throws(()=>s.mutate({...m,base:0,op:randomUUID()},'offline'),/permanently deleted/i);
  s.mutate(create('My note.md','fresh note'),'d');
 });
+
+test('stale non-overlapping Markdown changes merge against exact retained ancestor',()=>{
+ const s=fresh(),m=create('Writing/Merge.md','a\nb\nc\n');s.mutate(m,'first');
+ s.mutate({...m,op:randomUUID(),base:1,content:'a\nb\nC\n'},'server');
+ const saved=s.mutate({...m,op:randomUUID(),base:1,content:'A\nb\nc\n'},'phone');
+ assert.equal(saved.content,'A\nb\nC\n');assert.equal(saved.rev,3);assert.equal(s.state.conflicts.length,0);
+ assert.ok(saved.mergeParents?.some(p=>p.revision.content==='A\nb\nc\n'));assert.equal(new Store(root).state.notes[m.id].content,saved.content);
+});
+
+test('keeping Server explicitly retains the unchosen device version as a named branch',()=>{
+ const s=fresh(),m=create('Writing/Review.md','base');s.mutate(m,'first');s.mutate({...m,base:1,op:randomUUID(),content:'server'},'server');assert.throws(()=>s.mutate({...m,base:1,op:randomUUID(),content:'device'},'phone'));
+ const result=s.resolveConflict(s.state.conflicts[0].id,{action:'keep-server',expectedServerRevision:2},'phone');assert.ok(result.primary.mergeParents?.some(p=>p.revision.content==='device'));
+});

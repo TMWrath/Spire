@@ -56,3 +56,15 @@ test('revoked devices cannot publish or pull their mirrored local workspace',asy
  assert.equal((await(await client.request('/devices')).json()).length,1);
  const forged=await client.request('/login','POST',{...body,installation:{...body.installation,secret:randomUUID()+randomUUID()}});assert.equal(forged.status,403);
  });
+
+test('patch API enforces session/CSRF and supplies verified incremental changes',async t=>{
+ const {makePublicationPatch,snapshotHash}=await import('../shared/publication-patch');
+ const {session}=await start(t),phone=session();const setup=await phone.request('/setup','POST',{username:'owner',password:'long-enough-password',reliquary:'Vault',device:'Phone'});await phone.adopt(setup);
+ const before={seq:1,notes:[{id:randomUUID(),path:'Folder/File.md',content:'old\n',rev:1,deleted:false,history:[]}],folders:['Folder'],styles:{},attachments:[],conflicts:[]};
+ await phone.request('/device-workspaces/self/snapshot','PUT',{base:0,snapshot:before});
+ const after=structuredClone(before);after.notes[0].content='new\n';after.notes[0].rev++;
+ const result=await phone.request('/device-workspaces/self/patch','POST',{base:1,operation:randomUUID(),patch:makePublicationPatch(before,after)});assert.equal(result.status,200);assert.equal((await result.json()).hash,snapshotHash(after));
+ const delta=await(await phone.request('/device-workspaces/self/delta?after=1')).json();assert.ok(delta.patch);assert.equal(delta.snapshot,undefined);
+ const unchanged=await(await phone.request('/device-workspaces/self/delta?after=2')).json();assert.equal(unchanged.unchanged,true);
+ assert.equal((await session().request('/device-workspaces/self/delta?after=0')).status,401);
+});

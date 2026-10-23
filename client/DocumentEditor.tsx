@@ -6,7 +6,9 @@ import {PortableHighlight} from './PortableHighlight';
 import {readBookmark} from './bookmark';
 import React,{useEffect,useRef} from 'react';
 import {useEditor,EditorContent,type Editor} from '@tiptap/react';
-import {Node,type JSONContent} from '@tiptap/core';
+import {Node,Extension,type JSONContent} from '@tiptap/core';
+import {blankLineTokens,joinEditorBlocks} from './editor-blank-lines';
+const BlankLineSpacing=Extension.create({name:'blankLineSpacing',addGlobalAttributes:()=>[{types:['paragraph'],attributes:{blankNewlines:{default:null,rendered:false}}}]});
 import StarterKit from '@tiptap/starter-kit';
 import {Markdown} from '@tiptap/markdown';
 import Underline from '@tiptap/extension-underline';
@@ -23,6 +25,7 @@ import {api,engine} from './sync';
 const PortableUnderline=Underline.extend({renderMarkdown:(node,h)=>`<u>${h.renderChildren(node)}</u>`,markdownTokenizer:{name:'underline',level:'inline',start:src=>src.indexOf('<u>'),tokenize:(src,_tokens,lexer)=>{const m=/^<u>([\s\S]+?)<\/u>/.exec(src);if(m)return {type:'underline',raw:m[0],tokens:lexer.inlineTokens(m[1])};}}});
 
 /** Unsupported dialect blocks are rendered, but their exact portable source is retained. */
+const trimBlockNewlines=(source:string)=>source.replace(/\n+$/,'');
 function BodyEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,onChange,onReady,onSource,onDefinitionCommand,label='Document editor',onActivate}:{label?:string;onActivate?:(editor:Editor)=>void;onDefinitionCommand?:(term:string)=>void;keyboardEnabled?:boolean;onBlur?:()=>void;note:Note;notes:Note[];attachments:string[];fileCss?:string;onChange:(content:string)=>void;onReady:(editor:Editor|null)=>void;onSource:()=>void}){
  const callbacks=useRef({note,notes,attachments,onBlur,onChange,onReady,onSource,onActivate,onDefinitionCommand});callbacks.current={note,notes,attachments,onBlur,onChange,onReady,onSource,onActivate,onDefinitionCommand};
  const [quickLabel,setQuickLabel]=React.useState('');
@@ -30,10 +33,10 @@ function BodyEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,
  const prefix=useRef(''),last=useRef(note.content),originals=useRef(new Map<string,string[]>()),loaded=useRef<Editor|null>(null);
  const load=(editor:Editor,source:string)=>{
   const match=/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/.exec(source);prefix.current=match?.[0]??'';
-  const body=source.slice(prefix.current.length),tokens=marked.lexer(body),content:JSONContent[]=[];originals.current=new Map();
+  const body=source.slice(prefix.current.length),tokens=blankLineTokens(body),content:JSONContent[]=[];originals.current=new Map();
   const definitions=/^\s*\[[^\]]+\]:/m.test(body);
-  for(const token of tokens){if(token.type==='space')continue;
-   const raw=token.raw;
+  for(const part of tokens){if(part.kind==='gap'){content.push({type:'paragraph',attrs:{blankNewlines:part.newlines}});continue;}
+   const token=part.token,raw=part.source;
    const highlightSafe=raw.replace(/==([^\n]+?)==/g,'$1').replace(/<mark(?:\s+style="background-color:\s*#[\da-f]{6};\s*color:\s*#[\da-f]{6};?")?>([^\n]*?)<\/mark>/gi,'$1');
    const protectedBlock=!['heading','paragraph','text','list','blockquote','hr','code'].includes(token.type)||/!?\[\[|\[\^|\[!|==|\$|!\[|\^[\w-]+(?:\n|$)|<(?!\/?u>)[A-Za-z!/]|&(?:\w+|#\d+);/.test(highlightSafe)||(definitions&&raw.includes('['))||token.type==='code'&&'lang' in token&&token.lang==='mermaid';
    if(protectedBlock){content.push({type:'preservedBlock',attrs:{source:raw}});continue;}
@@ -44,15 +47,15 @@ function BodyEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,
   }
   const next={type:'doc',content:content.length?content:[{type:'paragraph'}]};if(!editor.state.doc.eq(editor.schema.nodeFromJSON(next))){editor.commands.setContent(next,{emitUpdate:false});resetQuickFormat(editor);}last.current=source;loaded.current=editor;
  };
- const Preserved=Node.create({name:'preservedBlock',group:'block',atom:true,selectable:true,draggable:false,addAttributes:()=>({source:{default:'',rendered:false}}),parseHTML:()=>[],renderHTML:()=>['div',{'data-preserved-block':'true'}],renderMarkdown:node=>String(node.attrs?.source??'').trimEnd(),addNodeView:()=>({node})=>{
+ const Preserved=Node.create({name:'preservedBlock',group:'block',atom:true,selectable:true,draggable:false,addAttributes:()=>({source:{default:'',rendered:false}}),parseHTML:()=>[],renderHTML:()=>['div',{'data-preserved-block':'true'}],renderMarkdown:node=>trimBlockNewlines(String(node.attrs?.source??'')),addNodeView:()=>({node})=>{
   const dom=document.createElement('div');dom.className='preserved-document-block';dom.contentEditable='false';
   const view=document.createElement('div');let rendered='';const refresh=()=>{const c=callbacks.current,html=DOMPurify.sanitize(renderMarkdown({...c.note,content:String(node.attrs.source)},c.notes,c.attachments));if(html!==rendered){view.innerHTML=html;rendered=html;}};refresh();mediaViews.current.add(refresh);
   dom.append(view);
   return {dom,stopEvent:()=>true,destroy:()=>{mediaViews.current.delete(refresh);}};
  }});
- const editor=useEditor({onFocus:({editor})=>callbacks.current.onActivate?.(editor),onBlur:()=>callbacks.current.onBlur?.(),onTransaction:({editor})=>setQuickLabel(quickFormatLabel(editor)),extensions:[QuickFormat,PortableHighlight,Preserved,PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false}}),TaskList,TaskItem.configure({nested:true}),Markdown],content:'',editorProps:{attributes:{role:'textbox','aria-label':label,'aria-multiline':'true',class:'document-writing-surface'},handleKeyDown:(view,event)=>{if(event.key!=='Enter'||event.shiftKey||event.ctrlKey||event.metaKey||event.altKey)return false;const {$from}=view.state.selection;if(!view.state.selection.empty||$from.parent.type.name!=='paragraph'||$from.parentOffset!==$from.parent.content.size)return false;const match=/^@def\s+(.+?)\s*$/i.exec($from.parent.textContent);if(!match)return false;event.preventDefault();const from=$from.before(),to=$from.after();view.dispatch(view.state.tr.delete(from,to));callbacks.current.onDefinitionCommand?.(match[1].trim());return true;},handlePaste:(view,event)=>{const text=event.clipboardData?.getData('text/plain');if(text===undefined)return false;event.preventDefault();view.dispatch(view.state.tr.insertText(text));return true;}},onCreate:({editor})=>{if(loaded.current!==editor)load(editor,callbacks.current.note.content);callbacks.current.onReady(editor);},onUpdate:({editor})=>{
-  const used=new Map<string,number>();const blocks=(editor.getJSON().content??[]).map(node=>{if(node.type==='preservedBlock')return String(node.attrs?.source??'').trimEnd();const key=JSON.stringify(node),i=used.get(key)??0;used.set(key,i+1);return (originals.current.get(key)?.[i]??editor.markdown!.serialize({type:'doc',content:[node]})).trimEnd();});
-  const source=prefix.current+blocks.join('\n\n');last.current=source;callbacks.current.onChange(source);
+ const editor=useEditor({onFocus:({editor})=>callbacks.current.onActivate?.(editor),onBlur:()=>callbacks.current.onBlur?.(),onTransaction:({editor})=>setQuickLabel(quickFormatLabel(editor)),extensions:[BlankLineSpacing,QuickFormat,PortableHighlight,Preserved,PortableUnderline,StarterKit.configure({underline:false,link:{openOnClick:false}}),TaskList,TaskItem.configure({nested:true}),Markdown],content:'',editorProps:{attributes:{role:'textbox','aria-label':label,'aria-multiline':'true',class:'document-writing-surface'},handleKeyDown:(view,event)=>{if(event.key!=='Enter'||event.shiftKey||event.ctrlKey||event.metaKey||event.altKey)return false;const {$from}=view.state.selection;if(!view.state.selection.empty||$from.parent.type.name!=='paragraph'||$from.parentOffset!==$from.parent.content.size)return false;const match=/^@def\s+(.+?)\s*$/i.exec($from.parent.textContent);if(!match)return false;event.preventDefault();const from=$from.before(),to=$from.after();view.dispatch(view.state.tr.delete(from,to));callbacks.current.onDefinitionCommand?.(match[1].trim());return true;},handlePaste:(view,event)=>{const text=event.clipboardData?.getData('text/plain');if(text===undefined)return false;event.preventDefault();view.dispatch(view.state.tr.insertText(text));return true;}},onCreate:({editor})=>{if(loaded.current!==editor)load(editor,callbacks.current.note.content);callbacks.current.onReady(editor);},onUpdate:({editor})=>{
+  const used=new Map<string,number>();const blocks=(editor.getJSON().content??[]).map(node=>{if(node.type==='paragraph'&&!node.content?.length)return {blankNewlines:node.attrs?.blankNewlines??2};if(node.type==='preservedBlock')return {text:trimBlockNewlines(String(node.attrs?.source??''))};const key=JSON.stringify(node),i=used.get(key)??0;used.set(key,i+1);return {text:trimBlockNewlines(originals.current.get(key)?.[i]??editor.markdown!.serialize({type:'doc',content:[node]}))};});
+  const source=prefix.current+joinEditorBlocks(blocks);last.current=source;callbacks.current.onChange(source);
  }});
  const [imageError,setImageError]=React.useState('');
  useEffect(()=>{
