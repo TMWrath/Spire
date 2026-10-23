@@ -1,5 +1,9 @@
 # Spire — Bugs
 
+## Mobile Local and Server trees stacked vertically
+
+**State:** Corrected in the reconciled canonical source. A release-only rule below 700 px replaced the two-column workspace grid with block layout and removed the trees' bounded scrolling. The override is removed, so Local and Server retain equal side-by-side columns and independent bounded scrolling at the 390×844 Android viewport. The production build passes, and the existing mobile geometry assertion failed before the correction and passed afterward. The broader unified-workspace scenario then continued into transfer/offline behavior and timed out on a separate cached `Unopened` server-file expectation; it is not reported green. Unit/API tests pass 279/279. Deployment, Android packaging, and physical WebView acceptance remain pending.
+
 ## Drag acceptance read stale coordinates after folder creation
 
 **State:** Test synchronization corrected and verified locally. The source row was measured before the asynchronous folder insertion shifted the tree; pointer-down then hit a folder summary and its long-press deletion safeguard legitimately appeared. The test now waits for the new folder target and Playwright-stable source hover before measuring. Existing ghost, drag-source, hover transform, successful drop and destination-path assertions remain unchanged. Reproduced failure before correction; focused regression passed afterward and the final full suite passed 80/80. No product drag implementation or deletion safeguard was weakened. No deployment performed.

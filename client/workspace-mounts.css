@@ -20,7 +20,6 @@
 .mount-grid.has-server{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:8px;min-width:0}
 .mount-grid.has-server>.mount-tree{min-width:0;min-height:0;max-height:min(58dvh,560px);overflow:auto;border:1px solid #303030;padding:6px}
 .mount-grid.has-server .mount-heading{position:sticky;top:-6px;z-index:1;background:#111;border-bottom:1px solid #333}
-@media(max-width:700px){.mount-grid.has-server{display:block}.mount-grid.has-server>.mount-tree{max-height:none;overflow:visible}}
 
 /*
  * One tree-row contract.
