@@ -3,7 +3,7 @@ import {FileText,Folder} from 'lucide-react';
 
 /** Only the icon owns drag pickup. Names remain scrollable and independently renameable. */
 export function ItemIcon({kind,path,onStart,onMove,onEnd}:{kind:'file'|'folder';path:string;onStart:(e:React.PointerEvent)=>void;onMove:(e:React.PointerEvent)=>void;onEnd:(e:React.PointerEvent)=>void}){
- return <span className="item-drag-handle" aria-label={`Drag ${kind} ${path}`} title="Hold and move to drag" onPointerDown={e=>{e.stopPropagation();onStart(e);}} onPointerMove={onMove} onPointerUp={onEnd} onPointerCancel={onEnd} onContextMenu={e=>e.preventDefault()}>{kind==='file'?<FileText/>:<Folder/>}</span>;
+ return <span className={`item-drag-handle item-drag-handle-${kind}`} aria-label={`Drag ${kind} ${path}`} title="Hold and move to drag" onPointerDown={e=>{e.stopPropagation();onStart(e);}} onPointerMove={onMove} onPointerUp={onEnd} onPointerCancel={onEnd} onContextMenu={e=>e.preventDefault()}>{kind==='file'?<FileText/>:<Folder/>}</span>;
 }
 export function ItemName({path,children,onRename}:{path:string;children:React.ReactNode;onRename:()=>void}){
  const timer=useRef<ReturnType<typeof setTimeout>|null>(null),start=useRef({x:0,y:0}),held=useRef(false);
