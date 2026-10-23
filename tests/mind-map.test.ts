@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {buildGraph,buildFileSlice,buildTimeline,demoFiles} from '../client/mind-map-model.ts';
+import {buildGraph,buildFileSlice,buildTimeline,buildTimelineRows,demoFiles} from '../client/mind-map-model.ts';
 import type {Note} from '../shared/model.ts';
 test('file slices contain only the current file and direct incoming/outgoing neighbors',()=>{const notes=[file('A','[[B]] [[Gone]] [[Missing]]'),file('B','[[D]]'),file('C','[[A]]'),file('D'),file('Gone','',true)];const g=buildFileSlice(notes,'A');assert.deepEqual(g.nodes.map(n=>n.id),['A','B','C']);assert.deepEqual(g.edges,[{source:'B',target:'A'},{source:'A',target:'C'}]);assert.deepEqual(buildFileSlice(notes,'D').nodes.map(n=>n.id),['B','D']);assert.deepEqual(buildFileSlice([file('Solo')],'Solo'),{nodes:[file('Solo')],edges:[]});assert.deepEqual(buildFileSlice(notes,'Gone'),{nodes:[],edges:[]});});
 const file=(id:string,content='',deleted=false):Note=>({id,path:`Writing/${id}.md`,content,deleted,rev:1,time:'',history:[]});
@@ -40,4 +40,10 @@ test('timeline extracts stable tags and topic metadata without moving files when
  const timeline=buildTimeline([current,linked],current.id)!;
  assert.deepEqual(timeline.topics,['Focus','shared','Spire','Timeline','writing']);
  assert.deepEqual(timeline.future.map(item=>item.note.id),['Linked']);
+});
+
+test('timeline rows mirror older and newer relationships around the selected file',()=>{
+ const older=[{note:file('Oldest'),created:'2025-01-01T00:00:00.000Z',direction:'outgoing' as const},{note:file('Recent'),created:'2025-10-01T00:00:00.000Z',direction:'incoming' as const}];
+ const newer=[{note:file('Soon'),created:'2026-11-01T00:00:00.000Z',direction:'mutual' as const}];
+ assert.deepEqual(buildTimelineRows(older,newer).map(row=>[row.before?.note.id??null,row.after?.note.id??null]),[['Recent','Soon'],['Oldest',null]]);
 });

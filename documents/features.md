@@ -1,5 +1,11 @@
 # Spire — Features
 
+## Mockup-matched chronological relationship timeline
+
+The Files relationship view now follows the project owner's supplied monochrome calendar/timeline mockup: a centered three-year rail, outlined month/day/time ruler, paired older/newer relationship rows, a center connector, and a selected-file card. The interface uses actual creation history, real linked files, paths, recentering, explicit file opening, fullscreen expansion, and the existing hidden accessible file selector; example filenames from the mockup are not copied into product data. Mobile geometry stays within 390 px and the decorative connector cannot intercept file-card taps.
+
+Verification: focused projection tests passed 9/9 after a genuine missing-export RED; full unit/API suite passed 284/284; production TypeScript/Vite build passed; focused 390×844 browser acceptance passed 1/1, including relationship recentering, selected-file opening, panel bounds, and no page overflow. Physical Android WebView acceptance remains separate.
+
 ## Persistent mobile caret and text selection — implementation
 
 When a mobile action row, formatting gallery, or picker takes interaction focus, Source and visual Editor modes keep the last valid insertion point visible inside the writing surface. A collapsed selection is represented by a blinking synthetic caret; a range remains visibly highlighted over the selected characters. The logical selection remains authoritative for formatting, direct taps return to native editing visuals, and toolbar use does not refocus the editor or summon the keyboard. Markers are scoped to the current editor document and disappear when native editor focus returns.

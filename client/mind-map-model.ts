@@ -14,6 +14,11 @@ export function buildFileSlice(files:Note[],id:string){
  return {nodes:graph.nodes.filter(n=>ids.has(n.id)),edges};
 }
 export type TimelineItem={note:Note;created:string;direction:'incoming'|'outgoing'|'mutual'};
+export type TimelineRow={before?:TimelineItem;after?:TimelineItem};
+export function buildTimelineRows(past:TimelineItem[],future:TimelineItem[]):TimelineRow[]{
+ const before=[...past].reverse(),length=Math.max(before.length,future.length,1);
+ return Array.from({length},(_,index)=>({before:before[index],after:future[index]}));
+}
 const created=(note:Note)=>note.history[0]?.time||note.time||'';
 const textList=(value:unknown)=>Array.isArray(value)?value.filter((item):item is string=>typeof item==='string'):typeof value==='string'?[value]:[];
 export function buildTimeline(files:Note[],currentId:string){
