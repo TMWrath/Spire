@@ -15,11 +15,15 @@ export function buildFileSlice(files:Note[],id:string){
 }
 export type TimelineItem={note:Note;created:string;direction:'incoming'|'outgoing'|'mutual'};
 export type TimelineRow={before?:TimelineItem;after?:TimelineItem};
+export type ChronologyItem={note:Note;created:string};
+const created=(note:Note)=>note.history[0]?.time||note.time||'';
+export function buildWorkspaceChronology(files:Note[]):ChronologyItem[]{
+ return files.filter(note=>!note.deleted).map(note=>({note,created:created(note)})).sort((a,b)=>a.created.localeCompare(b.created)||a.note.path.localeCompare(b.note.path)||a.note.id.localeCompare(b.note.id));
+}
 export function buildTimelineRows(past:TimelineItem[],future:TimelineItem[]):TimelineRow[]{
- const before=[...past].reverse(),length=Math.max(before.length,future.length,1);
+ const before=[...past].reverse(),length=Math.max(before.length,future.length,4);
  return Array.from({length},(_,index)=>({before:before[index],after:future[index]}));
 }
-const created=(note:Note)=>note.history[0]?.time||note.time||'';
 const textList=(value:unknown)=>Array.isArray(value)?value.filter((item):item is string=>typeof item==='string'):typeof value==='string'?[value]:[];
 export function buildTimeline(files:Note[],currentId:string){
  const graph=buildGraph(files),current=graph.nodes.find(note=>note.id===currentId);
