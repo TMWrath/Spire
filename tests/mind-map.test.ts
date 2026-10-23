@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {buildGraph,buildFileSlice,demoFiles} from '../client/mind-map-model.ts';
+import {buildGraph,buildFileSlice,buildTimeline,demoFiles} from '../client/mind-map-model.ts';
 import type {Note} from '../shared/model.ts';
 test('file slices contain only the current file and direct incoming/outgoing neighbors',()=>{const notes=[file('A','[[B]] [[Gone]] [[Missing]]'),file('B','[[D]]'),file('C','[[A]]'),file('D'),file('Gone','',true)];const g=buildFileSlice(notes,'A');assert.deepEqual(g.nodes.map(n=>n.id),['A','B','C']);assert.deepEqual(g.edges,[{source:'B',target:'A'},{source:'A',target:'C'}]);assert.deepEqual(buildFileSlice(notes,'D').nodes.map(n=>n.id),['B','D']);assert.deepEqual(buildFileSlice([file('Solo')],'Solo'),{nodes:[file('Solo')],edges:[]});assert.deepEqual(buildFileSlice(notes,'Gone'),{nodes:[],edges:[]});});
 const file=(id:string,content='',deleted=false):Note=>({id,path:`Writing/${id}.md`,content,deleted,rev:1,time:'',history:[]});
@@ -20,3 +20,24 @@ test('large graph resolves aliases through one workspace index instead of rescan
  assert.ok(bodyReads<=2_100,`graph read file bodies ${bodyReads} times; expected a bounded indexing pass`);
 });
 test('demo is deterministic presentation-only data with real relationships',()=>{assert.ok(demoFiles.length>=12);assert.ok(buildGraph(demoFiles).edges.length>=15);assert.ok(demoFiles.every(n=>n.path.startsWith('Demo/')&&n.rev===1&&!n.deleted));assert.equal(demoFiles.length,28);});
+
+test('timeline anchors the current file between directly linked files by permanent creation order',()=>{
+ const current={...file('Current','[[Past]] [[Future]]'),time:'2026-03-01T12:00:00.000Z',history:[{...file('Current').history,rev:1,path:'Writing/Current.md',content:'',deleted:false,time:'2026-02-01T12:00:00.000Z'}] as Note['history']};
+ const past={...file('Past'),time:'2026-01-01T12:00:00.000Z'};
+ const future={...file('Future','[[Current]]'),time:'2026-04-01T12:00:00.000Z'};
+ const unrelated={...file('Unrelated'),time:'2025-01-01T12:00:00.000Z'};
+ const timeline=buildTimeline([future,unrelated,current,past],current.id)!;
+ assert.equal(timeline.current.id,'Current');
+ assert.deepEqual(timeline.past.map(item=>item.note.id),['Past']);
+ assert.deepEqual(timeline.future.map(item=>item.note.id),['Future']);
+ assert.equal(timeline.current.created,'2026-02-01T12:00:00.000Z');
+ assert.deepEqual(timeline.topics,[]);
+});
+
+test('timeline extracts stable tags and topic metadata without moving files when edited',()=>{
+ const current={...file('Current','---\ntags: [writing, shared]\ntopics: [Spire, Focus]\n---\n[[Linked]]'),time:'2026-10-01T00:00:00.000Z',history:[{rev:1,path:'Writing/Current.md',content:'',deleted:false,time:'2026-01-01T00:00:00.000Z'}]};
+ const linked={...file('Linked','---\ntags: [shared]\ntopic: Timeline\n---\n'),time:'2026-02-01T00:00:00.000Z'};
+ const timeline=buildTimeline([current,linked],current.id)!;
+ assert.deepEqual(timeline.topics,['Focus','shared','Spire','Timeline','writing']);
+ assert.deepEqual(timeline.future.map(item=>item.note.id),['Linked']);
+});

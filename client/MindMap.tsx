@@ -9,10 +9,17 @@ function MapDialog({children,onClose,opener}:{children:React.ReactNode;onClose:(
 import {Plus,Minus,Maximize,Pause,Play,ArrowUpRight,X,Search} from 'lucide-react';
 import type {Note} from '../shared/model';
 import {buildGraph,demoFiles} from './mind-map-model';
+import {RelationshipTimeline} from './RelationshipTimeline';
 import {createDotMap,type DotMapController} from './dot-map/renderer.mjs';
 import './mind-map.css';
+import './relationship-timeline.css';
 const title=(n:Note)=>n.path.split('/').at(-1)!.replace(/\.md$/i,'');
-export function MindMap({files,demo,onOpen,compact=false,visible=true,graphOverride,relation='files'}:{files:Note[];demo:boolean;onOpen:(file:Note)=>void;compact?:boolean;visible?:boolean;graphOverride?:ReturnType<typeof buildGraph>;relation?:'files'|'tags'|'templates'|'sources'}){
+type MindMapProps={files:Note[];demo:boolean;onOpen:(file:Note)=>void;compact?:boolean;visible?:boolean;graphOverride?:ReturnType<typeof buildGraph>;relation?:'files'|'tags'|'templates'|'sources';activeId?:string|null};
+export function MindMap(props:MindMapProps){
+ if((props.relation??'files')==='files'&&!props.demo)return <RelationshipTimeline files={props.files} activeId={props.activeId} onOpen={props.onOpen} compact={props.compact}/>;
+ return <LegacyMindMap {...props}/>;
+}
+function LegacyMindMap({files,demo,onOpen,compact=false,visible=true,graphOverride,relation='files',activeId}:{files:Note[];demo:boolean;onOpen:(file:Note)=>void;compact?:boolean;visible?:boolean;graphOverride?:ReturnType<typeof buildGraph>;relation?:'files'|'tags'|'templates'|'sources';activeId?:string|null}){
  const graph=useMemo(()=>graphOverride??buildGraph(demo?demoFiles:files),[files,demo,graphOverride]);
  const [fullscreen,setFullscreen]=useState(false);
  const expandButton=useRef<HTMLButtonElement>(null);
@@ -46,5 +53,5 @@ export function MindMap({files,demo,onOpen,compact=false,visible=true,graphOverr
    {!!graph.nodes.length&&<label className="mind-picker">Select file<ThemedSelect aria-label="Select a file in the map" value={selected??''} onChange={e=>engine.current?.select(e.target.value||null)}><option value="">No selection</option>{graph.nodes.map(n=><option className="mind-node" key={n.id} value={n.id}>{title(n)}</option>)}</ThemedSelect></label>}
   <p className="mind-sr" role="status" aria-live="polite">{active?`Selected ${title(active)}`:'No file selected'}</p>
   <div className={compact?'mind-sr':'mind-legend'} id={compact?'sidebar-mind-controls':'mind-controls'}><span className="mind-legend-line"/>{relation==='sources'?'Source → citing files':relation==='tags'?'Files sharing tags':relation==='templates'?'Template → files using it':'Referenced file → referencing file'}<span className="mind-hint mind-mouse-hint">Drag to orbit · Wheel to zoom · Middle/Shift-drag to move</span><span className="mind-hint mind-touch-hint">One finger to orbit · Pinch to zoom · Two fingers to move/twist</span><span className="mind-sr">Arrow keys orbit. Shift and arrows move. Plus and minus zoom. Home resets. Escape clears selection. Use Select file to choose a file with the keyboard.</span></div>
- </section>{compact&&<label className="mind-search sidebar-map-search"><Search size={16} aria-hidden="true"/><input aria-label="Find a file in the map" placeholder="Find a file…" value={query} onChange={e=>setQuery(e.target.value)}/></label>}{compact&&fullscreen&&<MapDialog opener={expandButton.current} onClose={()=>setFullscreen(false)}><MindMap files={files} demo={demo} graphOverride={graph} relation={relation} onOpen={file=>{setFullscreen(false);onOpen(file);}}/></MapDialog>}</>;
+ </section>{compact&&<label className="mind-search sidebar-map-search"><Search size={16} aria-hidden="true"/><input aria-label="Find a file in the map" placeholder="Find a file…" value={query} onChange={e=>setQuery(e.target.value)}/></label>}{compact&&fullscreen&&<MapDialog opener={expandButton.current} onClose={()=>setFullscreen(false)}><MindMap files={files} demo={demo} graphOverride={graph} relation={relation} activeId={activeId} onOpen={file=>{setFullscreen(false);onOpen(file);}}/></MapDialog>}</>;
 }
