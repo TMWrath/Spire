@@ -13,7 +13,7 @@ async function start(t:any){
  const {app}=createApp(root,origin),server=app.listen(port,'127.0.0.1');
  await new Promise<void>(resolve=>server.once('listening',resolve));
  t.after(()=>new Promise<void>(resolve=>server.close(()=>{fs.rmSync(root,{recursive:true,force:true});resolve();})));
- const session=()=>{let cookie='',csrf='';return {request:async(route:string,method='GET',body?:unknown)=>fetch(origin+'/api'+route,{method,headers:{Origin:origin,Cookie:cookie,'X-CSRF-Token':csrf,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined}),adopt:async(response:Response)=>{cookie=response.headers.get('set-cookie')!.split(';')[0];csrf=(await response.clone().json()).csrf;},get cookie(){return cookie;}}};
+ const session=()=>{let cookie='',csrf='';return {request:async(route:string,method='GET',body?:unknown)=>fetch(origin+'/api'+route,{method,headers:{Origin:origin,Cookie:cookie,'X-CSRF-Token':csrf,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined}),binary:async(route:string,method:string,body?:BodyInit)=>fetch(origin+'/api'+route,{method,headers:{Origin:origin,Cookie:cookie,'X-CSRF-Token':csrf,'Content-Type':'application/octet-stream'},body}),adopt:async(response:Response)=>{cookie=response.headers.get('set-cookie')!.split(';')[0];csrf=(await response.clone().json()).csrf;},get cookie(){return cookie;}}};
  return {root,session};
 }
 
@@ -67,4 +67,15 @@ test('patch API enforces session/CSRF and supplies verified incremental changes'
  const delta=await(await phone.request('/device-workspaces/self/delta?after=1')).json();assert.ok(delta.patch);assert.equal(delta.snapshot,undefined);
  const unchanged=await(await phone.request('/device-workspaces/self/delta?after=2')).json();assert.equal(unchanged.unchanged,true);
  assert.equal((await session().request('/device-workspaces/self/delta?after=0')).status,401);
+});
+
+test('device attachment bytes are hash verified, readable, and unchanged uploads are deduplicated',async t=>{
+ const {createHash}=await import('node:crypto');
+ const {session}=await start(t),phone=session();const setup=await phone.request('/setup','POST',{username:'owner',password:'long-enough-password',reliquary:'Vault',device:'Phone'});await phone.adopt(setup);
+ const bytes=Buffer.from([0xff,0xd8,0xff,0x00,0x73,0x70,0x69,0x72,0x65]),hash=createHash('sha256').update(bytes).digest('hex'),attachmentPath='Attachments/photo.jpg',route=`/device-workspaces/self/attachment?path=${encodeURIComponent(attachmentPath)}&hash=${hash}`;
+ const put=await phone.binary(route,'PUT',bytes);assert.equal(put.status,200);assert.equal((await put.json()).stored,true);
+ const repeat=await phone.binary(route,'PUT',bytes);assert.equal(repeat.status,200);assert.equal((await repeat.json()).stored,false);
+ const probe=await phone.binary(route,'HEAD');assert.equal(probe.status,204);
+ const fetched=await phone.request(`/device-workspaces/self/attachment?path=${encodeURIComponent(attachmentPath)}`);assert.equal(fetched.status,200);assert.deepEqual(Buffer.from(await fetched.arrayBuffer()),bytes);
+ const bad=await phone.binary(`/device-workspaces/self/attachment?path=${encodeURIComponent('Attachments/bad.jpg')}&hash=${'0'.repeat(64)}`,'PUT',bytes);assert.equal(bad.status,400);
 });

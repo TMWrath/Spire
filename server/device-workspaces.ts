@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import {createHash} from 'node:crypto';
 import {z} from 'zod';
 import {atomic,HttpError} from './store.ts';
 import {mutationSchema,safePath} from '../shared/model.ts';
@@ -15,6 +16,16 @@ export class DeviceWorkspaces{
  constructor(private root:string){fs.mkdirSync(this.directory(),{recursive:true,mode:0o700});}
  private directory(){return path.join(this.root,'device-workspaces');}
  private file(id:string){if(!/^[0-9a-f-]{36}$/i.test(id))throw new HttpError(400,'Invalid device');return path.join(this.directory(),id+'.json');}
+ private attachmentFile(id:string,target:string){this.file(id);return path.join(this.directory(),id,'attachments',safePath.parse(target));}
+ attachment(id:string,target:string){const file=this.attachmentFile(id,target);if(!fs.existsSync(file))throw new HttpError(404,'Device attachment unavailable');return fs.readFileSync(file);}
+ attachmentMatches(id:string,target:string,hash:string){if(!/^[0-9a-f]{64}$/.test(hash))throw new HttpError(400,'Invalid attachment hash');const file=this.attachmentFile(id,target);return fs.existsSync(file)&&createHash('sha256').update(fs.readFileSync(file)).digest('hex')===hash;}
+ putAttachment(id:string,target:string,expectedHash:string,data:Buffer){
+  if(!/^[0-9a-f]{64}$/.test(expectedHash))throw new HttpError(400,'Invalid attachment hash');
+  if(!data.length)throw new HttpError(400,'Expected attachment bytes');
+  const actual=createHash('sha256').update(data).digest('hex');if(actual!==expectedHash)throw new HttpError(400,'Attachment hash mismatch');
+  const file=this.attachmentFile(id,target);if(fs.existsSync(file)&&createHash('sha256').update(fs.readFileSync(file)).digest('hex')===actual)return {stored:false,hash:actual,size:data.length};
+  atomic(file,data);return {stored:true,hash:actual,size:data.length};
+ }
  has(id:string){return fs.existsSync(this.file(id));}
  read(id:string):Mirror{const file=this.file(id);if(!fs.existsSync(file))throw new HttpError(404,'Device Local workspace has not been published');return JSON.parse(fs.readFileSync(file,'utf8'));}
  private archiveFile(id:string,revision:number){this.file(id);if(!Number.isSafeInteger(revision)||revision<1)throw new HttpError(400,'Invalid revision');return path.join(this.directory(),id,'revisions',revision+'.json');}

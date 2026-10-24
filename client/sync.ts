@@ -16,6 +16,7 @@ import {attachReturnProvenance,type TransferProvenance} from './transfer-provena
 import {hydratePublicationNotes} from './publication-hydration';
 import {publicationIsAdditive} from './publication-bootstrap';
 import {publicationDecision,samePublication} from './publication-state';
+import {syncPublicationAttachments} from './publication-media';
 export type Identity={owner:string;username:string;csrf:string;device?:{id:string;name:string};browser?:boolean;server?:{id:string;name:string}};
 export type Snapshot={localWorkspaceId?:string;quickActions?:import('../shared/quick-actions').QuickAction[];sources?:import('../shared/sources').Source[];templates?:SavedTemplate[];seq:number;notes:Note[];folders:string[];styles:Record<string,string>;conflicts:Conflict[];attachments:{path:string;size:number}[]};
 type Cache={identity?:Identity;workspaceBase?:WorkspaceBase<Snapshot>;snapshot:Snapshot;outbox:Mutation[];opened?:string[];media?:Record<string,{data:string;type:string}>;provenance?:Record<string,TransferProvenance>};
@@ -86,6 +87,7 @@ export class Engine{
   if(!Array.isArray(history))throw Error('Invalid revision response');return history;
  }
  private restoreMedia(){for(const [p,m]of Object.entries(this.cache.media??{})){if(!this.mediaURLs.has(p))this.mediaURLs.set(p,URL.createObjectURL(new Blob([bytesFromBase64(m.data)],{type:m.type})));}}
+ attachmentURL(target:string){return this.remote?(this.mediaURLs.get(target)??'data:application/octet-stream,'):'/api/attachment?path='+encodeURIComponent(target);}
  async cacheMedia(note:Note){if(!this.remote)return;const paths=this.cache.snapshot.attachments.map(a=>a.path);const {linkedMedia}=await import('./workspace-media');for(const p of linkedMedia(note,paths)){try{const response=await this.raw('/attachment?path='+encodeURIComponent(p));if(!response.ok)throw Error('Attachment unavailable');const blob=await response.blob();if(blob.size>10_000_000)throw Error('Attachment exceeds cache limit');const {base64FromBytes}=await import('./mount-transport');const data=base64FromBytes(new Uint8Array(await blob.arrayBuffer()));await this.exclusive(async()=>{this.cache.media![p]={data,type:blob.type};await this.persist();});const old=this.mediaURLs.get(p);if(old)URL.revokeObjectURL(old);this.mediaURLs.set(p,URL.createObjectURL(blob));}catch{/* Previously cached media remains available; never substitute Local bytes. */}}this.restoreMedia();this.emit();}
  async save(note:Note){if(note.contentLoaded===false){const indexed=this.cache.snapshot.notes.find(n=>n.id===note.id);if(!indexed||indexed.rev!==note.rev)throw Error("The file changed. Refresh before editing.");const current=await this.openFile(indexed);note={...note,content:current.content,rev:current.rev,contentLoaded:true};}if(this.manualLocal){await this.exclusive(async()=>{
   if(!this.cache.identity)throw Error('Local folder is not ready');
@@ -113,6 +115,7 @@ export class DeviceWorkspaceEngine extends Engine{
  override async sync(){await this.load();}
  override async openFile(note:Note){return note;}
  override async loadHistory(note:Note){return note.history;}
+ override attachmentURL(target:string){return '/api/device-workspaces/'+encodeURIComponent(this.device.id)+'/attachment?path='+encodeURIComponent(target);}
  override async save(note:Note){if(!this.cache.identity)throw Error('Sign in first');const mutation=mutationSchema.parse({op:crypto.randomUUID(),id:note.id,base:note.rev,path:note.path,content:note.content,deleted:note.deleted,templateIds:note.templateIds});const result:{workspaceRevision:number;snapshot:Snapshot}=await this.request('/device-workspaces/'+this.device.id+'/mutate',{method:'POST',body:JSON.stringify({workspaceRevision:this.workspaceRevision,mutation})},this.cache.identity.csrf);this.workspaceRevision=result.workspaceRevision;this.cache.snapshot=result.snapshot;this.status='Saved to '+this.device.name+' Local workspace';this.emit();}
 }
 export let engine=localEngine;
@@ -162,6 +165,7 @@ if(local.notes.some(n=>n.contentLoaded===false)){
  }
 }
 local.localWorkspaceId=location.origin;
+await syncPublicationAttachments(local,localEngine,remote,identity.csrf);
 try{const response=await remote.request('/device-workspaces/self/delta?after='+(record?.mirror?record.revision:0));const snapshot=response.snapshot??(record?.mirror?(response.unchanged?record.mirror:applyPublicationPatch(record.mirror,response.patch)):undefined);if(!snapshot||snapshotHash(snapshot)!==response.hash)throw Error('Server delta integrity failure; Local files retained');server={revision:response.revision,snapshot};}catch(error){if(!(error instanceof ApiError)||error.status!==404)throw error;const created:{revision:number;snapshot:Snapshot}=await remote.request('/device-workspaces/self/snapshot',{method:'PUT',body:JSON.stringify({base:0,snapshot:local})},identity.csrf);await d.put('cache',created,key);remote.status='Connected · Local workspace published';return;}if(!server)throw Error('Device workspace response missing');
 // A folder selection is a publication activation, not a file deletion or merge.
 // publish() archives the complete previous Server revision before the CAS swap.
@@ -204,7 +208,7 @@ for(const incoming of plan.pulls){
 const pending=[...plan.conflicts.map(id=>id.startsWith('workspace:')?id:(local.notes.find(n=>n.id===id)?.path??server!.snapshot.notes.find(n=>n.id===id)?.path??id)),...failures];
 remote.status=pending.length?'Connected · independent files synchronized; review conflicts: '+pending.join(', '):'Connected · Local files confirmed on Server';
 remote.emit();},
- select(target:Engine){if(this.busy)throw Error('Finish the current move first');if(!this.visibleEngines.includes(target)||!target.connected)throw Error('Mount unavailable');engine=target;setAttachmentResolver(p=>target.remote?(target.mediaURLs.get(p)??'data:application/octet-stream,'):'/api/attachment?path='+encodeURIComponent(p));target.emit();},
+ select(target:Engine){if(this.busy)throw Error('Finish the current move first');if(!this.visibleEngines.includes(target)||!target.connected)throw Error('Mount unavailable');engine=target;setAttachmentResolver(p=>target.attachmentURL(p));target.emit();},
  async disconnect(){const remote=this.remote;if(!remote)return;if(this.busy)throw Error('Finish the current move first');await remote.logout();remote.connected=false;this.remote=undefined;await(await db).delete('cache','server-profile');await(await db).delete('cache','publication-consent');this.publicationAuthorized=false;if(engine===remote)this.select(localEngine);localEngine.emit();},
  async move(source:Engine,target:Engine,path:string,recovery?:Journal){safePath.parse(path);if(this.busy)throw Error('Another move is in progress');if(source===target||!this.engines.includes(source)||!this.engines.includes(target))throw Error('Choose a different storage mount');this.busy=true;source.emit();const journal:Journal=recovery??{id:crypto.randomUUID(),source:source.cacheKey,destination:target.cacheKey,path,phase:'prepared',time:new Date().toISOString()};if(journal.source!==source.cacheKey||journal.destination!==target.cacheKey||journal.path!==path)throw Error('Recovery mount identity differs');const record=async()=>{await(await db).put('cache',journal,'transfer:'+journal.id);source.emit();};
  try{await source.sync();await target.sync();const keys=[source.lockName,target.lockName].sort();await navigator.locks.request(keys[0],()=>navigator.locks.request(keys[1],async()=>{await source.load();await target.load();const available=(e:Engine)=>e.connected&&!e.authRequired&&e.status==='Synchronized'&&!e.cache.outbox.length&&!e.cache.snapshot.conflicts.length;if(!available(source)||!available(target))throw Error('Reconnect and resolve pending edits/conflicts before moving files');await record();let captured:WireBundle|undefined=journal.bundle;
