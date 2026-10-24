@@ -63,9 +63,13 @@ export function RelationshipTimeline({
   const calendarInput = useRef<HTMLInputElement>(null),
     rail = useRef<HTMLDivElement>(null),
     scrollTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined),
-    fromScroll = useRef(false);
+    fromScroll = useRef(false),
+    programmaticScroll = useRef(false),
+    syncedActive = useRef<string | null | undefined>(undefined);
   useEffect(() => {
-    if (activeId && available.some((note) => note.id === activeId)) {
+    if (activeId && activeId !== syncedActive.current && available.some((note) => note.id === activeId)) {
+      syncedActive.current = activeId;
+      clearTimeout(scrollTimer.current);
       fromScroll.current = false;
       setAnchorId(activeId);
     }
@@ -83,14 +87,16 @@ export function RelationshipTimeline({
     const selected = track.querySelector<HTMLElement>(
       `[data-file-id="${CSS.escape(anchorId)}"]`,
     );
-    if (selected)
+    if (selected) {
+      programmaticScroll.current = true;
       track.scrollTo({
         left:
           selected.offsetLeft - (track.clientWidth - selected.offsetWidth) / 2,
-        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "auto"
-          : "smooth",
+        // Explicit navigation must settle before the selected card can be opened.
+        // Smooth scrolling can otherwise select an intermediate file mid-click.
+        behavior: "instant",
       });
+    }
   }, [anchorId]);
   if (!timeline)
     return (
@@ -112,6 +118,7 @@ export function RelationshipTimeline({
     ]);
   const recenter = (item?: ChronologyItem) => {
     if (item) {
+      clearTimeout(scrollTimer.current);
       fromScroll.current = false;
       setAnchorId(item.note.id);
     }
@@ -176,6 +183,7 @@ export function RelationshipTimeline({
   };
   const followScroll = () => {
     clearTimeout(scrollTimer.current);
+    if (programmaticScroll.current) return;
     scrollTimer.current = setTimeout(() => {
       const track = rail.current;
       if (!track) return;
@@ -278,6 +286,9 @@ export function RelationshipTimeline({
               className="mock-ruler-track"
               role="group"
               aria-label="Scrollable workspace chronology"
+              onPointerDown={() => { programmaticScroll.current = false; }}
+              onWheel={() => { programmaticScroll.current = false; }}
+              onKeyDown={() => { programmaticScroll.current = false; }}
               onScroll={followScroll}
             >
               {chronology.map((item) => (

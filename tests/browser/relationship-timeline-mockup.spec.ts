@@ -63,6 +63,23 @@ test("relationship timeline matches the monochrome calendar mockup at mobile wid
     .locator(".sidebar")
     .getByRole("region", { name: "Reliquary mind map" });
   await expect(map).toHaveAttribute("data-view", "relationship-timeline");
+  // Match Spire's neutral palette; tinted grays must not return.
+  const tintedColors = await map.evaluate(root => {
+    const failures: string[] = [];
+    for (const element of [root, ...root.querySelectorAll('*')]) {
+      for (const pseudo of [null, '::before', '::after']) {
+        const style = getComputedStyle(element, pseudo);
+        for (const property of ['color', 'background-color', 'border-top-color', 'background-image']) {
+          const value = style.getPropertyValue(property);
+          for (const match of value.matchAll(/rgba?\(\s*(\d+)[, ]+\s*(\d+)[, ]+\s*(\d+)/g)) {
+            if (match[1] !== match[2] || match[2] !== match[3]) failures.push(`${element.className} ${property}: ${value}`);
+          }
+        }
+      }
+    }
+    return failures;
+  });
+  expect(tintedColors).toEqual([]);
   await expect(map.locator(".mock-year-nav")).toBeVisible();
   await expect(
     map.getByRole("region", { name: "Creation date" }),
@@ -87,6 +104,28 @@ test("relationship timeline matches the monochrome calendar mockup at mobile wid
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  // The supplied concept retains both year separators and all four lanes on mobile.
+  await expect(map.locator('.mock-year-nav > i').first()).toBeVisible();
+  const concept = await map.evaluate((root) => {
+    const box = (s: string) => root.querySelector(s)!.getBoundingClientRect();
+    const card = box('.mock-current-file'), icon = box('.mock-current-file > svg');
+    const label = box('.mock-current-file strong'), files = box('.mock-file-panel');
+    const ruler = box('.mock-ruler-line'), stem = box('.mock-date-marker i');
+    const rows = [...root.querySelectorAll('.mock-file-row')].map(e => e.getBoundingClientRect());
+    return {
+      cardWidthRatio: card.width / files.width,
+      iconCenterDelta: Math.abs(icon.x + icon.width / 2 - card.x - card.width / 2),
+      iconAboveTitle: icon.bottom <= label.top,
+      allRowsInside: rows.every(r => r.top >= files.top && r.bottom <= files.bottom),
+      stemBaselineDelta: Math.abs(stem.bottom - (ruler.top + ruler.height / 2)),
+    };
+  });
+  expect(concept.cardWidthRatio).toBeGreaterThan(0.98);
+  expect(concept.iconCenterDelta).toBeLessThan(2);
+  expect(concept.iconAboveTitle).toBe(true);
+  expect(concept.allRowsInside).toBe(true);
+  expect(concept.stemBaselineDelta).toBeLessThan(2);
+  await map.screenshot({ path: 'artifacts/timeline-concept-mobile.png' });
   const rail = map.getByRole("group", {
     name: "Scrollable workspace chronology",
   });
@@ -94,6 +133,7 @@ test("relationship timeline matches the monochrome calendar mockup at mobile wid
   await expect(unrelatedTick).toBeAttached();
   await rail.evaluate((track, id) => {
     const tick = track.querySelector<HTMLElement>(`[data-file-id="${id}"]`)!;
+    track.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
     track.scrollLeft = tick.offsetLeft - (track.clientWidth - tick.offsetWidth) / 2;
     track.dispatchEvent(new Event("scroll"));
   }, await unrelatedTick.getAttribute("data-file-id"));

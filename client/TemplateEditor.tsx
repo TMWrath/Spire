@@ -12,6 +12,7 @@ import {TableEditor} from './TableEditor';
 import {findManagedTableAt,placeManagedTable,type ManagedTable,type TableAlignment} from '../shared/managed-table';
 import {formatTemporal,type TemporalFormat} from './temporal';
 import {VideoCapture,saveVideoCapture,type Capture} from './VideoCapture';
+import {attachmentMarkup} from './attachment-markup';
 import {AudioRecorder} from './AudioRecorder';
 import {engine,api} from './sync';
 import {pageBreak,readPage} from './page-layout';
@@ -83,7 +84,7 @@ export function TemplateEditor({template,notes,onSave,onClose,onInsert,canInsert
   const path='Attachments/'+name;await api('/attachments?path='+encodeURIComponent(path),{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:file},engine.cache.identity!.csrf);
   await engine.sync();return '../'.repeat(note.path.split('/').length-1)+path;
  };
- const insertAttachment=async(file:File,range:Range)=>{try{setError('');const relative=await upload(file,file.name,range);replace(range,`\n${file.type.startsWith('image/')?'!':''}[${file.name.replace(/[\[\]\n\r]/g,'')}](${encodeURI(relative)})\n`);}catch(e){setError((e as Error).message);}};
+ const insertAttachment=async(file:File,range:Range)=>{try{setError('');const relative=await upload(file,file.name,range);replace(range,`\n${attachmentMarkup(file.name,relative,file.type)}\n`);}catch(e){setError((e as Error).message);}};
  const insertLinkOrTag=()=>{
   if(!insertTool)return;const value=target.trim();
   if(insertTool.kind==='tag'){

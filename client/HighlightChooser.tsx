@@ -1,4 +1,5 @@
 import './highlight.css';
+import {useMobileBack} from './useMobileBack';
 import React,{useEffect,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
 import {Highlighter} from 'lucide-react';
@@ -6,6 +7,7 @@ import {highlightSwatches,highlightInk,normalizeColor,colorHsv,hsvColor,type Hig
 export type HighlightTarget={text:string;apply:(choice:HighlightChoice)=>void};
 export function HighlightControl({disabled,prepare,onOpen,host,inactive=false}:{inactive?:boolean;disabled:boolean;prepare:()=>HighlightTarget|null;onOpen:()=>void;host:HTMLElement|null}){
  const[target,setTarget]=useState<HighlightTarget|null>(null),[custom,setCustom]=useState(false),[hex,setHex]=useState('#ffe082');const [hsv,setHsv]=useState(()=>colorHsv('#ffe082'));const panel=useRef<HTMLDivElement>(null),trigger=useRef<HTMLButtonElement>(null);
+ useMobileBack([{id:'highlight',open:!!target,close:()=>{setTarget(null);setCustom(false);}}]);
  useEffect(()=>{if(inactive){setTarget(null);setCustom(false);}},[inactive]);
  const color=normalizeColor(hex),sample=target?.text||'Select text to highlight';
  const change=(value:string)=>{setHex(value);const c=normalizeColor(value);if(c)setHsv(colorHsv(c));};
