@@ -41,6 +41,7 @@ import {DocumentEditor,formatDocument} from './DocumentEditor';
 import type {Editor as RichEditor} from '@tiptap/react';
 import {FormattingToolbar} from './FormattingToolbar';
 import {VideoCapture,saveVideoCapture,type Capture} from './VideoCapture';
+import {useMobileBack} from './useMobileBack';
 import {AudioRecorder} from './AudioRecorder';
 import {formatText} from './formatting';
 import {findManagedTableAt,placeManagedTable,type ManagedTable,type TableAlignment} from '../shared/managed-table';
@@ -159,6 +160,7 @@ function App(){
  const beginVideoCapture=()=>{const current=draft.current,field=editor.current,rich=richEditor.current;if(!current||current.deleted||(!field&&!rich))return;videoSelection.current={id:current.id,content:current.content,start:field?field.selectionStart:rich!.state.selection.from,end:field?field.selectionEnd:rich!.state.selection.to,rich:field?null:rich};setVideoCapture(true);};
  const completeVideoCapture=async(capture:Capture)=>{const captured=videoSelection.current,current=draft.current;const valid=()=>captured&&draft.current?.id===captured.id&&!draft.current.deleted&&draft.current.content===captured.content&&(!captured.rich||!captured.rich.isDestroyed);if(!current||!captured||!valid())throw new Error('The file changed while video capture was open. Cancel and try again.');const markup=await saveVideoCapture(capture,current.path);if(!valid())throw new Error('The file changed while saving. Your capture is preserved in Attachments; reopen the file before inserting.');if(captured.rich){captured.rich.commands.insertContentAt({from:captured.start,to:captured.end},{type:'preservedBlock',attrs:{source:markup.trim()}});}else edit({...current,content:current.content.slice(0,captured.start)+markup+current.content.slice(captured.end)});await save();if(!engine.manualLocal)await engine.sync();setVideoCapture(false);requestAnimationFrame(()=>editor.current?.setSelectionRange(captured.start+markup.length,captured.start+markup.length));};
  const [createFrom,setCreateFrom]=useState(false);
+ useMobileBack(true,!selected&&sourceView===undefined&&!templatePreview&&!settings&&!calendar);
  const [voice,setVoice]=useState<{kind:'file'|'dictate';scope:string;id:string;path:string;content:string;baseContent:string;start:number;end:number;rich:boolean}|null>(null);
  const beginVoiceAuthoring=(kind:'file'|'dictate')=>{const current=draft.current,field=editor.current,rich=richEditor.current;if(!current||current.deleted||(!field&&!rich))return;setVoice({kind,scope:JSON.stringify([engine.cacheKey,engine.cache.identity?.owner]),id:current.id,path:current.path,content:current.content,baseContent:engine.cache.snapshot.notes.find(n=>n.id===current.id)?.content??current.content,start:field?field.selectionStart:rich!.state.selection.from,end:field?field.selectionEnd:rich!.state.selection.to,rich:!field});};
  const completeVoiceAuthoring=async(value:VoiceAcceptance)=>{
