@@ -1,0 +1,31 @@
+{
+  "model": "Cactus-Compute/whistle",
+  "revision": "b358ddadd89b7a713b5aa131f23032d3cca1b251",
+  "runtime": "cactus-needle@0.3.0",
+  "files": [
+    {
+      "path": "licenses/model-Apache-2.0.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "source": "node_modules/cactus-needle/LICENSE"
+    },
+    {
+      "path": "whistle/needle.wasm",
+      "bytes": 923348,
+      "sha256": "c43f48e11f302087250d1e406024956781cd2f02595a5e343b3d7ddd5ef707fa",
+      "source": "node_modules/cactus-needle/vendor/needle.wasm"
+    },
+    {
+      "path": "licenses/cactus-needle-Apache-2.0.txt",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "source": "node_modules/cactus-needle/LICENSE"
+    },
+    {
+      "path": "models/whistle.cact",
+      "bytes": 16919407,
+      "sha256": "b6e02f048568ac5d01a2042556c658061e699acbc0aa2a1439f52f3d461dffeb",
+      "url": "https://huggingface.co/Cactus-Compute/whistle/resolve/b358ddadd89b7a713b5aa131f23032d3cca1b251/whistle.cact?download=true"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+node_modules/
+dist/
+research/
+runtime/
+.test-data/
+test-results/
+playwright-report/
+artifacts/
+.env
+*.log
+
+# Android is a separate delivery target, not server runtime context
+android/
+.git/
+
+# Native Windows is not part of the server image
+windows/

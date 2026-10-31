@@ -1,0 +1,8 @@
+import {useEffect,useState} from 'react';
+import {operationEntries,clearOperations} from './operation-log';
+export function OperationLog(){
+ const [entries,setEntries]=useState(operationEntries),[errors,setErrors]=useState(false);
+ useEffect(()=>{const update=()=>setEntries(operationEntries());addEventListener('spire-operation-log',update);return()=>removeEventListener('spire-operation-log',update);},[]);
+ const exportLog=()=>{const blob=new Blob([JSON.stringify({schema:1,exportedAt:new Date().toISOString(),entries},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='spire-diagnostics.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),60000);};
+ return <section aria-label="Request diagnostics"><h3>Save, open and sync requests</h3><p>Latest 500 request events, including elapsed time, HTTP status and matching operation IDs. Successful requests do not by themselves prove server synchronization. Writing, credentials and file paths are excluded from this export.</p><button onClick={exportLog}>Export diagnostics</button><label><input type="checkbox" checked={errors} onChange={e=>setErrors(e.target.checked)}/>Failures only</label><button onClick={()=>{if(confirm('Clear request diagnostics?'))clearOperations();}}>Clear request log</button><ul>{entries.filter(e=>!errors||e.phase==='failed').map((e,i)=><li key={e.id+e.phase+i}><strong>{e.mount} · {e.operation} · {e.phase}</strong><p>{e.time} · {e.durationMs===undefined?'In progress':e.durationMs+' ms'}{e.status!==undefined?' · HTTP '+e.status:''}{e.failure?' · '+e.failure:''}</p><small>Operation {e.id}</small></li>)}</ul></section>;
+}

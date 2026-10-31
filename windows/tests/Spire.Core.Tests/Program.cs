@@ -1,0 +1,48 @@
+using Spire.Core;
+using System.Text.Json;
+await SyncTests.Run();
+await ProtocolTests.Run();
+await AuthoringTests.Run();
+await AssetTests.Run();
+MapTests.Run();
+CitationTests.Run();
+MetadataTests.Run();
+RichWritingTests.Run();
+PreviewTests.Run();
+BuiltinTemplateTests.Run();
+await MetadataSyncTests.Run();
+await SourceCreationTests.Run();
+await LibraryLifecycleTests.Run();
+await FolderTests.Run();
+await FolderProtocolTests.Run();
+await FolderWorkflowTests.Run();
+await BackupTests.Run();
+QuickActionRulesTests.Run();
+await StyleTests.Run();
+await QuickActionSyncTests.Run();
+var dir=Path.Combine(Path.GetTempPath(),"spire-tests-"+Guid.NewGuid());
+try {
+ var store=new WorkspaceStore(dir);
+ if((await store.LoadAsync()).SchemaVersion!=1)throw new Exception("Blank state");
+ var file=new LocalFile(Guid.NewGuid(),"Writing/Test.md","# Title\nUnicode 🖤");
+ await store.SaveAsync(new(1,LocalFiles.Encode([file]),[JsonSerializer.SerializeToElement(new{op="pending"})]));
+ var reopened=await new WorkspaceStore(dir).LoadAsync();
+ if(LocalFiles.Decode(reopened.ServerSnapshot).Single()!=file||reopened.PendingMutations.Count!=1)throw new Exception("Round trip");
+ await store.SaveAsync(reopened);if(!File.Exists(Path.Combine(dir,"workspace.json.previous")))throw new Exception("Backup");
+ foreach(var bad in new[]{"loose.md","../escape.md","Writing/../../escape.md","Writing/bad:name.md"}){bool rejected=false;try{LocalFiles.ValidatePath(bad);}catch(ArgumentException){rejected=true;}if(!rejected)throw new Exception("Unsafe path accepted");}
+ await File.WriteAllTextAsync(Path.Combine(dir,"workspace.json"),"broken");
+ bool corrupt=false;try{await store.LoadAsync();}catch(JsonException){corrupt=true;}if(!corrupt)throw new Exception("Corrupt state ignored");
+ var sf=new ServerFile(Guid.NewGuid(),4,"Writing/Sync.md","local",false,"",JsonSerializer.SerializeToElement(Array.Empty<object>()));
+ var sync=SyncWorkspace.Empty.BindOwner("owner-a").Queue(sf);
+ var first=sync.Outbox.Single();
+ sync=sync.Queue(sf with {Content="newer",Rev=9});
+ if(sync.Outbox.Single().Base!=4||sync.Outbox.Single().Op==first.Op)throw new Exception("Coalesced edit lost base or reused operation");
+ var remote=JsonSerializer.SerializeToElement(new{notes=new[]{sf with{Content="remote",Rev=10}},attachments=new[]{new{path="Attachments/test.png",size=5}},templates=new[]{new{id="template"}}},SyncWorkspace.Json);
+ sync=sync.Receive(remote);
+ if(sync.VisibleFiles().Single().Content!="newer")throw new Exception("Remote snapshot overwrote local draft");
+ bool ownerRejected=false;try{sync.BindOwner("owner-b");}catch(InvalidOperationException){ownerRejected=true;}if(!ownerRejected)throw new Exception("Cross-owner mixing");
+ var conflict=JsonSerializer.SerializeToElement(new{mutation=sync.Outbox.Single(),current=10});
+ sync=sync.Acknowledge(sync.Outbox.Single().Op,conflict);
+ if(sync.Outbox.Count!=0||sync.Conflicts.Count!=1||sync.Snapshot!.Value.GetProperty("attachments").GetArrayLength()!=1)throw new Exception("Conflict or metadata lost");
+ Console.WriteLine("PASS: local restart, pending mutations, backup, safe paths, corrupt-state refusal, mutation coalescing/base revisions, draft-preserving snapshots, owner isolation, retained conflicts and metadata");
+} finally {Directory.Delete(dir,true);}

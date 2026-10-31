@@ -1,0 +1,37 @@
+import {chromium,expect} from '@playwright/test';
+import fs from 'node:fs/promises';
+import http from 'node:http';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+const root=path.resolve('app/src/main/assets/web');
+const csp="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'";
+const server=http.createServer(async(req,res)=>{try{const name=new URL(req.url,'http://localhost').pathname;const f=path.join(root,name==='/'?'index.html':name);if(!f.startsWith(root+'/'))throw Error();res.setHeader('Content-Security-Policy',csp);res.setHeader('Content-Type',f.endsWith('.js')?'application/javascript':f.endsWith('.css')?'text/css':f.endsWith('.html')?'text/html':'application/octet-stream');res.end(await fs.readFile(f));}catch{res.writeHead(404);res.end();}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const browser=await chromium.launch({headless:true});
+let releaseLoad;let waitLoad=new Promise(resolve=>releaseLoad=resolve);
+let disk={files:{'Writing/existing.md':Buffer.from('Initial writing').toString('base64')},dirs:['Writing','Writing/Child']};let failed=false;const errors=[];let saves=0;disk.files['Writing/Child/nested.md']=Buffer.from('Nested writing').toString('base64');
+try{
+ const context=await browser.newContext({viewport:{width:1100,height:850}});
+ await context.exposeBinding('__native',async(source,message)=>{const m=JSON.parse(message);try{let value;if(m.op==='load'){await waitLoad;if(failed)throw Error('Permission revoked');value=structuredClone(disk);}else if(m.op==='text'){if(failed)throw Error('Permission revoked');assert.equal(typeof disk.files[m.path],'string');value=disk.files[m.path];}else{await new Promise(r=>setTimeout(r,150));if(failed)throw Error('Permission revoked');assert.deepEqual(m.before,disk);disk=structuredClone(m.after);saves++;value=true;}return {id:m.id,value};}catch(error){return {id:m.id,error:error.message};}});
+ await context.addInitScript(()=>{window.SpireFolder={postMessage:raw=>window.__native(raw).then(value=>window.SpireFolder.onmessage({data:JSON.stringify(value)}))};window.SpireApp={postMessage:action=>{if(action==='info')queueMicrotask(()=>window.SpireApp.onmessage?.({data:JSON.stringify({version:'0.2.0',server:location.origin})}));}};});
+ const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(`http://127.0.0.1:${server.address().port}/`);releaseLoad();
+ await expect(page.locator('.network')).toHaveText('Local folder · manual save');
+ const sidebar=async()=>{if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();};
+ await page.evaluate(()=>{const original=window.fetch;window.__localRequests=[];window.fetch=(input,options)=>{window.__localRequests.push(String(input));return original(input,options);};});
+ await sidebar();await page.locator('[data-folder="Writing"] > summary').click();await page.locator('nav [data-item-name="Writing/existing.md"]').click();
+ await page.getByRole('button',{name:'Source',exact:true}).click();
+ await page.getByLabel('Markdown source',{exact:true}).fill('First pending save');await page.getByRole('button',{name:'Save file',exact:true}).click();await page.getByLabel('Markdown source',{exact:true}).fill('Saved before moving');await page.getByRole('button',{name:'Save file',exact:true}).click();
+ await expect.poll(()=>Buffer.from(disk.files['Writing/existing.md'],'base64').toString()).toBe('Saved before moving');
+ await sidebar();await page.getByRole('button',{name:'Create',exact:true}).click();await page.getByRole('menuitem',{name:'New folder',exact:true}).click();await page.getByLabel('New folder path').fill('New');await page.getByRole('button',{name:'Create folder',exact:true}).click();
+ await expect.poll(()=>disk.dirs.includes('New')).toBe(true);
+ const drag=async(source,target)=>{await source.hover();const a=await source.boundingBox(),b=await target.boundingBox();assert.ok(a&&b);await page.mouse.move(a.x+a.width/2,a.y+a.height/2);await page.mouse.down();await page.waitForTimeout(600);await page.mouse.move(a.x+a.width/2+16,a.y+a.height/2,{steps:3});await expect(page.locator('.drag-ghost')).toBeVisible();await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:8});await page.mouse.up();};
+ await sidebar();await drag(page.locator('nav').getByRole('button',{name:'existing',exact:true}).locator('.item-drag-handle'),page.locator('[data-folder="New"] > summary'));
+ await expect.poll(()=>disk.files['New/existing.md']).toBe(Buffer.from('Saved before moving').toString('base64'));assert.equal(disk.files['Writing/existing.md'],undefined);
+ await expect(page.getByLabel('File path')).toHaveValue('New/existing.md');
+ await sidebar();await drag(page.locator('[data-folder="Writing"] > summary .item-drag-handle'),page.locator('[data-folder="New"] > summary'));
+ await expect.poll(()=>disk.files['New/Writing/Child/nested.md']).toBe(Buffer.from('Nested writing').toString('base64'));assert.equal(disk.files['Writing/Child/nested.md'],undefined);
+ assert.deepEqual(await page.evaluate(()=>window.__localRequests.filter(url=>url.includes('/snapshot'))),[],'manual file actions must not fetch full snapshots');
+ await page.reload();await expect(page.locator('.network')).toHaveText('Local folder · manual save');await sidebar();await page.locator('[data-folder="New"] > summary').click();await page.locator('nav [data-item-name="New/existing.md"]').click();await page.getByRole('button',{name:'Source',exact:true}).click();await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue('Saved before moving');
+ assert.deepEqual(errors,[]);console.log('PASS Local manual UI: explicit save, create folder, drag file into new folder, nest folder with child, reopen persisted bytes. Mock bridge, not physical Android.');
+}finally{await browser.close();server.close();}

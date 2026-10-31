@@ -1,0 +1,22 @@
+{
+  "name": "spire-android-browser-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bundle": "node scripts/bundle.mjs",
+    "test": "npm run bundle && node --test test-video-insertion.mjs test-workspace-fields.mjs test-structure-startup.mjs test-conflict-actions.mjs test-incremental-memory-snapshot.mjs test-commit-payload.mjs test-manual-local.mjs test-local.mjs test-availability.mjs test-recovery.mjs test-directory-authority.mjs test-two-phase-startup.mjs && node test-downloads.mjs && node test-workspace.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.58.2",
+    "buffer": "^6.0.3",
+    "esbuild": "^0.28.2",
+    "fflate": "^0.8.3",
+    "path-browserify": "^1.0.1",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "dependencies": {
+    "@noble/hashes": "2.0.1",
+    "diff": "9.0.0"
+  }
+}

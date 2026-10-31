@@ -1,0 +1,7 @@
+{
+  "phase": "blocked",
+  "status": "blocked",
+  "updated": 1791739235.4692109,
+  "reason": "rich-authoring: provider failure; no automatic retry loop",
+  "completion_claim": false
+}

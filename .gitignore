@@ -1,0 +1,19 @@
+node_modules/
+# Verified speech binaries are reproducibly staged, never committed
+/public/voice/
+dist/
+research/
+runtime/
+.test-data/
+test-results/
+playwright-report/
+artifacts/
+.env
+*.log
+
+# Generated desktop packages and acceptance captures
+desktop-dist/
+release-desktop/
+release-desktop-final/
+desktop-launcher.png
+windows-server.png

@@ -1,0 +1,47 @@
+# Spire — Bugs
+
+## Opening an edited file changed its calendar activity to Created
+
+**State:** Root cause corrected in canonical source and refreshed into the Android package. The lightweight directory response carried the file's original creation time and edit times, but opening that file fetched its body through a narrower endpoint that rebuilt metadata without the file's activity events. That response replaced the correct client record and made the latest edit time look like creation time. The body endpoint now preserves the same creation/edit metadata as the directory projection, with API regression coverage for opening an edited file. Android's vendored lightweight directory projection and bundled shared frontend were regenerated from the same canonical source; its 62 local/runtime tests plus bundled Chromium editor and download checks pass.
+
+## Android side-by-side tree rows clipped or misaligned
+
+**State:** Corrected in canonical source. The inactive Server tree was rendered outside the `<nav>` wrapper targeted by the shared tree-row CSS, so its disclosure, folder, delete, and transfer controls used fallback dimensions and could be clipped or drift out of alignment in the narrow two-pane Android layout. Both active and inactive trees now share the same navigation structure. At mobile width, each pane also has an explicit disclosure gutter, aligned file/folder icon column, and compact bounded action columns. A 390×844 browser regression now checks that both panes remain side by side and that disclosure, folder, delete, transfer, label, and action bounds do not clip or overlap. Production build and 279/279 unit/API tests pass; the geometry and transfer portions of the unified browser scenario pass before that broader scenario reaches its separately documented cached-file timeout. Deployment and replacement APK packaging remain pending.
+
+## Mobile Local and Server trees stacked vertically
+
+**State:** Corrected in the reconciled canonical source. A release-only rule below 700 px replaced the two-column workspace grid with block layout and removed the trees' bounded scrolling. The override is removed, so Local and Server retain equal side-by-side columns and independent bounded scrolling at the 390×844 Android viewport. The production build passes, and the existing mobile geometry assertion failed before the correction and passed afterward. The broader unified-workspace scenario then continued into transfer/offline behavior and timed out on a separate cached `Unopened` server-file expectation; it is not reported green. Unit/API tests pass 279/279. Deployment, Android packaging, and physical WebView acceptance remain pending.
+
+## Drag acceptance read stale coordinates after folder creation
+
+**State:** Test synchronization corrected and verified locally. The source row was measured before the asynchronous folder insertion shifted the tree; pointer-down then hit a folder summary and its long-press deletion safeguard legitimately appeared. The test now waits for the new folder target and Playwright-stable source hover before measuring. Existing ghost, drag-source, hover transform, successful drop and destination-path assertions remain unchanged. Reproduced failure before correction; focused regression passed afterward and the final full suite passed 80/80. No product drag implementation or deletion safeguard was weakened. No deployment performed.
+
+## Newly recorded audio did not play immediately in Editor
+
+**State:** Reproduced and resolved locally; production build, 45/45 unit/API tests, and 3/3 focused recording tests pass. Full repeated browser verification and deployment are tracked separately.
+
+Recording inserts a preserved HTML audio block before the synchronized attachment list includes the uploaded recording. The node view previously rendered only once, leaving its portable relative URL unresolved even after synchronization. Preserved node views now refresh when attachment metadata or the file path changes, replacing their rendered DOM only when the sanitized HTML changes. The Markdown source remains portable and unchanged.
+
+The regression now requires the freshly inserted rich-editor audio to resolve through the authenticated attachment endpoint, successfully execute `play()`, and advance `currentTime`. Before the fix it failed on the unresolved relative URL; after the fix actual playback passes. Tests use real MediaRecorder bytes from a generated audio stream, not a physical microphone. Native Android microphone permission and real-device capture remain unverified.
+
+## Sidebar remained open after clicking outside it
+
+**State:** Resolved locally; production build and focused browser acceptance passed. Release acceptance: full browser suite passed 98/98 repeated checks (49 scenarios), unit/API suite passed 45/45, and production build/TypeScript passed. Deployment verification is recorded separately.
+
+An open folder sidebar now closes on pointer-down outside the sidebar (including canvas and controls), while clicks within the sidebar and its toggle remain usable. Browser acceptance verifies outside dismissal.
+
+## Empty folder deletion incorrectly offered file disposition
+
+**State:** Resolved locally; unit/API and focused browser acceptance passed. Release acceptance: full browser suite passed 98/98 repeated checks (49 scenarios), unit/API suite passed 45/45, and production build/TypeScript passed. Deployment verification is recorded separately.
+
+Empty folders now show only the ordinary folder confirmation. The server revalidates emptiness at deletion time, including nested folders, attachments, and styles, so concurrent additions are not silently removed. Populated folders retain their existing file disposition flow.
+
+## File movement lacked animated drag-and-drop feedback
+
+**State:** Resolved locally; focused browser acceptance passed. Release acceptance: full browser suite passed 98/98 repeated checks (49 scenarios), unit/API suite passed 45/45, and production build/TypeScript passed. Deployment verification is recorded separately.
+
+File dragging now presents pickup/drag-ghost feedback, highlights and animates a valid folder target, then persists the move. Existing collision and server-side path validation remain in effect.
+
+
+## Existing temporal repeated-insertion regression
+Full browser verification during Blocks work still fails `combined temporal gallery inserts formatted manual plain text`: resetting the source between manual insertions can retain previous insertion/selection state. Blocks acceptance passes independently. This date/time defect remains unresolved; the full suite is not green.

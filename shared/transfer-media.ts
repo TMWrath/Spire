@@ -1,0 +1,5 @@
+import {type Note,links,metadata} from './model';
+export function linkedMedia(note:Pick<Note,'path'|'content'>,paths:string[]):string[]{
+ const targets=[...links(note.content).map(l=>l.target),...Array.from(note.content.matchAll(/\b(?:src|href)\s*=\s*["']([^"']+)["']/gi),m=>m[1]),String(metadata(note.content).properties.hero??'')];
+ return [...new Set(targets.flatMap(raw=>{let target=raw.replace(/&amp;/g,'&');try{target=decodeURIComponent(target);}catch{}if(!target||/^(?:[a-z][a-z\d+.-]*:|\/\/|#)/i.test(target))return [];if(target.startsWith('/api/attachment?')){target=new URL(target,'https://spire.invalid').searchParams.get('path')??'';}const parts=target.startsWith('/')?[]:note.path.split('/').slice(0,-1);for(const p of target.replace(/^\//,'').split('/')){if(p==='..'){if(!parts.length)return [];parts.pop();}else if(p!=='.')parts.push(p);}const exact=paths.find(p=>p===parts.join('/'))??paths.find(p=>p===target);if(exact)return [exact];const matches=paths.filter(p=>p.split('/').at(-1)===target);return matches.length===1?matches:[];}))];
+}

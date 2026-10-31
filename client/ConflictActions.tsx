@@ -1,0 +1,8 @@
+import React,{useState} from 'react';
+import {MergeSections} from './MergeSections';
+export type ConflictAction='keep-server'|'keep-device'|'keep-both'|'merge';
+export function ConflictActions({base,server,device,resolve}:{base?:string|null;server:string;device:string;resolve:(action:ConflictAction,content?:string)=>Promise<void>}){
+ const [busy,setBusy]=useState(false),[error,setError]=useState(''),[merged,setMerged]=useState<string|null>(null);
+ const run=async(action:ConflictAction,content?:string)=>{setBusy(true);setError('');try{await resolve(action,content);setMerged(null);}catch(e){setError(e instanceof Error?e.message:String(e));}finally{setBusy(false);}};
+ return <>{base!==undefined&&base!==null&&<MergeSections key={base+server+device} base={base} local={device} server={server} disabled={busy} save={content=>run('merge',content)}/>}<div className="conflict-actions"><button type="button" disabled={busy} onClick={()=>void run('keep-device')}>Keep mine</button><button type="button" disabled={busy} onClick={()=>void run('keep-server')}>Keep Server</button><button type="button" disabled={busy} onClick={()=>void run('keep-both')}>Keep both</button><button type="button" disabled={busy} onClick={()=>{setError('');setMerged(server+'\n\n'+device);}}>Merge</button></div>{merged!==null&&<div><label>Merged file<textarea aria-label="Merged file" style={{width:'100%',minHeight:180}} value={merged} onChange={e=>setMerged(e.target.value)} disabled={busy}/></label><button type="button" disabled={busy} onClick={()=>void run('merge',merged)}>Save merged file</button><button type="button" disabled={busy} onClick={()=>setMerged(null)}>Cancel merge</button></div>}{busy&&<p role="status">Resolving conflict…</p>}{error&&<p role="alert">{error}</p>}</>;
+}

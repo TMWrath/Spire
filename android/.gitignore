@@ -1,0 +1,12 @@
+.gradle/
+**/build/
+local.properties
+node_modules/
+artifacts/
+*.apk
+*.idsig
+*.jks
+*.keystore
+app/src/main/assets/web/
+local/runtime.mjs
+logs/

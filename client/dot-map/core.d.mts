@@ -1,0 +1,10 @@
+export type Point=[number,number,number];
+export type Camera={axes:Point[];zoom:number;x:number;y:number};
+export function createLayoutCache(): (files:{id:string}[],links:{source:string;target:string}[])=>Map<string,Point>;
+export function identity():Camera;
+export function layout(files:{id:string}[],links:{source:string;target:string}[]):Map<string,Point>;
+export function project(point:Point,camera:Camera,radius:number):{x:number;y:number;depth:number;scale:number};
+export function turn(camera:Camera,yaw:number,pitch:number,roll?:number):Camera;
+export function zoomAt(camera:Camera,factor:number,anchor:[number,number]):Camera;
+export function pairGesture(camera:Camera,start:[number,number][],current:[number,number][]):Camera;
+export function connectionPoint(a:Point,b:Point,t:number):Point;

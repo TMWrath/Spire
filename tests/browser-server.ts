@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+import express from 'express';
+import {createApp} from '../server/app.ts';
+import {lock} from '../server/lock.ts';
+const root='.test-data/browser';if(fs.existsSync(root+'/process.lock'))throw new Error('Browser test data locked');fs.rmSync(root,{recursive:true,force:true});const unlock=lock(root);
+const origin='http://127.0.0.1:4179';let scenario=0;let current=createApp(`${root}/scenario-${scenario}`,origin,{staticDirectory:process.env.SPIRE_TEST_DIST}).app;
+const harness=express();
+harness.post('/__test/reset',(req,res)=>{if(req.headers.host!=='127.0.0.1:4179'||req.headers.origin&&req.headers.origin!==origin)return res.sendStatus(403);setImmediate(()=>{current=createApp(`${root}/scenario-${++scenario}`,origin,{staticDirectory:process.env.SPIRE_TEST_DIST}).app;res.sendStatus(204);});});
+harness.use((req,res,next)=>current(req,res,next));
+const server=harness.listen(4179,'127.0.0.1');let closing=false;const stop=()=>{if(closing)return;closing=true;server.close(()=>{unlock();process.exit(0);});server.closeAllConnections();};process.on('SIGINT',stop);process.on('SIGTERM',stop);server.on('error',error=>{unlock();throw error;});

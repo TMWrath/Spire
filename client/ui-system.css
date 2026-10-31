@@ -1,0 +1,102 @@
+/* Spire interface system
+   Shared visual tokens and chrome rules. Feature-specific canvases keep their own geometry. */
+:root{
+ --surface-app:#101010;
+ --surface-panel:#171717;
+ --surface-raised:#1d1d1d;
+ --surface-hover:#292929;
+ --text-primary:#eeeeee;
+ --text-secondary:#aaaaaa;
+ --line-subtle:#383838;
+ --line-strong:#555555;
+ --control-size:40px;
+ --control-radius:6px;
+ --control-gap:8px;
+ --page-gutter:clamp(12px,2.2vw,28px);
+}
+
+.app{background:var(--surface-app);color:var(--text-primary)}
+.app > header{
+ min-height:64px;
+ gap:var(--control-gap);
+ padding-inline:16px;
+ background:var(--surface-app);
+ border-color:var(--line-subtle);
+ overflow:hidden;
+}
+.app > header button{
+ min-width:var(--control-size);
+ height:var(--control-size);
+ min-height:var(--control-size);
+ padding:10px;
+ border:1px solid transparent;
+ border-radius:var(--control-radius);
+ color:var(--text-primary);
+}
+.app > header button:hover,.app > header button:focus-visible{background:var(--surface-hover);border-color:var(--line-subtle)}
+.app > header button svg{width:18px;height:18px}
+
+button,.button,.file-button,input,textarea,select{border-radius:var(--control-radius)}
+button,.button,.file-button{gap:var(--control-gap)}
+button:not(.note-link):not(.folder-drag-handle):not(.mock-file-row button){transition:background-color .15s ease,border-color .15s ease,color .15s ease}
+
+.sidebar,.context{background:var(--surface-panel);border-color:var(--line-subtle)}
+.sidebar{padding:16px 14px}
+.sidebar-tabs{gap:var(--control-gap);margin:8px 0 12px}
+.sidebar-tabs button{min-height:44px;border-radius:var(--control-radius)}
+.search{min-height:var(--control-size);border-color:var(--line-subtle);border-radius:var(--control-radius)}
+.workspace-status,footer{background:var(--surface-panel);border-color:var(--line-subtle)}
+
+.note-toolbar{
+ min-height:60px;
+ gap:var(--control-gap);
+ padding:10px var(--page-gutter);
+ border-color:var(--line-subtle);
+}
+.note-toolbar input{min-height:var(--control-size);padding:8px 10px}
+.note-toolbar button,.note-toolbar .file-autosave{flex:0 0 auto}
+.note-toolbar button{min-width:var(--control-size);min-height:var(--control-size);padding:9px}
+.note-toolbar button svg{width:18px;height:18px}
+.editor-tabs{
+ min-height:48px;
+ gap:4px;
+ padding:8px var(--page-gutter) 0;
+ overflow-x:auto;
+ overscroll-behavior-x:contain;
+ scrollbar-width:none;
+}
+.editor-tabs::-webkit-scrollbar{display:none}
+.editor-tabs button{flex:0 0 auto;min-height:36px;padding:7px 11px;border-radius:var(--control-radius)}
+.editor-tabs button[aria-pressed="true"]{background:var(--surface-hover)}
+.markdown-toolbar{gap:var(--control-gap);padding:8px var(--page-gutter) 10px;border-color:var(--line-subtle)}
+.toolbar-section{gap:4px}
+.toolbar-section+.toolbar-section{padding-left:var(--control-gap);border-color:var(--line-subtle)}
+.markdown-toolbar button{min-width:var(--control-size);min-height:var(--control-size);border-radius:var(--control-radius)}
+.markdown-toolbar button svg{width:18px;height:18px}
+
+.template-dialog,.file-dialog,.folder-delete-dialog,.table-editor,.quick-format-help,.term-dialog{
+ background:var(--surface-panel);
+ border-color:var(--line-strong);
+ border-radius:12px;
+}
+.file-dialog-actions{align-items:center;gap:var(--control-gap)}
+.file-dialog-actions button{min-height:var(--control-size)}
+.settings,.calendar-view,.source-panel{padding-inline:clamp(16px,4vw,40px)}
+
+@media(max-width:760px){
+ .app > header{height:58px;min-height:58px;gap:4px;padding-inline:8px}
+ .app > header button{min-width:40px;width:40px;height:40px;padding:10px}
+ .note-toolbar{flex-wrap:wrap;align-items:center;padding:8px;gap:6px}
+ .note-toolbar>input:first-child{flex:1 1 calc(100% - 190px);min-width:128px}
+ .note-toolbar button{min-width:40px}
+ .file-autosave{min-height:40px;padding-inline:4px}
+ .editor-tabs{min-height:46px;padding:6px 8px 0;gap:4px}
+ .editor-tabs button{min-height:38px;padding:7px 10px}
+ .markdown-toolbar{gap:4px;padding:7px 8px 9px}
+ .toolbar-section+.toolbar-section{padding-left:6px}
+ .template-backdrop{padding:10px}
+ .file-dialog,.folder-delete-dialog{padding:18px}
+ .file-dialog-actions{flex-wrap:wrap}
+ .file-dialog-actions button{flex:1 1 auto}
+ footer{padding-inline:12px;gap:10px}
+}
