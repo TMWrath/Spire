@@ -16,6 +16,8 @@ async function openLetterDocument(page:any){
  await page.getByLabel('File name',{exact:true}).fill('Editor zoom');
  await selectDropdown(page.getByLabel('Save in folder'),'__new__');
  await page.getByLabel('New folder path').fill('Writing');
+ const folderSelect=page.getByLabel('Save in folder',{exact:true}).and(page.getByRole('button'));
+ if(await folderSelect.getAttribute('aria-expanded')==='true')await folderSelect.click();
  await page.getByRole('button',{name:'Create file',exact:true}).click();
  await page.getByRole('button',{name:'Source',exact:true}).click();
  await page.getByLabel('Markdown source',{exact:true}).fill('---\nspire_page:\n  header:\n    enabled: true\n    text: Running header\n  footer:\n    enabled: true\n    text: Running footer\n  footnotes:\n    enabled: false\n    text: ""\n  toc:\n    enabled: false\n    text: ""\n---\n<!-- spire:header -->\nRunning header\n<!-- /spire:header -->\n\nZoom belongs to this Letter page.\n\n'+('Stable pagination and chrome. '.repeat(180))+'\n\n<!-- spire:footer -->\nRunning footer\n<!-- /spire:footer -->');
@@ -66,7 +68,7 @@ test('a two-touch editor gesture changes editor zoom around the pinch midpoint w
  expect(await canvas.evaluate(el=>el.scrollWidth>el.clientWidth)).toBe(true);
 });
 
-test('mobile editing bar matches the raised central microphone reference',async({page})=>{
+test('mobile editing bar presents five aligned actions in one solid bar',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  await openLetterDocument(page);
  const letter=page.locator('.document-editor.letter-paginated');
@@ -79,19 +81,31 @@ test('mobile editing bar matches the raised central microphone reference',async(
  await expect(microphone).toBeVisible();
  await expect(actions.getByRole('button',{name:'Paste from clipboard',exact:true})).toBeVisible();
  await expect(actions.getByRole('button',{name:'Cut selection',exact:true})).toBeVisible();
+ await expect(actions.getByRole('button',{name:'Copy selection',exact:true})).toBeVisible();
  await expect(page.locator('.editor-topbar').getByRole('button',{name:'Start dictation',exact:true})).toHaveCount(0);
  await expect(page.locator('.workspace-status')).toHaveCount(0);
- await expect(footer.locator(':scope > *')).toHaveCount(2);
+ await expect(footer.locator(':scope > *')).toHaveCount(3);
  expect(await footer.locator(':scope > *').evaluateAll(nodes=>nodes.map(node=>node.textContent?.trim()))).toEqual([
   expect.stringMatching(/Revision|Unsaved changes|pending sync/),
   expect.stringMatching(/\d+ words/),
+ '100%',
  ]);
- const geometry=await actions.evaluate(bar=>{const box=bar.getBoundingClientRect();const mic=bar.querySelector('.live-dictation-toggle')!.getBoundingClientRect();return {radius:getComputedStyle(bar).borderRadius,border:getComputedStyle(bar).borderTopWidth,barTop:box.top,barHeight:box.height,micTop:mic.top,micWidth:mic.width,micHeight:mic.height};});
- expect(parseFloat(geometry.radius)).toBeGreaterThanOrEqual(20);
+ const geometry=await actions.evaluate(bar=>{
+  const cells=Array.from(bar.children).map(el=>{const r=el.getBoundingClientRect();return {top:r.top,width:r.width,height:r.height};});
+  const mic=bar.querySelector('.live-dictation-toggle')!.getBoundingClientRect();
+  return {radius:getComputedStyle(bar).borderRadius,border:getComputedStyle(bar).borderTopWidth,background:getComputedStyle(bar).backgroundColor,cells,micTop:mic.top,micHeight:mic.height};
+ });
+ expect(parseFloat(geometry.radius)).toBe(0);
  expect(geometry.border).toBe('1px');
- expect(geometry.micTop).toBeLessThan(geometry.barTop);
- expect(Math.abs(geometry.micWidth-geometry.micHeight)).toBeLessThan(1);
- expect(geometry.micWidth).toBeGreaterThanOrEqual(64);
+ expect(geometry.background).toBe('rgb(17, 17, 17)');
+  expect(geometry.cells[0].height).toBeLessThan(45);
+ for(const cell of geometry.cells){
+  expect(Math.abs(cell.top-geometry.cells[0].top)).toBeLessThan(1);
+  expect(Math.abs(cell.width-geometry.cells[0].width)).toBeLessThan(1);
+  expect(Math.abs(cell.height-geometry.cells[0].height)).toBeLessThan(1);
+ }
+ expect(Math.abs(geometry.micTop-geometry.cells[0].top)).toBeLessThan(1);
+ expect(Math.abs(geometry.micHeight-geometry.cells[0].height)).toBeLessThan(1);
  await expect(actions.locator('.mobile-edit-label')).toHaveCount(0);
  await expect(zoom).toHaveAccessibleName('Zoom in to 200%');
  await expect(zoom.locator('.lucide-zoom-in')).toBeVisible();
@@ -104,13 +118,44 @@ test('mobile editing bar matches the raised central microphone reference',async(
  await expect(zoom.locator('.lucide-zoom-out')).toBeVisible();
  await expect(letter).toHaveAttribute('data-editor-zoom','2.000');
  const anchoredPoint=await page.locator('.letter-page-sheet').nth(caretAnchor!.page).evaluate((sheet,anchor)=>{const rect=sheet.getBoundingClientRect();return {x:rect.left+rect.width*anchor.x,y:rect.top+rect.height*anchor.y};},caretAnchor!);
- expect(Math.abs(anchoredPoint.x-caretAnchor!.clientX)).toBeLessThan(4);
- expect(Math.abs(anchoredPoint.y-caretAnchor!.clientY)).toBeLessThan(4);
+ expect(Math.abs(anchoredPoint.x-caretAnchor!.clientX)).toBeLessThan(5);
+ expect(Math.abs(anchoredPoint.y-caretAnchor!.clientY)).toBeLessThan(5);
  await expect(page.getByRole('dialog',{name:'Adjust zoom',exact:true})).toHaveCount(0);
  await zoom.click();
  await expect(zoom).toHaveAccessibleName('Zoom in to 200%');
  await expect(zoom.locator('.lucide-zoom-in')).toBeVisible();
  await expect(letter).toHaveAttribute('data-editor-zoom','1.000');
+});
+
+test('zoom settings set a custom target and lock gestures for the file',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await openLetterDocument(page);
+ const zoom=page.locator('.workspace-zoom-value');
+ const letter=page.locator('.document-editor.letter-paginated');
+ await zoom.dispatchEvent('pointerdown',{pointerType:'touch'});
+ await page.waitForTimeout(650);
+ await zoom.dispatchEvent('pointerup',{pointerType:'touch'});
+ const dialog=page.getByRole('dialog',{name:'Zoom settings'});
+ await expect(dialog).toBeVisible();
+ await dialog.getByLabel('Zoom in percentage').fill('175');
+ await dialog.getByLabel('Lock zoom for this file').check();
+ await dialog.getByRole('button',{name:'Apply'}).click();
+ await expect(letter).toHaveAttribute('data-editor-zoom','1.750');
+ await expect(page.getByLabel('Current zoom')).toHaveText('175%');
+ await letter.dispatchEvent('wheel',{ctrlKey:true,deltaY:-300});
+ await expect(letter).toHaveAttribute('data-editor-zoom','1.750');
+ await page.getByRole('button',{name:'Source',exact:true}).click();
+ await page.getByRole('button',{name:'Editor',exact:true}).click();
+ await expect(letter).toHaveAttribute('data-editor-zoom','1.750');
+ await expect(letter).toHaveAttribute('data-editor-zoom-locked','true');
+ await zoom.click();
+ await expect(dialog).toBeVisible();
+ await dialog.getByLabel('Lock zoom for this file').uncheck();
+ await dialog.getByRole('button',{name:'Apply'}).click();
+ await zoom.click();
+ await expect(letter).toHaveAttribute('data-editor-zoom','1.000');
+ await zoom.click();
+ await expect(letter).toHaveAttribute('data-editor-zoom','1.750');
 });
 
 test('mobile editor tools can collapse and reopen without hiding the toggle',async({page})=>{

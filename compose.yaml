@@ -1,6 +1,6 @@
 services:
   spire:
-    image: spire-preview:lists-context-20261031
+    image: spire-preview:bottom-bar-20261031
     container_name: spire-preview
     restart: unless-stopped
     ports:
