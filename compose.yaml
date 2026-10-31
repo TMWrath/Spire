@@ -1,6 +1,6 @@
 services:
   spire:
-    image: spire-preview:caret-zoom-64a1880-20261028T185421Z
+    image: spire-preview:lists-context-20261031
     container_name: spire-preview
     restart: unless-stopped
     ports:
