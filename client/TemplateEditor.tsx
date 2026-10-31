@@ -63,6 +63,7 @@ export function TemplateEditor({template,notes,onSave,onClose,onInsert,canInsert
   requestAnimationFrame(()=>{source.current?.setSelectionRange(range.start+value.length,range.start+value.length);focusForTyping(source.current);});return true;
  };
  const formatMarkdown=(kind:FormatKind,option:number|string=2)=>{
+  if(kind==='list'&&typeof option==='string'&&option.startsWith('builder:')){replace(capture(),option.slice(8));return;}
   if(mode==='editor'&&rich.current&&!rich.current.isDestroyed){formatDocument(rich.current,kind,option);return;}
   const r=capture(),result=formatText(r.content,r.start,r.end,kind,option);edit(result.content);
   requestAnimationFrame(()=>{source.current?.setSelectionRange(result.start,result.end);focusForTyping(source.current);});

@@ -16,6 +16,7 @@ export function TableEditor({initial,initialAlignments=[],onClose,onSave,editing
  const field=useRef<HTMLInputElement|null>(null),active=useRef<[number,number]>([0,0]),richEditor=useRef<Editor|null>(null);
  const formatMarkdown=(kind:FormatKind,option:number|string=2)=>{
   const editor=richEditor.current;if(!editor||editor.isDestroyed)return;
+  if(kind==='list'&&typeof option==='string'&&option.startsWith('builder:')){editor.commands.insertContent(option.slice(8));return;}
   if(kind==='case'){capitalizeCell(editor,String(option));return;}
   const chain=touchEditing()?editor.chain():editor.chain().focus();
   if(kind==='bold')chain.toggleBold().run();
