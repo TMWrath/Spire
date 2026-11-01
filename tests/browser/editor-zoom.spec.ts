@@ -170,17 +170,10 @@ test('mobile editor tools can collapse and reopen without hiding the toggle',asy
  await expect(toolbar).toBeVisible();
 });
 
-test('top sync button animates only while synchronization is active',async({page})=>{
+test('server-only header has no manual synchronization control',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  await openLetterDocument(page);
- let release!:()=>void;
- const held=new Promise<void>(resolve=>{release=resolve;});
- await page.route('**/api/me',async route=>{await held;await route.continue();},{times:1});
- const sync=page.getByRole('button',{name:'Sync now',exact:true});
- await sync.click();
- await expect(sync).toHaveClass(/sync-active/);
- release();
- await expect(sync).not.toHaveClass(/sync-active/);
+ await expect(page.getByRole('button',{name:'Sync now',exact:true})).toHaveCount(0);
 });
 
 test('mobile Context writing controls zoom to the cursor at 200 percent',async({page})=>{

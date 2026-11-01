@@ -8,7 +8,7 @@ import {Store} from '../server/store.ts';
 import {createBackup,restoreBackup,verifyBackup} from '../server/backup.ts';
 import {unpack} from '../server/archive.ts';
 const root='.test-data/integration';
-test('authenticated API, isolation, device revocation, CSRF, archive round trip and restore',async()=>{
+test('authenticated API, session isolation, CSRF, archive round trip and restore',async()=>{
  fs.rmSync(root,{recursive:true,force:true});const origin='http://127.0.0.1:4181';const{app,store}=createApp(root,origin);const server=app.listen(4181,'127.0.0.1');await new Promise<void>(r=>server.once('listening',r));
  let cookie='',csrf='';const req=(p:string,method='GET',body?:unknown,headers:Record<string,string>={})=>fetch(origin+'/api'+p,{method,headers:{Origin:origin,Cookie:cookie,'X-CSRF-Token':csrf,...(body&&!Buffer.isBuffer(body)?{'Content-Type':'application/json'}:{}),...headers},body:Buffer.isBuffer(body)?new Uint8Array(body):body?JSON.stringify(body):undefined});
  try{
@@ -34,11 +34,9 @@ test('authenticated API, isolation, device revocation, CSRF, archive round trip 
  const before=store.state.seq;
  assert.equal((await req('/import','POST',Buffer.from(zipSync({'safe.md':strToU8('safe'),'../bad.md':strToU8('bad')})),{'Content-Type':'application/zip'})).status,400);assert.equal(store.state.seq,before);
  const exported=unzipSync(new Uint8Array(await(await req('/export')).arrayBuffer()));assert.equal(new TextDecoder().decode(exported[m.path]),m.content);assert.deepEqual([...exported['Assets/item.bin']],[0,1,255]);assert.equal(Object.keys(exported).some(p=>p.includes('auth')),false);
- const b=await req('/login','POST',{username:'owner',password:'test-password-long',device:'B'});const cookieB=b.headers.get('set-cookie')!.split(';')[0];const identityB=await b.json();assert.equal((await req('/devices/'+identityB.device.id,'DELETE')).status,200);
- assert.equal((await req('/snapshot','GET',undefined,{Cookie:cookieB})).status,401);
  assert.equal((await req('/snapshot','GET',undefined,{Cookie:''})).status,401);
  assert.equal((await req('/logout','POST')).status,200);assert.equal((await req('/snapshot')).status,401);
- const backup=root+'/backup.json';createBackup(root,backup);assert.equal(verifyBackup(backup).state.notes[m.id].rev,3);const restored='.test-data/restored';fs.rmSync(restored,{recursive:true,force:true});restoreBackup(backup,restored);assert.equal(new Store(restored).state.notes[m.id].content,m.content);assert.deepEqual(JSON.parse(fs.readFileSync(restored+'/auth.json','utf8')).sessions,{});assert.throws(()=>restoreBackup(backup,restored),/empty/);
+ const backup='.test-data/integration-backup.json';fs.rmSync(backup,{force:true});createBackup(root,backup);assert.equal(verifyBackup(backup).state.notes[m.id].rev,3);const restored='.test-data/restored';fs.rmSync(restored,{recursive:true,force:true});restoreBackup(backup,restored);assert.equal(new Store(restored).state.notes[m.id].content,m.content);assert.deepEqual(JSON.parse(fs.readFileSync(restored+'/auth.json','utf8')).sessions,{});assert.throws(()=>restoreBackup(backup,restored),/empty/);
  const corrupt=JSON.parse(fs.readFileSync(backup,'utf8'));corrupt.payload+=' ';fs.writeFileSync(root+'/corrupt.json',JSON.stringify(corrupt));assert.throws(()=>verifyBackup(root+'/corrupt.json'),/Checksum/);
  }finally{await new Promise<void>((resolve,reject)=>server.close(e=>e?reject(e):resolve()));}
 });

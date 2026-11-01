@@ -22,12 +22,12 @@ test('browser login creates sessions without registering storage devices',async(
   const identity=await setup.json();csrf=identity.csrf;
   assert.match(identity.server.id,/^[0-9a-f-]{36}$/);
   assert.equal(identity.device,undefined,'browser identity must not pretend to be a device');
-  assert.deepEqual(await(await req('/devices')).json(),[]);
+  assert.equal((await req('/devices')).status,404,'device management API is removed');
   await req('/logout','POST');
   const login=await req('/login','POST',credentials);assert.equal(login.status,200);
   csrf=(await login.json()).csrf;
-  assert.deepEqual(await(await req('/devices')).json(),[]);
-  assert.deepEqual(await(await req('/device-workspaces')).json(),[]);
-  assert.equal((await req('/device-workspaces/self/snapshot','PUT',{base:0,snapshot:{}})).status,403,'browser cannot publish a pretend Local folder');
+  assert.equal((await req('/devices')).status,404,'device management stays unavailable after login');
+  assert.equal((await req('/device-workspaces')).status,404,'client workspace publication API is removed');
+  assert.equal((await req('/device-workspaces/self/snapshot','PUT',{base:0,snapshot:{}})).status,404,'Local workspace publication is removed');
  }finally{await new Promise<void>((resolve,reject)=>server.close(e=>e?reject(e):resolve()));fs.rmSync(root,{recursive:true,force:true});}
 });

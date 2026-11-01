@@ -79,6 +79,10 @@ Verification: production build; 95/95 unit/API tests; 103/103 full browser regre
 
 Deployed code revision `25db76e` as `toolbar-25db76e` to https://spire.example. Production build, 80/80 unit/API tests and 93/93 browser tests passed, including sidebar outside-click dismissal, animated folder drag/drop, empty-folder deletion and file wording. All 127 candidate assets match the accepted build (equivalent generated service-worker ordering); served HTML and entry JS/CSS match. Live health returns ok, anonymous snapshot returns 401, container is healthy, and the original writable named volume and loopback-only binding are retained. Application/full-volume backups and checksums verified at `/srv/spire/backups/toolbar-25db76e-20261009T193505Z`; rollback image/config retained. No source push, physical phone access, authenticated live editing or microphone recording test was performed. Physical Android WebView acceptance remains unverified; shared UI is delivered through the existing hosted client without a replacement APK.
 
+## Mind map disabled
+
+The mind-map interface is disabled and hidden. Spire no longer constructs or animates the sidebar relationship graph, renders its compact/fullscreen controls, or exposes the Mind map Settings tab and demo-data controls. Existing files and relationships are unchanged.
+
 
 Template editing now reuses the normal writing toolbar in Editor and Source modes: text styles, highlighting, headings, lists, capitalization, code/quote blocks, tables, media/attachment insertion, dates/times, alignment, spacing, page breaks, links, tags and nested templates. Save template remains separate from workspace-file saving; saved templates update in place and built-ins save editable copies. Complex-template desktop/touch coverage verifies save/reopen persistence without creating workspace files. Microphone recording and physical Android WebView acceptance remain unverified.
 
