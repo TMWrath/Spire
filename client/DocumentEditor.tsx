@@ -1,3 +1,4 @@
+import {prepareImage} from './prepare-image';
 import {LetterPagination,paginateFrontMatter} from './letter-pagination';
 import {mountImageSizing} from './image-size';
 import {mountEditorAudio} from './editor-audio';
@@ -73,8 +74,8 @@ function BodyEditor({note,notes,attachments,fileCss,keyboardEnabled=true,onBlur,
   const cancel=()=>{pending=null;input.value='';};
   const open=(event:Event)=>{const detail=(event as CustomEvent).detail;if(!editor.isEditable||callbacks.current.note.deleted||!detail||!editor.state.doc.eq(detail.doc))return;const current=callbacks.current.note;pending={...detail,id:current.id,content:current.content,path:current.path};setImageError('');input.value='';input.click();};
   const choose=async()=>{const target=pending,file=input.files?.[0];cancel();if(!target||!file||!valid(target))return;
-   try{if(!file.type.startsWith('image/'))throw new Error('Choose an image file.');const path=`Attachments/${crypto.randomUUID()}-${file.name.replace(/[\\/]/g,'_')}`;
-    await api('/attachments?path='+encodeURIComponent(path),{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:file},engine.cache.identity!.csrf);await engine.sync();
+   try{if(!file.type.startsWith('image/'))throw new Error('Choose an image file.');const prepared=await prepareImage(file);if(!prepared||!valid(target))return;const path=`Attachments/${crypto.randomUUID()}-${prepared.name.replace(/[\\/]/g,'_')}`;
+    await api('/attachments?path='+encodeURIComponent(path),{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:prepared},engine.cache.identity!.csrf);await engine.sync();
     if(!valid(target))throw new Error('The file changed during upload. The image is saved in Attachments but was not inserted.');
     const src=('../'.repeat(target.path.split('/').length-1)+path).split('/').map(part=>encodeURIComponent(part).replace(/\(/g,'%28').replace(/\)/g,'%29')).join('/');
     const escape=(text:string)=>text.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');

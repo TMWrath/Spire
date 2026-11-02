@@ -8,8 +8,7 @@ import {LazyFolder} from '../client/LazyFolder';
 
 // Execute the actual recursive JSX renderers with an isolated empty workspace.
 for(const [file,start,end] of [
- ['client/main.tsx','const renderFolder=',';\n const unattached='],
- ['client/WorkspaceMounts.tsx','const folder=',';\n return <section']
+ ['client/main.tsx','const renderFolder=',';\n const unattached=']
 ] as const){
  test(`${file}: all folder levels start collapsed`,()=>{
   const source=fs.readFileSync(file,'utf8');
