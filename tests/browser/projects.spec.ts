@@ -20,7 +20,7 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await projects.getByRole('button',{name:'Create project',exact:true}).click();
  await projects.getByLabel('Project name').fill('Atlas');
  await projects.getByRole('button',{name:'Create',exact:true}).click();
- await expect(projects.getByRole('button',{name:'Atlas',exact:true})).toHaveAttribute('aria-pressed','true');
+ await expect(page.getByRole('region',{name:'Project Atlas',exact:true}).getByRole('button',{name:'Select project Atlas',exact:true})).toHaveAttribute('aria-pressed','true');
  await page.getByRole('tab',{name:'Files',exact:true}).click();
  await expect(page.getByRole('region',{name:'Projects',exact:true})).toHaveCount(0);
  await expect(page.locator('nav').getByText('Atlas',{exact:true})).toHaveCount(0);
@@ -35,5 +35,5 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  if(!await projectsTab.isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
  await expect(projectsTab).toBeVisible();
  await projectsTab.click();
- await expect(page.getByRole('region',{name:'Projects',exact:true}).getByRole('button',{name:'Atlas',exact:true})).toBeVisible();
+ await expect(page.getByRole('region',{name:'Project Atlas',exact:true})).toBeVisible();
 });
