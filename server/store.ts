@@ -10,6 +10,7 @@ import { navigationIndex, emptyState, mutationSchema, safePath, refactor, type S
 import {mergeMarkdown} from '../shared/markdown-sync.ts';
 import {snapshotHash} from '../shared/publication-patch.ts';
 import {applyWorkspaceFields} from '../shared/workspace-fields.ts';
+import {visualGroupsSchema,type VisualGroup} from '../shared/visual-groups.ts';
 export class HttpError extends Error { constructor(public status: number, message: string, public details?: unknown) { super(message); } }
 export function noSymlinks(p: string) { const full=path.resolve(p); let part=path.parse(full).root; for(const segment of full.slice(part.length).split(path.sep)){ part=path.join(part,segment); if(fs.existsSync(part) || (()=>{try{return fs.lstatSync(part).isSymbolicLink();}catch{return false;}})()) if(fs.lstatSync(part).isSymbolicLink()) throw new Error('Symbolic link boundary refused'); } }
 export function atomic(file: string, data: string | Buffer) { noSymlinks(file); fs.mkdirSync(path.dirname(file),{recursive:true,mode:0o700}); const tmp=file+'.tmp-'+randomUUID(); const fd=fs.openSync(tmp,'wx',0o600); try{fs.writeFileSync(fd,data);fs.fsyncSync(fd);}finally{fs.closeSync(fd);} fs.renameSync(tmp,file); if(process.platform!=='win32'){const dir=fs.openSync(path.dirname(file),'r');try{fs.fsyncSync(dir);}finally{fs.closeSync(dir);}} }
@@ -120,6 +121,7 @@ export class Store {
  if(snapshotHash(next)===snapshotHash(this.state))return {ok:true};
  next.seq++;this.commit(next);return {ok:true};
  }
+ saveVisualGroups(directory:string,groups:VisualGroup[]){const parsed=visualGroupsSchema.parse(groups),next=structuredClone(this.state);next.visualGroups={...(next.visualGroups??{}),[directory]:parsed};next.seq++;this.commit(next);return parsed;}
  quickTemplate(id:string|null){if(!id)return null;const template=id.startsWith('saved-')?this.state.templates?.find(t=>t.id===id.slice(6)):fullTemplates.find(t=>t.id===id);if(!template)throw new HttpError(409,'The configured template is unavailable. Edit this action in Settings.');return template;}
  saveQuickAction(input:unknown,id?:string,revision?:number){const body=quickActionInputSchema.parse(input);this.quickTemplate(body.templateId);const actions=this.state.quickActions??[];const old=id?actions.find(a=>a.id===id):undefined;if(id&&!old)throw new HttpError(404,'Quick action not found');if(old&&old.revision!==revision)throw new HttpError(409,'Quick action changed elsewhere. Reopen before saving.');safePath.parse(body.folder+'/'+actionStem(body.namePattern)+'.md');const action={...body,id:old?.id??randomUUID(),revision:(old?.revision??0)+1};const next=structuredClone(this.state);next.quickActions=old?actions.map(a=>a.id===id?action:a):[...actions,action];next.seq++;this.commit(next);return action;}
  deleteQuickAction(id:string,revision:number){const actions=this.state.quickActions??[];const old=actions.find(a=>a.id===id);if(!old)throw new HttpError(404,'Quick action not found');if(old.revision!==revision)throw new HttpError(409,'Quick action changed elsewhere');const next=structuredClone(this.state);next.quickActions=actions.filter(a=>a.id!==id);next.seq++;this.commit(next);return {ok:true};}
