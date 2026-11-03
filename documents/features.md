@@ -2,7 +2,7 @@
 
 ## Adaptive sidebar Create popup — implementation
 
-The sidebar's bottom Add button opens the existing Create popup, whose items follow the active section. In Files the popup includes New file, New folder, and Add group. In Projects the same popup includes New project and opens the existing project name/color form. No intermediary menu is added. The redundant New control in the Projects heading remains removed so creation has one consistent entry point.
+The sidebar's bottom Add button follows the active tab. In Files it opens the existing Create popup with New file, New folder, and Add group. In Projects the same popup includes New project and opens the existing project name/color form. In Tags it opens the existing tag-insertion form for the active file; the button is disabled when no file is open. In Templates it opens a blank template in the full main-workspace template editor. In Sources it opens the existing new-source editor. No intermediary menu is added, and creation has one consistent tab-aware entry point.
 
 ## Word-like Letter zoom control — implementation
 
