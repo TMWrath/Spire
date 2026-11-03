@@ -19,8 +19,16 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await expect(projects).toBeVisible();
  await projects.getByRole('button',{name:'Create project',exact:true}).click();
  await projects.getByLabel('Project name').fill('Atlas');
+ await projects.getByLabel('Project color').fill('#247acf');
  await projects.getByRole('button',{name:'Create',exact:true}).click();
- await expect(page.getByRole('region',{name:'Project Atlas',exact:true}).getByRole('button',{name:'Select project Atlas',exact:true})).toHaveAttribute('aria-pressed','true');
+ const atlas=page.getByRole('region',{name:'Project Atlas',exact:true});
+ await expect(atlas.getByRole('button',{name:'Select project Atlas',exact:true})).toHaveAttribute('aria-pressed','true');
+ await expect(atlas).toHaveCSS('border-left-color','rgb(36, 122, 207)');
+ await atlas.getByRole('button',{name:'Edit project Atlas',exact:true}).click();
+ await page.getByLabel('Edit project name').fill('Atlas Revised');
+ await page.getByLabel('Edit project color').fill('#cf8799');
+ await page.getByRole('dialog',{name:'Edit project Atlas'}).getByRole('button',{name:'Save',exact:true}).click();
+ await expect(page.getByRole('region',{name:'Project Atlas Revised',exact:true})).toHaveCSS('border-left-color','rgb(207, 135, 153)');
  await page.getByRole('tab',{name:'Files',exact:true}).click();
  await expect(page.getByRole('region',{name:'Projects',exact:true})).toHaveCount(0);
  await expect(page.locator('nav').getByText('Atlas',{exact:true})).toHaveCount(0);
@@ -35,5 +43,5 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  if(!await projectsTab.isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
  await expect(projectsTab).toBeVisible();
  await projectsTab.click();
- await expect(page.getByRole('region',{name:'Project Atlas',exact:true})).toBeVisible();
+ await expect(page.getByRole('region',{name:'Project Atlas Revised',exact:true})).toBeVisible();
 });
