@@ -18,10 +18,10 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  const projects=page.getByRole('region',{name:'Projects',exact:true});
  await expect(projects).toBeVisible();
  await page.getByRole('button',{name:'Create',exact:true}).click();
- const projectMenu=page.getByRole('menu',{name:'Project add options'});
- await expect(projectMenu.getByRole('menuitem',{name:'New project',exact:true})).toBeVisible();
- await expect(projectMenu.getByRole('menuitem',{name:'File or folder',exact:true})).toHaveCount(0);
- await projectMenu.getByRole('menuitem',{name:'New project',exact:true}).click();
+ const projectCreate=page.getByRole('dialog',{name:'Create from file'});
+ await expect(projectCreate.getByRole('button',{name:/New project/})).toBeVisible();
+ await expect(projectCreate.getByRole('button',{name:/New file/})).toHaveCount(0);
+ await projectCreate.getByRole('button',{name:/New project/}).click();
  await projects.getByLabel('Project name').fill('Atlas');
  await projects.getByLabel('Project color').fill('#247acf');
  await projects.getByRole('button',{name:'Create',exact:true}).click();

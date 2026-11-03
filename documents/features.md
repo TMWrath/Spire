@@ -1,8 +1,8 @@
 # Spire — Features
 
-## Adaptive sidebar Add menu — implementation
+## Adaptive sidebar Create popup — implementation
 
-The sidebar's bottom Add button now follows the active section. In Files it opens the existing file/folder creation flow or the visual-group editor for the selected folder (root when no normal folder is selected). In Projects it offers New project and opens the existing project name/color form. The redundant New control in the Projects heading has been removed so creation has one consistent entry point.
+The sidebar's bottom Add button opens the existing Create popup, whose items follow the active section. In Files the popup includes New file, New folder, and Add group. In Projects the same popup includes New project and opens the existing project name/color form. No intermediary menu is added. The redundant New control in the Projects heading remains removed so creation has one consistent entry point.
 
 ## Word-like Letter zoom control — implementation
 
