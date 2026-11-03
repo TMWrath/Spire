@@ -1,5 +1,9 @@
 # Spire — Features
 
+## Adaptive sidebar Add menu — implementation
+
+The sidebar's bottom Add button now follows the active section. In Files it opens the existing file/folder creation flow or the visual-group editor for the selected folder (root when no normal folder is selected). In Projects it offers New project and opens the existing project name/color form. The redundant New control in the Projects heading has been removed so creation has one consistent entry point.
+
 ## Word-like Letter zoom control — implementation
 
 On mobile, the editor uses a single outlined, rounded bottom action bar matching the approved visual reference: an icon-only Zoom action at left, a raised circular microphone centered over the bar, then Paste and a divider-separated Cut action. Zoom shows a magnifying-glass-plus when the next tap will zoom in and a magnifying-glass-minus when the next tap will zoom out. Tapping it switches the Letter canvas directly between 100% and 200%, keeping the active caret position anchored in the viewport while zooming. Pinch and Ctrl/Cmd-wheel gestures update the same zoom state. Zoom changes only the Letter canvas, retains the existing page/pagination model, and leaves application chrome fixed.

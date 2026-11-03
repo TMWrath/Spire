@@ -1,4 +1,4 @@
-import React,{useState} from 'react';
+import React,{useEffect,useState} from 'react';
 import {createPortal} from 'react-dom';
 import {Pencil} from 'lucide-react';
 import './visual-groups.css';
@@ -15,8 +15,9 @@ export function VisualSection({name,index,children,project=false,color,onEdit}:{
  </section>;
 }
 
-export function VisualGroups({directory,entries,groups,enabled=true,onSave}:{scope:string;directory:string;entries:VisualEntry[];groups:Group[];enabled?:boolean;onSave:(groups:Group[])=>Promise<void>}){
+export function VisualGroups({directory,entries,groups,enabled=true,openRequested=false,onRequestHandled,onSave}:{scope:string;directory:string;entries:VisualEntry[];groups:Group[];enabled?:boolean;openRequested?:boolean;onRequestHandled?:()=>void;onSave:(groups:Group[])=>Promise<void>}){
  const [draft,setDraft]=useState<Group[]|null>(null);const [error,setError]=useState('');const [editing,setEditing]=useState<string|null>(null);
+ useEffect(()=>{if(enabled&&openRequested){setDraft(structuredClone(groups));setEditing(null);setError('');onRequestHandled?.();}},[enabled,openRequested,groups,onRequestHandled]);
  if(!enabled)return <>{entries.map(e=><React.Fragment key={e.id}>{e.node}</React.Fragment>)}</>;
  const assigned=new Set<string>();const sections=new Map<string,Group>();
  for(const g of groups)for(const id of g.members)if(!assigned.has(id)){assigned.add(id);sections.set(id,g);}
