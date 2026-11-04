@@ -26,9 +26,10 @@ test('file Media tab groups real references, deduplicates, previews, and follows
  await expect(inline.locator('audio')).not.toHaveAttribute('controls','');
  await expect.poll(()=>inline.locator('audio').evaluate((el:HTMLAudioElement)=>el.duration)).toBeGreaterThan(1);
  await inline.getByRole('button',{name:'Play song.mp3',exact:true}).click();await expect(inline.getByRole('button',{name:'Pause song.mp3',exact:true})).toBeVisible();await inline.getByRole('button',{name:'Pause song.mp3',exact:true}).click();
- await inline.getByLabel('More options for song.mp3').click();await inline.getByRole('button',{name:'Show speaker button',exact:true}).click();await expect(inline).toHaveClass(/media-audio-row-speaker/);
+ const canvas=page.locator('.canvas.editor');const fullOverflow=await canvas.evaluate(el=>({width:el.scrollWidth,height:el.scrollHeight}));
+ await inline.getByLabel('More options for song.mp3').click();await expect(page.getByRole('menu')).toBeVisible();await expect.poll(()=>canvas.evaluate(el=>({width:el.scrollWidth,height:el.scrollHeight}))).toEqual(fullOverflow);await page.getByRole('menuitem',{name:'Show speaker button',exact:true}).click();await expect(inline).toHaveClass(/media-audio-row-speaker/);
  const speaker=inline.getByRole('button',{name:'Play song.mp3',exact:true});expect((await speaker.boundingBox())?.width).toBeLessThanOrEqual(46);expect((await inline.locator('..').boundingBox())?.width).toBeLessThanOrEqual(46);await speaker.click();await expect(inline.getByRole('button',{name:'Pause song.mp3',exact:true})).toBeVisible();await inline.getByRole('button',{name:'Pause song.mp3',exact:true}).click();
- await speaker.dispatchEvent('pointerdown');await page.waitForTimeout(550);await speaker.dispatchEvent('pointerup');await expect(inline.getByRole('menuitem',{name:'Show full player',exact:true})).toBeVisible();await inline.getByRole('menuitem',{name:'Show full player',exact:true}).click();await expect(inline).not.toHaveClass(/media-audio-row-speaker/);await expect(inline.getByRole('slider',{name:'Seek song.mp3',exact:true})).toBeVisible();
+ const compactOverflow=await canvas.evaluate(el=>({width:el.scrollWidth,height:el.scrollHeight}));await speaker.dispatchEvent('pointerdown');await page.waitForTimeout(550);await speaker.dispatchEvent('pointerup');await expect(page.getByRole('menuitem',{name:'Show full player',exact:true})).toBeVisible();await expect.poll(()=>canvas.evaluate(el=>({width:el.scrollWidth,height:el.scrollHeight}))).toEqual(compactOverflow);await page.getByRole('menuitem',{name:'Show full player',exact:true}).click();await expect(inline).not.toHaveClass(/media-audio-row-speaker/);await expect(inline.getByRole('slider',{name:'Seek song.mp3',exact:true})).toBeVisible();
  expect(await inline.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBeTruthy();
  await page.getByRole('button',{name:'Source',exact:true}).click();await expect(page.getByLabel('Markdown source')).toHaveValue(originalSource);
  if(!await page.locator('.context').isVisible())await page.getByRole('button',{name:'Toggle context',exact:true}).click();
@@ -39,7 +40,7 @@ test('file Media tab groups real references, deduplicates, previews, and follows
  expect(await row.evaluate(el=>el.getBoundingClientRect().height)).toBeLessThanOrEqual(64);
  expect(await row.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBeTruthy();
  await panel.getByLabel('More options for song.mp3').click();
- await expect(panel.getByRole('link',{name:'Open original'})).toBeVisible();
+ await expect(page.getByRole('menuitem',{name:'Open original'})).toBeVisible();
  await panel.getByLabel('More options for song.mp3').click();
  await expect.poll(()=>panel.locator('audio').evaluate((el:HTMLAudioElement)=>el.duration)).toBeGreaterThan(1);await panel.getByRole('button',{name:'Play song.mp3',exact:true}).click();await expect(panel.getByRole('button',{name:'Pause song.mp3',exact:true})).toBeVisible();await panel.getByRole('button',{name:'Pause song.mp3',exact:true}).click();await expect(panel.locator('audio')).toHaveAttribute('src','/api/attachment?path=Attachments%2Fsong.mp3');
  await panel.getByRole('button',{name:'Show 1 more images',exact:true}).click();await expect(panel.getByRole('button',{name:'Preview Image 5',exact:true})).toBeVisible();
