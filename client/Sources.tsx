@@ -1,15 +1,15 @@
 import {ThemedSelect} from './ThemedSelect';
 import {attachmentUrl} from './attachment-urls';
 import React,{useEffect,useState} from 'react';
-import {BookOpen,Plus} from 'lucide-react';
+import {BookOpen} from 'lucide-react';
 import {api,engine} from './sync';
 import {sourceInputSchema,sourceUses,citationMarkdown,type Source,type SourceInput} from '../shared/sources';
 import type {Note} from '../shared/model';
 import './sources.css';
 import {SourceTypePicker} from './SourceTypePicker';
-export function SourcesLibrary({sources,notes,query,onSelect,onCreate}:{sources:Source[];notes:Note[];query:string;onSelect:(s:Source)=>void;onCreate:()=>void}){
+export function SourcesLibrary({sources,notes,query,onSelect}:{sources:Source[];notes:Note[];query:string;onSelect:(s:Source)=>void}){
  const matching=sources.filter(s=>[s.title,s.author,s.kind,s.description,s.isbn].join(' ').toLowerCase().includes(query.toLowerCase()));
- return <section id="sidebar-sources" role="tabpanel" aria-label="Sources" className="sidebar-library"><button onClick={onCreate}><Plus aria-hidden="true"/>Add source</button>{matching.map(s=><button className="library-template" key={s.id} onClick={()=>onSelect(s)}><BookOpen aria-hidden="true"/><span>{s.title}<small>{s.author} · {sourceUses(notes,s.id).length} citations</small></span></button>)}{!matching.length&&<p className="muted">{sources.length?'No matching sources.':'Add books, websites or media to your source library.'}</p>}</section>;
+ return <section id="sidebar-sources" role="tabpanel" aria-label="Sources" className="sidebar-library">{matching.map(s=><button className="library-template" key={s.id} onClick={()=>onSelect(s)}><BookOpen aria-hidden="true"/><span>{s.title}<small>{s.author} · {sourceUses(notes,s.id).length} citations</small></span></button>)}{!matching.length&&<p className="muted">{sources.length?'No matching sources.':'Add books, websites or media to your source library.'}</p>}</section>;
 }
 const blank=()=>sourceInputSchema.parse({kind:'book',title:'Untitled source'});
 export function SourcePanel({source,notes,attachments,onClose,onSaved,onJump}:{source:Source|null;notes:Note[];attachments:{path:string}[];onClose:()=>void;onSaved:(s:Source)=>void;onJump:(n:Note,offset:number)=>void}){

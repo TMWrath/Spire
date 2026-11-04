@@ -34,6 +34,7 @@ for(const touch of [false,true])test.describe(touch?'touch contextual sidebar Ad
 
   await reveal();
   await sidebar.getByRole('tab',{name:'Sources',exact:true})[touch?'tap':'click']();
+  await expect(sidebar.getByRole('button',{name:'Add source',exact:true})).toHaveCount(0);
   await sidebar.getByRole('button',{name:'Create',exact:true}).click();
   await expect(page.getByLabel('New source',{exact:true})).toBeVisible();
   await expect(page.getByLabel('Source title',{exact:true})).toBeVisible();
