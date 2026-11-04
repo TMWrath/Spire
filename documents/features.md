@@ -1,5 +1,9 @@
 # Spire — Features
 
+## Compact frame-first video player — implementation
+
+Embedded videos on the Editor canvas occupy only their intrinsic frame, preserving each video's native aspect ratio without distortion. Before playback, the current frame is visible with a centered Play overlay and no persistent title bar, timeline, or control footer. After playback begins, tapping the video reveals Spire's playback controls as an overlay inside the same frame; tapping again or waiting briefly hides them. Seeking, volume, speed, skipping, fullscreen, errors, and the original portable `<video>` source remain supported without changing the video's canvas height.
+
 ## Adaptive sidebar Create popup — implementation
 
 The sidebar's bottom Add button follows the active tab. In Files it opens the existing Create popup with New file, New folder, and Add group; this popup is the sole entry point for adding groups, so the redundant Group items button is not shown in the Files tree. Existing groups retain their pencil edit action. In Projects the same popup includes New project and opens the existing project name/color form. The Projects browsing surface omits the redundant Projects label and bordered divider panel once projects exist, placing search directly beneath the tabs and above the project cards. In Tags it opens the existing tag-insertion form for the active file; the button is disabled when no file is open. In Templates it opens a blank template in the full main-workspace template editor. In Sources it is the sole source-creation entry point and opens the existing new-source editor; the redundant standalone Add source button is not shown. No intermediary menu is used. The existing creation editors and flows remain authoritative.
