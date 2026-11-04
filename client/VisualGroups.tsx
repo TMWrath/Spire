@@ -24,7 +24,6 @@ export function VisualGroups({directory,entries,groups,enabled=true,openRequeste
  const shown=new Set<string>();
  const open=(id:string|null=null)=>{setDraft(structuredClone(groups));setEditing(id);setError('');};
  return <>
-  <button className="visual-group-control" type="button" aria-label={'Group items in '+(directory||'directory')} onClick={()=>open()}>Group items</button>
   {entries.map(entry=>{const g=sections.get(entry.id);if(!g)return <React.Fragment key={entry.id}>{entry.node}</React.Fragment>;if(shown.has(g.id))return null;shown.add(g.id);return <VisualSection key={g.id} name={g.name} color={g.color} index={groups.indexOf(g)} onEdit={()=>open(g.id)}>{entries.filter(e=>sections.get(e.id)?.id===g.id).map(e=><React.Fragment key={e.id}>{e.node}</React.Fragment>)}</VisualSection>;})}
   {draft&&createPortal(<div className="template-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setDraft(null);}}><form className="file-dialog visual-groups-dialog" role="dialog" aria-modal="true" aria-label={editing?'Edit visual group':'Visual groups'} onKeyDown={e=>{if(e.key==='Escape')setDraft(null);}} onSubmit={async e=>{e.preventDefault();try{const next=draft.filter(g=>g.name.trim()).map(g=>({...g,name:g.name.trim()}));await onSave(next);setDraft(null);}catch{setError('Unable to save groups. Your existing groups are unchanged.');}}}>
    <h2>{editing?'Edit group':'Visual groups'}</h2><p>Grouping changes presentation only; files and folders stay in place.</p><p className="muted">Saved with this workspace and available in your other browsers.</p>
