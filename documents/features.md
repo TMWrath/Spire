@@ -2,7 +2,7 @@
 
 ## Toggleable compact audio action — implementation
 
-Audio keeps the existing full player as its default presentation. Each full player's options include **Show speaker button**, which reduces only that audio instance to a single speaker action without changing its portable `<audio>` markup or playback position. Tapping the speaker toggles play and pause. Holding it for about half a second opens a compact display menu with **Show full player**, restoring the full controls without restarting the track. The shared renderer gives the Editor canvas and Context → Media the same behavior, while seeking, volume, adjacent-track controls, errors, and source persistence remain intact.
+Audio keeps the existing full player as its default presentation. Each full player's options include **Show speaker button**, which reduces only that audio instance to a single speaker action without changing its source or playback position. Tapping the speaker toggles play and pause. Holding it for about half a second opens a compact display menu with **Show full player**, restoring the full controls without restarting the track. In the Editor, Save stores the chosen per-audio presentation in the portable HTML block as `data-spire-display="simple"`; reopening the file restores simple mode, while restoring the full player removes that attribute on the next save. The shared renderer gives the Editor canvas and Context → Media the same controls, while seeking, volume, adjacent-track controls, errors, and source persistence remain intact.
 
 ## Compact frame-first video player — implementation
 
