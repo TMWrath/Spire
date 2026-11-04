@@ -17,7 +17,7 @@ export function AudioTrack({item,onReady,previous,next,initialDisplay='default',
  const toggle=()=>{const a=ref.current;if(a)playing?a.pause():void a.play().catch(()=>setFailed(true));};
  const endHold=()=>{if(hold.current!==undefined){clearTimeout(hold.current);hold.current=undefined;}};
  const progress=duration>0?Math.min(100,position/duration*100):0;
- return <article className={`media-audio-row${compact?' media-audio-row-speaker':''}`}>
+ return <span role="group" aria-label={`Audio player for ${item.name}`} className={`media-audio-row${compact?' media-audio-row-speaker':''}`}>
   <div className="media-audio-art"><Music2 aria-hidden="true"/></div>
   <div className="media-audio-title"><strong title={item.name}>{item.name}</strong><span className="media-audio-duration">{clock(duration)}</span></div>
   <audio ref={ref} src={item.url} preload="metadata" onLoadedMetadata={e=>setDuration(e.currentTarget.duration)} onDurationChange={e=>setDuration(e.currentTarget.duration)} onTimeUpdate={e=>setPosition(e.currentTarget.currentTime)} onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)} onEnded={()=>setPlaying(false)} onVolumeChange={e=>setMuted(e.currentTarget.muted)} onError={()=>setFailed(true)}/>
@@ -33,5 +33,5 @@ export function AudioTrack({item,onReady,previous,next,initialDisplay='default',
   </div>
   {compact&&<div className="media-audio-compact"><button ref={speakerButton} type="button" className="media-audio-speaker" disabled={failed} aria-label={`${playing?'Pause':'Play'} ${item.name}`} aria-pressed={playing} aria-haspopup="menu" aria-expanded={displayMenu} title="Tap to play or pause. Hold for display options." onPointerDown={()=>{held.current=false;hold.current=window.setTimeout(()=>{held.current=true;setDisplayMenu(true);},500);}} onPointerUp={endHold} onPointerCancel={endHold} onPointerLeave={endHold} onContextMenu={e=>{e.preventDefault();held.current=true;setDisplayMenu(true);}} onClick={()=>{if(held.current){held.current=false;return;}toggle();}}><Volume2/></button>{displayMenu&&<FloatingMenu anchor={speakerButton} onClose={()=>setDisplayMenu(false)}><button type="button" role="menuitem" onClick={()=>{setDisplayMenu(false);chooseDisplay('default');}}>Show full player</button></FloatingMenu>}</div>}
   {failed&&<small className="media-error" role="status">Audio unavailable. Check the source file or connection.</small>}
- </article>;
+ </span>;
 }

@@ -16,7 +16,9 @@ export function mountEditorAudio(view:HTMLElement,onDisplayChange?:(index:number
   if(!url)return;
   let name=original.getAttribute('title')||'Audio';
   try{const parsed=new URL(url,location.href);name=original.getAttribute('title')||(parsed.searchParams.get('path')||decodeURIComponent(parsed.pathname)).split('/').pop()||'Audio';}catch{/* Keep the safe display fallback. */}
-  const host=document.createElement('div');host.className='media-audio-list editor-audio-player';original.replaceWith(host);
+  // An audio element is phrasing content, so keep its enhanced host inline-safe.
+  // CSS promotes the default player to a block grid while simple mode remains inline.
+  const host=document.createElement('span');host.className='media-audio-list editor-audio-player';original.replaceWith(host);
   const root=createRoot(host);
   let audio:HTMLAudioElement|null=null;
   const adjacent=(direction:number)=>{const scope=view.closest('.document-writing-surface')||view;const tracks=Array.from(scope.querySelectorAll('audio'));const current=tracks.indexOf(audio!);if(tracks.length)void tracks[(current+direction+tracks.length)%tracks.length].play().catch(()=>{});};
