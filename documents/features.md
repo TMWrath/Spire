@@ -1,5 +1,9 @@
 # Spire — Features
 
+## Toggleable compact audio action — implementation
+
+Audio keeps the existing full player as its default presentation. Each full player's options include **Show speaker button**, which reduces only that audio instance to a single speaker action without changing its portable `<audio>` markup or playback position. Tapping the speaker toggles play and pause. Holding it for about half a second opens a compact display menu with **Show full player**, restoring the full controls without restarting the track. The shared renderer gives the Editor canvas and Context → Media the same behavior, while seeking, volume, adjacent-track controls, errors, and source persistence remain intact.
+
 ## Compact frame-first video player — implementation
 
 Embedded videos on the Editor canvas occupy only their intrinsic frame, preserving each video's native aspect ratio without distortion. Before playback, the current frame is visible with a centered Play overlay and no persistent title bar, timeline, or control footer. After playback begins, tapping the video reveals Spire's playback controls as an overlay inside the same frame; tapping again or waiting briefly hides them. Seeking, volume, speed, skipping, Picture-in-Picture pop-up playback, fullscreen, errors, and the original portable `<video>` markup remain supported. Picture-in-Picture is available from the overlay when the browser/device supports it. The same player is used in Media Preview.
