@@ -1,5 +1,5 @@
 .project-switcher{display:grid;gap:.65rem;padding:.75rem;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--panel) 92%,transparent)}
-.project-switcher>header{display:flex;align-items:center;justify-content:space-between;gap:.75rem}.project-switcher>header button,.project-list button{display:flex;align-items:center;gap:.45rem}
+.project-list button{display:flex;align-items:center;gap:.45rem}
 .project-switcher form{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:.4rem;align-items:end}.project-switcher input{min-width:0}.project-color{display:flex;align-items:center;gap:.35rem;font-size:.75rem}.project-color input[type=color]{width:42px;min-height:38px;padding:3px}
 .project-list{display:flex;gap:.4rem;overflow-x:auto;padding-bottom:.15rem}.project-list button{flex:0 0 auto;max-width:12rem}.project-list button[aria-pressed=true]{border-color:var(--text);background:var(--surface-strong)}
 .project-list button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

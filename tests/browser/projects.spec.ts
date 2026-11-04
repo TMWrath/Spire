@@ -25,6 +25,7 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await projects.getByLabel('Project name').fill('Atlas');
  await projects.getByLabel('Project color').fill('#247acf');
  await projects.getByRole('button',{name:'Create',exact:true}).click();
+ await expect(page.locator('.project-switcher')).toHaveCount(0);
  const atlas=page.getByRole('region',{name:'Project Atlas',exact:true});
  await expect(atlas.getByRole('button',{name:'Select project Atlas',exact:true})).toHaveAttribute('aria-pressed','true');
  await expect(atlas).toHaveCSS('border-left-color','rgb(36, 122, 207)');
