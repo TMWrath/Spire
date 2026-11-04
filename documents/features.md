@@ -2,7 +2,7 @@
 
 ## Compact frame-first video player — implementation
 
-Embedded videos on the Editor canvas occupy only their intrinsic frame, preserving each video's native aspect ratio without distortion. Before playback, the current frame is visible with a centered Play overlay and no persistent title bar, timeline, or control footer. After playback begins, tapping the video reveals Spire's playback controls as an overlay inside the same frame; tapping again or waiting briefly hides them. Seeking, volume, speed, skipping, fullscreen, errors, and the original portable `<video>` source remain supported without changing the video's canvas height.
+Embedded videos on the Editor canvas occupy only their intrinsic frame, preserving each video's native aspect ratio without distortion. Before playback, the current frame is visible with a centered Play overlay and no persistent title bar, timeline, or control footer. After playback begins, tapping the video reveals Spire's playback controls as an overlay inside the same frame; tapping again or waiting briefly hides them. Seeking, volume, speed, skipping, Picture-in-Picture pop-up playback, fullscreen, errors, and the original portable `<video>` markup remain supported. Picture-in-Picture is available from the overlay when the browser/device supports it. The same player is used in Media Preview.
 
 ## Adaptive sidebar Create popup — implementation
 
