@@ -30,6 +30,7 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await expect(atlas.getByRole('button',{name:'Select project Atlas',exact:true})).toHaveAttribute('aria-pressed','true');
  await expect(atlas).toHaveCSS('border-left-color','rgb(36, 122, 207)');
  await expect(atlas.getByRole('button',{name:'Tasks for Atlas',exact:true})).toHaveText('0%');
+ await atlas.locator('.visual-section-title>span').click();
  const actions=atlas.locator('.visual-section-actions');
  await expect(actions.getByRole('button')).toHaveCount(3);
  for(const name of ['Tasks for Atlas','Add items to Atlas','Edit project Atlas']){

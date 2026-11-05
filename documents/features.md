@@ -615,3 +615,5 @@ Each project label has a Tasks percentage link and a project-scoped plus for add
 
 ## Project header action styling
 Percentage, plus and pencil share compact unboxed project-colored styling in one right-aligned action group. Project name remains left aligned.
+
+Header styling deployed: project-header-b4b8126-20261105T142031Z. Build/unit and desktop Projects acceptance passed; mobile/touch styling assertions passed but later Tasks-file visibility assertion failed, so complete touch journey and physical WebView remain unverified. Live HTML/assets match accepted release; healthy, zero restarts, data volume preserved and backup completed.
