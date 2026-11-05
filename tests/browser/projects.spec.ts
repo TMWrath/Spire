@@ -33,11 +33,15 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await atlas.getByRole('button',{name:'Collapse project Atlas',exact:true}).click();
  await expect(atlas.getByRole('button',{name:'Expand project Atlas',exact:true})).toHaveAttribute('aria-expanded','false');
  await expect(atlas.locator('.visual-section-items')).toBeHidden();
- await expect(atlas.locator('.visual-section-actions')).toBeHidden();
+ await expect(atlas.locator('.visual-section-actions').getByRole('button')).toHaveCount(1);
  await atlas.getByRole('button',{name:'Expand project Atlas',exact:true}).press('Enter');
  await expect(atlas.locator('.visual-section-items')).toBeVisible();
  const actions=atlas.locator('.visual-section-actions');
- await expect(actions.getByRole('button')).toHaveCount(3);
+ await expect(actions.getByRole('button')).toHaveCount(4);
+ await expect(actions.getByRole('button').last()).toHaveAccessibleName('Collapse project Atlas');
+ const labelBox=await atlas.locator('.visual-section-title>span').boundingBox();
+ const titleBox=await atlas.locator('.visual-section-title').boundingBox();
+ expect(labelBox!.x-titleBox!.x).toBeLessThan(15);
  for(const name of ['Tasks for Atlas','Add items to Atlas','Edit project Atlas']){
   await expect(actions.getByRole('button',{name,exact:true})).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
   await expect(actions.getByRole('button',{name,exact:true})).toHaveCSS('color','rgb(36, 122, 207)');
