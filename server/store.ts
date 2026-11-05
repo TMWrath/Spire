@@ -1,3 +1,4 @@
+import {taskBoardSchema,emptyTaskBoard,type TaskBoard} from '../shared/project-tasks.ts';
 import {quickActionInputSchema,actionStem} from '../shared/quick-actions.ts';
 import {fullTemplates} from '../shared/full-templates.ts';
 import fs from 'node:fs';
@@ -121,6 +122,12 @@ export class Store {
  if(snapshotHash(next)===snapshotHash(this.state))return {ok:true};
  next.seq++;this.commit(next);return {ok:true};
  }
+ saveProjectTasks(project:string,board:TaskBoard){
+ const parsed=taskBoardSchema.parse(board);const current=this.state.projectTasks?.[project]??emptyTaskBoard();
+ if(current.revision!==parsed.revision)throw new HttpError(409,'Tasks changed elsewhere. Reopen Tasks before saving again.');
+ if(!(this.state.folders??[]).includes('Projects/'+project)&&!Object.values(this.state.notes).some(n=>!n.deleted&&n.path.startsWith('Projects/'+project+'/')))throw new HttpError(404,'Project not found');
+ const next=structuredClone(this.state);const saved={...parsed,revision:current.revision+1};next.projectTasks={...next.projectTasks,[project]:saved};next.seq++;this.commit(next);return saved;
+ }
  saveVisualGroups(directory:string,groups:VisualGroup[]){const parsed=visualGroupsSchema.parse(groups),next=structuredClone(this.state);next.visualGroups={...(next.visualGroups??{}),[directory]:parsed};next.seq++;this.commit(next);return parsed;}
  quickTemplate(id:string|null){if(!id)return null;const template=id.startsWith('saved-')?this.state.templates?.find(t=>t.id===id.slice(6)):fullTemplates.find(t=>t.id===id);if(!template)throw new HttpError(409,'The configured template is unavailable. Edit this action in Settings.');return template;}
  saveQuickAction(input:unknown,id?:string,revision?:number){const body=quickActionInputSchema.parse(input);this.quickTemplate(body.templateId);const actions=this.state.quickActions??[];const old=id?actions.find(a=>a.id===id):undefined;if(id&&!old)throw new HttpError(404,'Quick action not found');if(old&&old.revision!==revision)throw new HttpError(409,'Quick action changed elsewhere. Reopen before saving.');safePath.parse(body.folder+'/'+actionStem(body.namePattern)+'.md');const action={...body,id:old?.id??randomUUID(),revision:(old?.revision??0)+1};const next=structuredClone(this.state);next.quickActions=old?actions.map(a=>a.id===id?action:a):[...actions,action];next.seq++;this.commit(next);return action;}
@@ -201,6 +208,7 @@ export class Store {
   const stationaryFolders=folders.filter(f=>!inside(f)).map(p=>p.toLowerCase()),stationaryFiles=[...Object.values(this.state.notes).filter(n=>!n.deleted&&!inside(n.path)).map(n=>n.path),...this.state.attachments.filter(a=>!inside(a.path)).map(a=>a.path),...Object.keys(this.state.styles??{}).filter(p=>!inside(p))].map(p=>p.toLowerCase());
   for(const p of [target,...movingNotes.map(n=>translate(n.path)),...movingAttachments.map(a=>translate(a.path)),...movingStyles.map(([p])=>translate(p))]){const lower=p.toLowerCase();if(stationaryFolders.some(q=>q===lower||q.startsWith(lower+'/'))||stationaryFiles.some(q=>q===lower||q.startsWith(lower+'/')||lower.startsWith(q+'/')))throw new HttpError(409,`Destination path is occupied: ${p}`);}
   const next=structuredClone(this.state),original=Object.values(this.state.notes);for(const n of movingNotes)this.revise(next,n.id,{path:translate(n.path),content:n.content,deleted:false},device);
+  if(/^Projects\/[^/]+$/.test(source)&&/^Projects\/[^/]+$/.test(target)&&source!==target&&next.projectTasks?.[source.slice(9)]){next.projectTasks[target.slice(9)]=next.projectTasks[source.slice(9)];delete next.projectTasks[source.slice(9)];next.seq++;}
   for(const current of Object.values(next.notes).filter(n=>!n.deleted)){let content=current.content;const sourceNote=original.find(n=>n.id===current.id)??current;for(const moved of movingNotes)content=refactor({...sourceNote,content},original,moved.id,translate(moved.path));if(content!==current.content)this.revise(next,current.id,{path:current.path,content,deleted:false},device);}
   next.folders=[...new Set([...folders.filter(f=>!inside(f)),...folders.filter(inside).map(translate)])];next.attachments=next.attachments.map(a=>inside(a.path)?{...a,path:translate(a.path)}:a);next.styles=Object.fromEntries(Object.entries(next.styles??{}).map(([p,css])=>[inside(p)?translate(p):p,css]));this.commit(next);return {path:target,moved:movingNotes.length};
  }

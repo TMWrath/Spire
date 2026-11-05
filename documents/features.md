@@ -617,3 +617,6 @@ Each project label has a Tasks percentage link and a project-scoped plus for add
 Percentage, plus and pencil share compact unboxed project-colored styling in one right-aligned action group. Project name remains left aligned.
 
 Header styling deployed: project-header-b4b8126-20261105T142031Z. Build/unit and desktop Projects acceptance passed; mobile/touch styling assertions passed but later Tasks-file visibility assertion failed, so complete touch journey and physical WebView remain unverified. Live HTML/assets match accepted release; healthy, zero restarts, data volume preserved and backup completed.
+
+## Dedicated project Tasks pages
+Tasks are now structured server-backed project data, not Markdown files. The percentage opens a dedicated page with task creation, title editing, completion, deletion confirmation and the same shared colored visual grouping component as files/projects. Completion directly controls project progress. Revision checks prevent stale overwrites; tasks survive project rename and verified backup/restore. Existing Tasks.md documents are preserved unchanged, not deleted or silently interpreted as the new board. Android/Windows hosted clients receive the shared UI; physical-device acceptance remains separate.
