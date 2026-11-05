@@ -612,3 +612,6 @@ The real Chromium reconciliation harness is repaired (native capability and exac
 
 ## Project label actions and Tasks progress
 Each project label has a Tasks percentage link and a project-scoped plus for adding files, folders, or a Tasks page. Tasks is optional, stored as Tasks.md, and checkbox completion determines the percentage. The main Projects Add flow remains project-only. Implemented and deployed as project-tasks-42f5e2b-20261105T135455Z (code revision 42f5e2b). Production build, unit tests and focused Projects browser acceptance passed. Live image and entry assets match the accepted release; service healthy, zero restarts, existing data volume preserved, backup verified by the release process, anonymous snapshot access denied. Android consumes the hosted UI; physical Android/WebView acceptance remains unverified.
+
+## Project header action styling
+Percentage, plus and pencil share compact unboxed project-colored styling in one right-aligned action group. Project name remains left aligned.

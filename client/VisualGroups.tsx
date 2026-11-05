@@ -10,7 +10,7 @@ const validColor=(color?:string)=>Boolean(color&&/^#[0-9a-f]{6}$/i.test(color));
 
 export function VisualSection({name,index,children,project=false,color,onEdit,progress,onTasks,onAdd}:{name:string;index:number;children:React.ReactNode;project?:boolean;color?:string;onEdit?:()=>void;progress?:number;onTasks?:()=>void;onAdd?:()=>void}){
  return <section className="visual-section" aria-label={(project?'Project ':'Group ')+name} style={{'--group-color':validColor(color)?color:visualGroupColors[index%visualGroupColors.length]} as React.CSSProperties}>
-  <div className="visual-section-title"><span>{name}</span>{onTasks&&<button type="button" aria-label={`Tasks for ${name}`} onClick={onTasks}>{progress??0}%</button>}{onAdd&&<button type="button" aria-label={`Add items to ${name}`} onClick={onAdd}><Plus aria-hidden="true"/></button>}{onEdit&&<button type="button" className="visual-section-edit" aria-label={`Edit ${project?'project':'group'} ${name}`} onClick={onEdit}><Pencil aria-hidden="true"/></button>}</div>
+  <div className="visual-section-title"><span>{name}</span><div className="visual-section-actions">{onTasks&&<button type="button" className="visual-section-edit" aria-label={`Tasks for ${name}`} onClick={onTasks}>{progress??0}%</button>}{onAdd&&<button type="button" className="visual-section-edit" aria-label={`Add items to ${name}`} onClick={onAdd}><Plus aria-hidden="true"/></button>}{onEdit&&<button type="button" className="visual-section-edit" aria-label={`Edit ${project?'project':'group'} ${name}`} onClick={onEdit}><Pencil aria-hidden="true"/></button>}</div></div>
   <div className="visual-section-items">{children}</div>
  </section>;
 }
