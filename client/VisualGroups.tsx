@@ -1,6 +1,6 @@
 import React,{useEffect,useState} from 'react';
 import {createPortal} from 'react-dom';
-import {Pencil,Plus} from 'lucide-react';
+import {ChevronDown,ChevronRight,Pencil,Plus} from 'lucide-react';
 import './visual-groups.css';
 
 export type VisualEntry={id:string;label:string;node:React.ReactNode};
@@ -9,9 +9,10 @@ export const visualGroupColors=['#cf8799','#cba36e','#79b2ab','#8c9dd1','#b092cc
 const validColor=(color?:string)=>Boolean(color&&/^#[0-9a-f]{6}$/i.test(color));
 
 export function VisualSection({name,index,children,project=false,color,onEdit,progress,onTasks,onAdd}:{name:string;index:number;children:React.ReactNode;project?:boolean;color?:string;onEdit?:()=>void;progress?:number;onTasks?:()=>void;onAdd?:()=>void}){
+ const [collapsed,setCollapsed]=useState(false);
  return <section className="visual-section" aria-label={(project?'Project ':'Group ')+name} style={{'--group-color':validColor(color)?color:visualGroupColors[index%visualGroupColors.length]} as React.CSSProperties}>
-  <div className="visual-section-title"><span>{name}</span><div className="visual-section-actions">{onTasks&&<button type="button" className="visual-section-edit" aria-label={`Tasks for ${name}`} onClick={onTasks}>{progress??0}%</button>}{onAdd&&<button type="button" className="visual-section-edit" aria-label={`Add items to ${name}`} onClick={onAdd}><Plus aria-hidden="true"/></button>}{onEdit&&<button type="button" className="visual-section-edit" aria-label={`Edit ${project?'project':'group'} ${name}`} onClick={onEdit}><Pencil aria-hidden="true"/></button>}</div></div>
-  <div className="visual-section-items">{children}</div>
+  <div className="visual-section-title">{project?<button type="button" className="project-collapse" aria-label={`${collapsed?'Expand':'Collapse'} project ${name}`} aria-expanded={!collapsed} onClick={()=>setCollapsed(!collapsed)}>{collapsed?<ChevronRight aria-hidden="true"/>:<ChevronDown aria-hidden="true"/>}<span>{name}</span></button>:<span>{name}</span>}<div className="visual-section-actions" hidden={project&&collapsed}>{onTasks&&<button type="button" className="visual-section-edit" aria-label={`Tasks for ${name}`} onClick={onTasks}>{progress??0}%</button>}{onAdd&&<button type="button" className="visual-section-edit" aria-label={`Add items to ${name}`} onClick={onAdd}><Plus aria-hidden="true"/></button>}{onEdit&&<button type="button" className="visual-section-edit" aria-label={`Edit ${project?'project':'group'} ${name}`} onClick={onEdit}><Pencil aria-hidden="true"/></button>}</div></div>
+  <div className="visual-section-items" hidden={project&&collapsed}>{children}</div>
  </section>;
 }
 

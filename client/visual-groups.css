@@ -2,4 +2,6 @@
 
 .visual-section-title>span{flex:1}.visual-section-actions{display:flex;align-items:center;gap:2px;flex:none;margin-left:auto}.visual-section-actions .visual-section-edit{font:inherit;font-size:12px;font-weight:600;border-radius:4px;display:inline-flex;align-items:center;justify-content:center}.visual-section-actions .visual-section-edit:hover{background:color-mix(in srgb,var(--group-color) 12%,transparent)!important}.visual-section-actions .visual-section-edit:focus-visible{outline:1px solid var(--group-color);outline-offset:1px}
 
+.visual-section-actions[hidden],.visual-section-items[hidden]{display:none}
+.project-collapse{display:flex;align-items:center;gap:6px;flex:1;min-width:0;text-align:left;border:0!important;background:transparent!important;color:inherit!important;font:inherit;padding:0!important;cursor:pointer}.project-collapse svg{width:16px;height:16px;flex:none}.project-collapse span{min-width:0;overflow-wrap:anywhere}.project-collapse:focus-visible{outline:1px solid currentColor;outline-offset:3px}
 .project-tasks-link{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:transparent;border:0;color:var(--group-color);padding:7px 0;font:inherit;cursor:pointer}.project-tasks-link svg{width:16px;height:16px;flex:none}.project-tasks-link:hover{background:color-mix(in srgb,var(--group-color) 10%,transparent)}
