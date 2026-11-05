@@ -1,6 +1,6 @@
 import React,{useEffect,useState} from 'react';
 import {createPortal} from 'react-dom';
-import {Pencil} from 'lucide-react';
+import {Pencil,Plus} from 'lucide-react';
 import './visual-groups.css';
 
 export type VisualEntry={id:string;label:string;node:React.ReactNode};
@@ -8,9 +8,9 @@ type Group={id:string;name:string;color:string;members:string[]};
 export const visualGroupColors=['#cf8799','#cba36e','#79b2ab','#8c9dd1','#b092cc'];
 const validColor=(color?:string)=>Boolean(color&&/^#[0-9a-f]{6}$/i.test(color));
 
-export function VisualSection({name,index,children,project=false,color,onEdit}:{name:string;index:number;children:React.ReactNode;project?:boolean;color?:string;onEdit?:()=>void}){
+export function VisualSection({name,index,children,project=false,color,onEdit,progress,onTasks,onAdd}:{name:string;index:number;children:React.ReactNode;project?:boolean;color?:string;onEdit?:()=>void;progress?:number;onTasks?:()=>void;onAdd?:()=>void}){
  return <section className="visual-section" aria-label={(project?'Project ':'Group ')+name} style={{'--group-color':validColor(color)?color:visualGroupColors[index%visualGroupColors.length]} as React.CSSProperties}>
-  <div className="visual-section-title"><span>{name}</span>{onEdit&&<button type="button" className="visual-section-edit" aria-label={`Edit ${project?'project':'group'} ${name}`} onClick={onEdit}><Pencil aria-hidden="true"/></button>}</div>
+  <div className="visual-section-title"><span>{name}</span>{onTasks&&<button type="button" aria-label={`Tasks for ${name}`} onClick={onTasks}>{progress??0}%</button>}{onAdd&&<button type="button" aria-label={`Add items to ${name}`} onClick={onAdd}><Plus aria-hidden="true"/></button>}{onEdit&&<button type="button" className="visual-section-edit" aria-label={`Edit ${project?'project':'group'} ${name}`} onClick={onEdit}><Pencil aria-hidden="true"/></button>}</div>
   <div className="visual-section-items">{children}</div>
  </section>;
 }
