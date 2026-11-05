@@ -35,6 +35,9 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  const overview=page.getByRole('region',{name:'Overview for Atlas',exact:true});
  await expect(overview).toBeVisible();
  await expect(overview.getByRole('heading',{name:'Atlas',exact:true})).toBeVisible();
+ await expect(overview.getByRole('toolbar',{name:'Overview formatting'})).toHaveCount(0);
+ for(const name of ['Bold','Italic','Heading','Bullets','Numbered list','Undo','Redo'])await expect(overview.getByRole('button',{name,exact:true})).toHaveCount(0);
+ await expect(overview.getByText('Saved on server',{exact:true})).toHaveCount(0);
  await page.getByRole('button',{name:'Toggle context',exact:true}).click();
  const projectContext=page.getByRole('complementary',{name:'Project Context',exact:true});
  await expect(page.locator('.workspace > aside.context')).toBeVisible();
@@ -55,7 +58,8 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await page.getByRole('complementary',{name:'Project Context',exact:true}).getByLabel('Project background image',{exact:true}).setInputFiles({name:'background.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64')});
  await expect(overview.locator('.overview-design')).toHaveCSS('background-image',/data:image\/png/);
  await overview.getByRole('button',{name:'Save overview',exact:true}).click();
- await expect(overview.getByRole('status')).toHaveText('Saved on server');
+ await expect(overview.getByRole('status')).toHaveCount(0);
+ await expect(overview.getByText('Saved on server',{exact:true})).toHaveCount(0);
 
  await overview.getByRole('button',{name:'Back to project',exact:true}).click();
  await expect(overview).toHaveCount(0);
