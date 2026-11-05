@@ -1,0 +1,17 @@
+import {useEffect,useRef,useState} from 'react';
+import {ZoomIn,ZoomOut} from 'lucide-react';
+
+type Settings={target:number;locked:boolean;lockedZoom:number};
+const defaults:Settings={target:200,locked:false,lockedZoom:100};
+function load(key:string):Settings {try {const raw=JSON.parse(localStorage.getItem(key)??'null');return {target:Number.isFinite(raw?.target)?Math.max(100,Math.min(300,raw.target)):200,locked:raw?.locked===true,lockedZoom:Number.isFinite(raw?.lockedZoom)?Math.max(100,Math.min(300,raw.lockedZoom)):100};} catch{return defaults;}}
+export function ZoomControl({scope,zoom,setZoom}:{scope:string;zoom:number;setZoom:(value:number)=>void}) {
+ const key='spire:document-zoom:'+scope;
+ const [settings,setSettings]=useState<Settings>(()=>load(key)),[open,setOpen]=useState(false),[target,setTarget]=useState(String(settings.target)),[locked,setLocked]=useState(settings.locked);
+ const timer=useRef<ReturnType<typeof setTimeout>|null>(null),held=useRef(false);
+ const cancel=()=>{if(timer.current!==null)clearTimeout(timer.current);timer.current=null;};
+ useEffect(()=>{const host=document.querySelector<HTMLElement>('.document-editor.letter-paginated');if(host)host.dataset.editorZoomLocked=String(settings.locked);try{localStorage.setItem(key,JSON.stringify(settings));}catch{}},[key,settings]);
+ useEffect(()=>{const restore=window.setTimeout(()=>{const host=document.querySelector<HTMLElement>('.document-editor.letter-paginated');if(host)host.dataset.editorZoomLocked=String(settings.locked);if(settings.locked)setZoom(settings.lockedZoom/100);},100);return()=>{clearTimeout(restore);cancel();};},[]);
+ const out=zoom>1.001;
+ const show=()=>{cancel();held.current=true;setTarget(String(settings.target));setLocked(settings.locked);setOpen(true);};
+ return <><div className="workspace-zoom"><button type="button" className="workspace-zoom-value" aria-label={out?'Zoom out to 100%':`Zoom in to ${settings.target}%`} title="Tap to zoom; hold for zoom settings" onPointerDown={()=>{held.current=false;cancel();timer.current=setTimeout(show,550);}} onPointerUp={cancel} onPointerCancel={cancel} onPointerLeave={cancel} onContextMenu={e=>{e.preventDefault();show();}} onClick={()=>{if(held.current){held.current=false;return;}if(!settings.locked)setZoom(out?1:settings.target/100);else show();}}>{out?<ZoomOut aria-hidden="true"/>:<ZoomIn aria-hidden="true"/>}</button></div>{open&&<div className="template-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setOpen(false);}}><form className="file-dialog zoom-settings" role="dialog" aria-modal="true" aria-label="Zoom settings" onKeyDown={e=>{if(e.key==='Escape')setOpen(false);}} onSubmit={e=>{e.preventDefault();const amount=Math.max(100,Math.min(300,Number(target)||200));const next={target:amount,locked,lockedZoom:locked?amount:Math.round(zoom*100)};setSettings(next);setZoom(amount/100);setOpen(false);}}><h2>Zoom settings</h2><label>Zoom in percentage <input aria-label="Zoom in percentage" type="number" min="100" max="300" step="1" required value={target} onChange={e=>setTarget(e.target.value)}/></label><label><input type="checkbox" checked={locked} onChange={e=>setLocked(e.target.checked)}/> Lock zoom for this file</label><p>Locked zoom stays fixed for this file on this device until you unlock it.</p><div className="file-dialog-actions"><button className="primary" type="submit">Apply</button><button type="button" onClick={()=>setOpen(false)}>Cancel</button></div></form></div>}</>;
+}

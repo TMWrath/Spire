@@ -5,6 +5,24 @@ import type {Note} from '../shared/model';
 
 const note=(id:string,path:string,content:string,deleted=false):Note=>({id,rev:1,path,content,deleted,history:[],time:'2026-01-01T00:00:00.000Z'});
 
+test('search avoids a folder-by-file cross product',()=>{
+ let reads=0;
+ const notes=Array.from({length:1000},(_,i)=>({...note(String(i),'','needle'),get path(){reads++;return `Folder${i}/Note.md`;}}));
+ const projection=projectFileNavigation(notes,[],false,'needle');
+ assert.equal(projection.filtered.length,1000);
+ assert.ok(reads<50000,`excessive path reads: ${reads}`);
+});
+test('folder adjacency lists include only immediate children and preserve sorted order',()=>{
+ const projection=projectFileNavigation([note('1','A/Deep/One.md',''),note('2','Z/Two.md','')],['Empty','A/Other'],false,'');
+ assert.deepEqual(projection.foldersByParent?.get(''),['A','Empty','Z']);
+ assert.deepEqual(projection.foldersByParent?.get('A'),['A/Deep','A/Other']);
+ assert.deepEqual(projection.foldersByParent?.get('A/Deep'),undefined);
+});
+test('search keeps matching empty folders and their ancestors without unrelated siblings',()=>{
+ const projection=projectFileNavigation([],['Top/Needle/Child','Top/Other','Other'],false,'needle');
+ assert.deepEqual(projection.folders,['Top','Top/Needle','Top/Needle/Child']);
+ assert.deepEqual(projection.foldersByParent?.get('Top'),['Top/Needle']);
+});
 test('empty-query navigation groups a large workspace in one file pass without reading bodies',()=>{
  let bodyReads=0;
  const notes=Array.from({length:10_000},(_,index)=>{

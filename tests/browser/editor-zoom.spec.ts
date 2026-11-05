@@ -84,12 +84,11 @@ test('mobile editing bar presents five aligned actions in one solid bar',async({
  await expect(actions.getByRole('button',{name:'Copy selection',exact:true})).toBeVisible();
  await expect(page.locator('.editor-topbar').getByRole('button',{name:'Start dictation',exact:true})).toHaveCount(0);
  await expect(page.locator('.workspace-status')).toHaveCount(0);
- await expect(footer.locator(':scope > *')).toHaveCount(3);
- expect(await footer.locator(':scope > *').evaluateAll(nodes=>nodes.map(node=>node.textContent?.trim()))).toEqual([
-  expect.stringMatching(/Revision|Unsaved changes|pending sync/),
-  expect.stringMatching(/\d+ words/),
- '100%',
- ]);
+ await expect(footer.locator(':scope > *')).toHaveCount(4);
+ await expect(footer.locator('.network')).toBeVisible();
+ await expect(footer.getByText(/^Revision \d+$/)).toBeVisible();
+ await expect(footer.locator('.editor-word-count')).toHaveText(/\d+ words/);
+ await expect(footer.getByLabel('Current zoom')).toHaveText('100%');
  const geometry=await actions.evaluate(bar=>{
   const cells=Array.from(bar.children).map(el=>{const r=el.getBoundingClientRect();return {top:r.top,width:r.width,height:r.height};});
   const mic=bar.querySelector('.live-dictation-toggle')!.getBoundingClientRect();

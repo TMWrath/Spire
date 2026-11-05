@@ -100,11 +100,11 @@ export const LetterPagination=Extension.create({name:'letterPagination',addProse
   const editorScroller=host.closest('.canvas.editor') as HTMLElement|null,pageDocument=host.closest('.page-document') as HTMLElement|null;
   const syncEditorChrome=()=>pageDocument?.style.setProperty('--editor-scroll-x',`${editorScroller?.scrollLeft??0}px`);
   editorScroller?.addEventListener('scroll',syncEditorChrome,{passive:true});syncEditorChrome();
-  const wheel=(event:WheelEvent)=>{if(!event.ctrlKey&&!event.metaKey)return;event.preventDefault();event.stopPropagation();setZoom(editorZoom*Math.exp(-event.deltaY*.002),event.clientX,event.clientY);};
+  const wheel=(event:WheelEvent)=>{if(!event.ctrlKey&&!event.metaKey)return;event.preventDefault();event.stopPropagation();if(host.dataset.editorZoomLocked==='true')return;setZoom(editorZoom*Math.exp(-event.deltaY*.002),event.clientX,event.clientY);};
   const distance=(touches:TouchList)=>Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
   const midpoint=(touches:TouchList)=>({x:(touches[0].clientX+touches[1].clientX)/2,y:(touches[0].clientY+touches[1].clientY)/2});
   const touchStart=(event:TouchEvent)=>{if(event.touches.length===2){pinchDistance=distance(event.touches);pinchZoom=editorZoom;const point=midpoint(event.touches);pinchAnchor=anchorAt(point.x,point.y);}};
-  const touchMove=(event:TouchEvent)=>{if(event.touches.length!==2||!pinchDistance||!pinchAnchor)return;event.preventDefault();event.stopPropagation();const point=midpoint(event.touches);setZoom(pinchZoom*distance(event.touches)/pinchDistance,point.x,point.y,pinchAnchor);};
+  const touchMove=(event:TouchEvent)=>{if(event.touches.length!==2||!pinchDistance||!pinchAnchor)return;event.preventDefault();event.stopPropagation();if(host.dataset.editorZoomLocked==='true')return;const point=midpoint(event.touches);setZoom(pinchZoom*distance(event.touches)/pinchDistance,point.x,point.y,pinchAnchor);};
   const touchEnd=(event:TouchEvent)=>{if(event.touches.length<2){pinchDistance=0;pinchAnchor=null;}};
   const requestedZoom=(event:Event)=>{const detail=(event as CustomEvent<{zoom:number;clientX?:number;clientY?:number}>).detail,zoom=detail?.zoom;if(!Number.isFinite(zoom))return;const rect=host.getBoundingClientRect(),clientX=Number.isFinite(detail.clientX)?detail.clientX!:rect.left+rect.width/2,clientY=Number.isFinite(detail.clientY)?detail.clientY!:rect.top+Math.min(rect.height/2,innerHeight/2);setZoom(zoom,clientX,clientY);};
   window.addEventListener('spire:set-editor-zoom',requestedZoom);

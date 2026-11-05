@@ -5,6 +5,7 @@ export type FileNavigationProjection={
  allFolders:string[];
  folders:string[];
  filesByFolder:Map<string,Note[]>;
+ foldersByParent:Map<string,string[]>;
 };
 
 const parentFolder=(path:string)=>path.includes('/')?path.slice(0,path.lastIndexOf('/')):'';
@@ -33,7 +34,14 @@ export function projectFileNavigation(notes:Note[],explicitFolders:string[],tras
   }
  }
  const allFolders=[...new Set([...visibleFolders].flatMap(path=>path.split('/').map((_,index,parts)=>parts.slice(0,index+1).join('/'))))].filter(Boolean).sort((a,b)=>a.localeCompare(b));
- const matching=needle?allFolders.filter(folder=>folder.toLocaleLowerCase().includes(needle)||filtered.some(note=>note.path.startsWith(folder+'/'))):allFolders;
- const folders=needle?allFolders.filter(folder=>matching.some(match=>match===folder||match.startsWith(folder+'/'))):allFolders;
- return {filtered,allFolders,folders,filesByFolder};
+ const matches=new Set<string>();
+ const includeAncestors=(folder:string)=>{while(folder&&!matches.has(folder)){matches.add(folder);folder=parentFolder(folder);}};
+ if(needle){
+  for(const folder of filesByFolder.keys())includeAncestors(folder);
+  for(const folder of allFolders)if(folder.toLocaleLowerCase().includes(needle))includeAncestors(folder);
+ }
+ const folders=needle?allFolders.filter(folder=>matches.has(folder)):allFolders;
+ const foldersByParent=new Map<string,string[]>();
+ for(const folder of folders){const parent=parentFolder(folder),children=foldersByParent.get(parent);if(children)children.push(folder);else foldersByParent.set(parent,[folder]);}
+ return {filtered,allFolders,folders,filesByFolder,foldersByParent};
 }
