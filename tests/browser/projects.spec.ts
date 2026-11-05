@@ -38,7 +38,13 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await atlas.getByRole('button',{name:'Expand project Atlas',exact:true}).press('Enter');
  await expect(atlas.locator('.visual-section-items')).toBeVisible();
  const actions=atlas.locator('.visual-section-actions');
- await expect(actions.getByRole('button')).toHaveCount(4);
+ await expect(actions.getByRole('button')).toHaveCount(5);
+ await expect(page.locator('.sidebar-bottom').getByRole('button',{name:'Trash',exact:true})).toHaveCount(0);
+ await atlas.getByRole('button',{name:'Delete project Atlas',exact:true}).click();
+ const deletion=page.getByRole('dialog',{name:'Delete empty folder',exact:true});
+ await expect(deletion).toBeVisible();
+ await deletion.getByRole('button',{name:'Cancel',exact:true}).click();
+ await expect(atlas).toBeVisible();
  await expect(actions.getByRole('button').last()).toHaveAccessibleName('Collapse project Atlas');
  const labelBox=await atlas.locator('.visual-section-title>span').boundingBox();
  const titleBox=await atlas.locator('.visual-section-title').boundingBox();
