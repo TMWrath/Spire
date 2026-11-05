@@ -27,7 +27,8 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await projects.getByRole('button',{name:'Create',exact:true}).click();
  await expect(page.locator('.project-switcher')).toHaveCount(0);
  const atlas=page.getByRole('region',{name:'Project Atlas',exact:true});
- await expect(atlas.getByRole('button',{name:'Select project Atlas',exact:true})).toHaveAttribute('aria-pressed','true');
+ await expect(atlas.getByRole('button',{name:'Select project Atlas',exact:true})).toHaveCount(0);
+ await expect(page.getByText('Your workspace is empty. Create a file to begin.',{exact:true})).toHaveCount(0);
  await expect(atlas).toHaveCSS('border-left-color','rgb(36, 122, 207)');
  await expect(atlas.getByRole('button',{name:'Tasks for Atlas',exact:true})).toHaveText('0%');
  await atlas.getByRole('button',{name:'Collapse project Atlas',exact:true}).click();
