@@ -34,9 +34,28 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await atlas.getByRole('button',{name:'Overview',exact:true}).click();
  const overview=page.getByRole('region',{name:'Overview for Atlas',exact:true});
  await expect(overview).toBeVisible();
- await expect(overview.getByRole('heading',{name:'Overview',exact:true})).toBeVisible();
+ await expect(overview.getByRole('heading',{name:'Atlas',exact:true})).toBeVisible();
+ await overview.getByRole('button',{name:'Project Context',exact:true}).click();
+ await overview.getByRole('textbox',{name:'Project title',exact:true}).fill('Atlas design');
+ await overview.getByRole('textbox',{name:'Project description',exact:true}).fill('Our live project description');
+ await expect(overview.getByRole('heading',{name:'Atlas design',exact:true})).toBeVisible();
+ await overview.locator('.overview-content').fill('Designed without code');
+ await overview.getByLabel('Project background image',{exact:true}).setInputFiles({name:'background.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64')});
+ await expect(overview.locator('.overview-design')).toHaveCSS('background-image',/data:image\/png/);
+ await overview.getByRole('button',{name:'Save overview',exact:true}).click();
+ await expect(overview.getByRole('status')).toHaveText('Saved on server');
+
  await overview.getByRole('button',{name:'Back to project',exact:true}).click();
  await expect(overview).toHaveCount(0);
+ await atlas.getByRole('button',{name:'Overview',exact:true}).click();
+ await expect(overview.getByRole('heading',{name:'Atlas design',exact:true})).toBeVisible();
+ await expect(overview.locator('.overview-content')).toContainText('Designed without code');
+ await expect(overview.locator('.overview-design')).toHaveCSS('background-image',/data:image\/png/);
+ await overview.getByRole('button',{name:'Project Context',exact:true}).click();
+ await overview.getByRole('button',{name:'Remove background image',exact:true}).click();
+ await expect(overview.locator('.overview-design')).toHaveCSS('background-image','none');
+ await overview.getByRole('button',{name:'Back to project',exact:true}).click();
+
  await atlas.getByRole('button',{name:'Collapse project Atlas',exact:true}).click();
  await expect(atlas.getByRole('button',{name:'Expand project Atlas',exact:true})).toHaveAttribute('aria-expanded','false');
  await expect(atlas.locator('.visual-section-items')).toBeHidden();

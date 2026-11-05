@@ -1,3 +1,5 @@
+import sanitizeHtml from 'sanitize-html';
+import {overviewSchema,emptyOverview,overviewHtml,parseOverview,type ProjectOverviewData} from '../shared/project-overview.ts';
 import {taskBoardSchema,emptyTaskBoard,type TaskBoard} from '../shared/project-tasks.ts';
 import {quickActionInputSchema,actionStem} from '../shared/quick-actions.ts';
 import {fullTemplates} from '../shared/full-templates.ts';
@@ -122,11 +124,17 @@ export class Store {
  if(snapshotHash(next)===snapshotHash(this.state))return {ok:true};
  next.seq++;this.commit(next);return {ok:true};
  }
+ projectExists(project:string){safePath.parse('Projects/'+project);if(!project||/[\\/]/.test(project)||project==='.'||project==='..')throw new HttpError(400,'Invalid project');if(!(this.state.folders??[]).includes('Projects/'+project)&&!Object.values(this.state.notes).some(n=>!n.deleted&&n.path.startsWith('Projects/'+project+'/')))throw new HttpError(404,'Project not found');}
+ projectArtifact(project:string,name:string){this.projectExists(project);return this.state.attachments.find(a=>a.path===`Projects/${project}/${name}`);}
+ getProjectOverview(project:string){const artifact=this.projectArtifact(project,'overview.html');return artifact?parseOverview(Buffer.from(artifact.data,'base64').toString('utf8')):emptyOverview(project);}
+ saveProjectOverview(project:string,input:ProjectOverviewData){const parsed=overviewSchema.parse(input),current=this.getProjectOverview(project);if(current.revision!==parsed.revision)throw new HttpError(409,'Overview changed elsewhere. Reopen it before saving.');const saved={...parsed,content:sanitizeHtml(parsed.content,{allowedTags:['p','br','h1','h2','h3','strong','em','u','s','ul','ol','li','blockquote','pre','code','hr','a'],allowedAttributes:{a:['href','target','rel']},allowedSchemes:['https','http','mailto']}),revision:current.revision+1};const next=structuredClone(this.state),p=`Projects/${project}/overview.html`;next.attachments=next.attachments.filter(a=>a.path!==p);next.attachments.push({path:p,data:Buffer.from(overviewHtml(saved)).toString('base64')});next.seq++;this.commit(next);return saved;}
+ projectTaskBoards(){const boards={...this.state.projectTasks};for(const a of this.state.attachments){const m=a.path.match(/^Projects\/([^/]+)\/tasks\.json$/);if(m)boards[m[1]]=taskBoardSchema.parse(JSON.parse(Buffer.from(a.data,'base64').toString('utf8')));}return boards;}
+ migrateProjectFiles(){const next=structuredClone(this.state);let changed=false;for(const [project,board] of Object.entries(next.projectTasks??{})){const p=`Projects/${project}/tasks.json`;if(!(next.folders??[]).includes('Projects/'+project)||next.attachments.some(a=>a.path===p))continue;next.attachments.push({path:p,data:Buffer.from(JSON.stringify(board,null,2)+'\n').toString('base64')});changed=true;}if(changed){next.seq++;this.commit(next);}}
  saveProjectTasks(project:string,board:TaskBoard){
- const parsed=taskBoardSchema.parse(board);const current=this.state.projectTasks?.[project]??emptyTaskBoard();
+ const parsed=taskBoardSchema.parse(board);const current=this.projectTaskBoards()[project]??emptyTaskBoard();
  if(current.revision!==parsed.revision)throw new HttpError(409,'Tasks changed elsewhere. Reopen Tasks before saving again.');
  if(!(this.state.folders??[]).includes('Projects/'+project)&&!Object.values(this.state.notes).some(n=>!n.deleted&&n.path.startsWith('Projects/'+project+'/')))throw new HttpError(404,'Project not found');
- const next=structuredClone(this.state);const saved={...parsed,revision:current.revision+1};next.projectTasks={...next.projectTasks,[project]:saved};next.seq++;this.commit(next);return saved;
+ const next=structuredClone(this.state);const saved={...parsed,revision:current.revision+1};next.projectTasks={...next.projectTasks,[project]:saved};const p=`Projects/${project}/tasks.json`;next.attachments=next.attachments.filter(a=>a.path!==p);next.attachments.push({path:p,data:Buffer.from(JSON.stringify(saved,null,2)+'\n').toString('base64')});next.seq++;this.commit(next);return saved;
  }
  saveVisualGroups(directory:string,groups:VisualGroup[]){const parsed=visualGroupsSchema.parse(groups),next=structuredClone(this.state);next.visualGroups={...(next.visualGroups??{}),[directory]:parsed};next.seq++;this.commit(next);return parsed;}
  quickTemplate(id:string|null){if(!id)return null;const template=id.startsWith('saved-')?this.state.templates?.find(t=>t.id===id.slice(6)):fullTemplates.find(t=>t.id===id);if(!template)throw new HttpError(409,'The configured template is unavailable. Edit this action in Settings.');return template;}
@@ -223,7 +231,8 @@ export class Store {
    const next=structuredClone(this.state);next.folders=folders.filter(f=>f.toLowerCase()!==sourceLower);next.seq++;
    this.commit(next);const old=this.vault(source);if(this.contentDirectory)this.removeLocalEmptyFolder(source);else if(fs.existsSync(old))fs.rmSync(old,{recursive:true,force:true});return {moved:0,destination:null};
   }
-  if(this.state.attachments.some(a=>inside(a.path)))throw new HttpError(409,'Move attachments out of this folder before deleting it');
+  const managed=(p:string)=>/^Projects\/[^/]+\/(overview\.html|tasks\.json)$/.test(p);
+  if(this.state.attachments.some(a=>inside(a.path)&&!managed(a.path)))throw new HttpError(409,'Move attachments out of this folder before deleting it');
   const affected=Object.values(this.state.notes).filter(n=>!n.deleted&&inside(n.path));
   const next=structuredClone(this.state);let destination:string|null=null;
   if(action.mode==='trash'){
@@ -246,7 +255,10 @@ export class Store {
    for(const target of moves.values()){const parts=target.split('/').slice(0,-1);for(let i=1;i<=parts.length;i++)required.add(parts.slice(0,i).join('/'));}
    next.folders=[...new Set([...folders.filter(f=>!inside(f)&&f.toLowerCase()!==sourceLower),...required])];
   }
-  if(action.mode==='trash')next.folders=folders.filter(f=>!inside(f)&&f.toLowerCase()!==sourceLower);
+  const generated=next.attachments.filter(a=>inside(a.path)&&managed(a.path));
+  if(generated.length){const recovery='Recovered Projects/'+source.split('/').at(-1)+'-'+randomUUID();next.attachments=next.attachments.map(a=>generated.includes(a)?{...a,path:recovery+'/'+a.path.slice(source.length+1)}:a);next.folders=[...(next.folders??[]),'Recovered Projects',recovery];}
+  if(/^Projects\/[^/]+$/.test(source)&&next.projectTasks)delete next.projectTasks[source.slice(9)];
+  if(action.mode==='trash')next.folders=(next.folders??folders).filter(f=>!inside(f)&&f.toLowerCase()!==sourceLower);
   this.commit(next);const old=this.vault(source);if(this.contentDirectory)this.removeLocalEmptyFolder(source);else if(fs.existsSync(old))fs.rmSync(old,{recursive:true,force:true});
   return {moved:affected.length,destination};
  }

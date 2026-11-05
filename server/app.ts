@@ -28,7 +28,7 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
  app.disable('x-powered-by');app.use(helmet({contentSecurityPolicy:{directives:{defaultSrc:["'self'"],scriptSrc:["'self'","'wasm-unsafe-eval'"],styleSrc:["'self'","'unsafe-inline'"],imgSrc:["'self'",'data:','blob:'],mediaSrc:["'self'",'blob:'],objectSrc:["'none'"],frameSrc:["'none'"],upgradeInsecureRequests:url.protocol==='https:'?[]:null}},strictTransportSecurity:url.protocol==='https:'?undefined:false}));
  app.use((req,res,next)=>{if(req.headers.host!==url.host)return res.status(403).json({error:'Host rejected'});next();});
  app.use('/api',(req,res,next)=>{res.set('Cache-Control','no-store');if(!['GET','HEAD'].includes(req.method)){const started=Date.now();res.on('finish',()=>console.info(JSON.stringify({event:'api_mutation',method:req.method,path:req.path,status:res.statusCode,durationMs:Date.now()-started})));}if(!['GET','HEAD'].includes(req.method)&&req.headers.origin!==origin)return res.status(403).json({error:'Origin rejected'});next();});
- app.use(cookieParser());app.use(express.json({limit:'2mb'}));
+ app.use(cookieParser());app.use(express.json({limit:'10mb'}));
  app.get('/api/health',(_req,res)=>res.json({ok:!store.poisoned}));
  app.get('/api/bootstrap',(_req,res)=>res.json({setup:!auth.owner}));
  const credentials=z.object({username:z.string().trim().min(1).max(80),password:z.string().min(12).max(256)});
@@ -66,7 +66,9 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
  app.get('/api/workspace/files/:id/history',(req,res)=>{const note=store.state.notes[String(req.params.id)];if(!note)throw new HttpError(404,'File unavailable');res.json(note.history);});
  app.get('/api/snapshot',(_req,res)=>res.json(workspaceSnapshot(store)));
  app.put('/api/visual-groups',(req,res)=>{const body=z.object({directory:z.string().max(240),groups:visualGroupsSchema}).parse(req.body);res.json(store.saveVisualGroups(body.directory,body.groups));});
- app.get('/api/project-tasks',(_req,res)=>res.json(store.state.projectTasks??{}));
+ app.get('/api/project-tasks',(_req,res)=>{store.migrateProjectFiles();res.json(store.projectTaskBoards());});
+ app.get('/api/project-overview/:project',(req,res)=>res.json(store.getProjectOverview(String(req.params.project))));
+ app.put('/api/project-overview/:project',(req,res)=>res.json(store.saveProjectOverview(String(req.params.project),req.body)));
  app.put('/api/project-tasks/:project',(req,res)=>{const project=z.string().min(1).max(100).refine(n=>!/[\\/]/.test(n)&&n!=='.'&&n!=='..').parse(req.params.project);res.json(store.saveProjectTasks(project,taskBoardSchema.parse(req.body)));});
  app.get('/api/projects',(_req,res)=>{const prefix='Projects/';const names=new Set<string>();for(const folder of store.state.folders??[])if(folder.startsWith(prefix)){const name=folder.slice(prefix.length).split('/')[0];if(name)names.add(name);}for(const note of Object.values(store.state.notes))if(!note.deleted&&note.path.startsWith(prefix)){const name=note.path.slice(prefix.length).split('/')[0];if(name)names.add(name);}res.json([...names].sort((a,b)=>a.localeCompare(b)).map(name=>({name,path:prefix+name})));});
  app.post('/api/projects',(req,res)=>{const name=z.string().trim().min(1).max(100).refine(value=>!/[\\/]/.test(value)&&value!=='.'&&value!=='..','Use a project name without slashes').parse(req.body?.name);const projectPath='Projects/'+name;if((store.state.folders??[]).some(folder=>folder.toLowerCase()===projectPath.toLowerCase())||Object.values(store.state.notes).some(note=>!note.deleted&&note.path.toLowerCase().startsWith(projectPath.toLowerCase()+'/')))throw new HttpError(409,'A project with this name already exists');store.createFolder(projectPath);res.status(201).json({name,path:projectPath});});
