@@ -15,3 +15,23 @@ test('dedicated project tasks persist, reject stale writes, rename, and survive 
  createBackup(root,backup);restoreBackup(backup,restored);assert.equal(taskProgress(new Store(restored).state.projectTasks!.Renamed),50);
  for(const p of [root,restored,backup])fs.rmSync(p,{force:true,recursive:true});
 });
+
+test('task deadlines persist through save, restart, rename, and backup',()=>{
+ const root='.test-data/task-deadlines',restored=root+'-restored',backup=root+'-backup.json';
+ for(const p of [root,restored,backup])fs.rmSync(p,{force:true,recursive:true});
+ try{
+ const store=new Store(root);store.createFolder('Projects/Atlas');
+ const id=randomUUID();const board=store.saveProjectTasks('Atlas',{...emptyTaskBoard(),tasks:[{id,title:'Ship',done:false,dueDate:'2026-12-15'}]} );
+ assert.equal(board.tasks[0].dueDate,'2026-12-15');
+ assert.equal(new Store(root).state.projectTasks!.Atlas.tasks[0].dueDate,'2026-12-15');
+ store.moveFolder('Projects/Atlas','Projects','test','Renamed');
+ createBackup(root,backup);restoreBackup(backup,restored);
+ assert.equal(new Store(restored).state.projectTasks!.Renamed.tasks[0].dueDate,'2026-12-15');
+ const next=store.state.projectTasks!.Renamed;store.saveProjectTasks('Renamed',{...next,tasks:next.tasks.map(t=>({...t,dueDate:undefined}))});
+ assert.equal(new Store(root).state.projectTasks!.Renamed.tasks[0].dueDate,undefined);
+ }finally{for(const p of [root,restored,backup])fs.rmSync(p,{force:true,recursive:true});}
+});
+test('task deadlines reject impossible dates and timestamp strings',async()=>{
+ const {taskBoardSchema}=await import('../shared/project-tasks.ts');
+ for(const dueDate of ['2026-02-30','2026-13-01','2026-12-15T12:00:00Z','tomorrow'])assert.equal(taskBoardSchema.safeParse({...emptyTaskBoard(),tasks:[{id:randomUUID(),title:'Ship',done:false,dueDate}]}).success,false);
+});

@@ -37,6 +37,7 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
   await expect(actions.getByRole('button',{name,exact:true})).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
   await expect(actions.getByRole('button',{name,exact:true})).toHaveCSS('color','rgb(36, 122, 207)');
  }
+ await expect(atlas.getByRole('button',{name:'Tasks',exact:true})).toBeVisible();
  await atlas.getByRole('button',{name:'Add items to Atlas',exact:true}).click();
  const add=page.getByRole('dialog',{name:'Add items to Atlas'});
  await expect(add.getByRole('button',{name:'Add file',exact:true})).toBeVisible();
@@ -46,11 +47,16 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  const tasks=page.getByRole('region',{name:'Tasks for Atlas',exact:true});
  await expect(tasks).toBeVisible();
  await tasks.getByLabel('New task',{exact:true}).fill('Build it');
+ await tasks.getByLabel('New task deadline',{exact:true}).fill('2026-12-01');
  await tasks.getByRole('button',{name:'Add task',exact:true}).click();
  await expect(tasks.getByLabel('Complete Build it',{exact:true})).toBeVisible();
+ await expect(tasks.getByLabel('Deadline for Build it',{exact:true})).toHaveValue('2026-12-01');
  await tasks.getByLabel('New task',{exact:true}).fill('Test it');
  await tasks.getByRole('button',{name:'Add task',exact:true}).click();
  await expect(tasks.getByLabel('Complete Test it',{exact:true})).toBeVisible();
+ await tasks.getByLabel('Deadline for Test it',{exact:true}).fill('2026-12-15');
+ await expect(tasks.getByRole('button',{name:'Group tasks',exact:true})).toBeEnabled();
+ await expect(tasks.getByLabel('Deadline for Test it',{exact:true})).toHaveValue('2026-12-15');
  await page.route('**/api/project-tasks/Atlas',async route=>{await new Promise(resolve=>setTimeout(resolve,900));await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Task save unavailable'})});});
  await tasks.getByLabel('Complete Build it',{exact:true}).click();
  await expect(tasks.getByLabel('Complete Build it',{exact:true})).toBeChecked({timeout:600});
@@ -82,7 +88,7 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await expect(milestone.getByLabel('Complete Test it',{exact:true})).toBeVisible();
  await tasks.getByRole('button',{name:'Back to project',exact:true}).click();
  await expect(atlas.getByRole('button',{name:'Tasks for Atlas',exact:true})).toHaveText('50%');
- await expect(atlas.getByRole('button',{name:'Tasks',exact:true})).toHaveCount(0);
+ await expect(atlas.getByRole('button',{name:'Tasks',exact:true})).toBeVisible();
  await atlas.getByRole('button',{name:'Edit project Atlas',exact:true}).click();
  await page.getByLabel('Edit project name').fill('Atlas Revised');
  await page.getByLabel('Edit project color').fill('#cf8799');
@@ -108,4 +114,13 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await revised.getByRole('button',{name:'Tasks for Atlas Revised',exact:true}).click();
  await expect(page.getByRole('region',{name:'Group Milestone',exact:true})).toBeVisible();
  await expect(page.getByLabel('Complete Build it',{exact:true})).toBeChecked();
+ await expect(page.getByLabel('Deadline for Build it',{exact:true})).toHaveValue('2026-12-01');
+ const bounds=await page.locator('.project-tasks-page').evaluate(el=>({scroll:el.scrollWidth,width:el.clientWidth}));
+ expect(bounds.scroll).toBeLessThanOrEqual(bounds.width+1);
+ await expect(page.getByLabel('Deadline for Test it',{exact:true})).toHaveValue('2026-12-15');
+ await page.getByLabel('Deadline for Test it',{exact:true}).fill('');
+ await expect(page.getByRole('button',{name:'Group tasks',exact:true})).toBeEnabled();
+ await page.getByRole('button',{name:'Back to project',exact:true}).click();
+ await revised.getByRole('button',{name:'Tasks',exact:true}).click();
+ await expect(page.getByLabel('Deadline for Test it',{exact:true})).toHaveValue('');
 });
