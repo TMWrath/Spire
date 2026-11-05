@@ -59,6 +59,29 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
 
  await overview.getByRole('button',{name:'Back to project',exact:true}).click();
  await expect(overview).toHaveCount(0);
+ // Overview participates in normal workspace navigation, never an overlay above it.
+ for(const width of [390,1280]){
+  await page.setViewportSize({width,height:900});
+  for(const view of ['Overview','Tasks'])for(const destination of ['Home','Settings','Calendar']){
+   const projectPage=page.getByRole('region',{name:`${view} for Atlas`,exact:true});
+   if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+   await atlas.getByRole('button',{name:view,exact:true}).click();
+   await expect(projectPage).toBeVisible();
+   await expect(page.locator('.main > .empty')).toHaveCount(0);
+   await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+   await expect(atlas.getByRole('button',{name:view,exact:true})).toBeVisible();
+   await atlas.getByRole('button',{name:view,exact:true}).click();
+   if(view==='Overview')await overview.locator('.overview-content').fill('Designed without code');
+   await page.getByRole('button',{name:destination,exact:true}).click();
+   await expect(projectPage).toHaveCount(0);
+   await expect(page.getByRole('heading',{name:destination==='Home'?'Your writing lives here.':destination==='Settings'?'Reliquary settings':'Calendar',exact:true})).toBeVisible();
+   if(destination!=='Home')await page.getByRole('button',{name:'Home',exact:true}).click();
+  }
+ }
+ if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+ await atlas.getByRole('button',{name:'Overview',exact:true}).click();
+ await expect(overview.locator('.overview-content')).toContainText('Designed without code');
+ await overview.getByRole('button',{name:'Back to project',exact:true}).click();
  await atlas.getByRole('button',{name:'Overview',exact:true}).click();
  await expect(overview.getByRole('heading',{name:'Atlas design',exact:true})).toBeVisible();
  await expect(overview.locator('.overview-content')).toContainText('Designed without code');
