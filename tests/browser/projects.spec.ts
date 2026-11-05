@@ -31,6 +31,12 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await expect(page.getByText('Your workspace is empty. Create a file to begin.',{exact:true})).toHaveCount(0);
  await expect(atlas).toHaveCSS('border-left-color','rgb(36, 122, 207)');
  await expect(atlas.getByRole('button',{name:'Tasks for Atlas',exact:true})).toHaveText('0%');
+ await atlas.getByRole('button',{name:'Overview',exact:true}).click();
+ const overview=page.getByRole('region',{name:'Overview for Atlas',exact:true});
+ await expect(overview).toBeVisible();
+ await expect(overview.getByRole('heading',{name:'Overview',exact:true})).toBeVisible();
+ await overview.getByRole('button',{name:'Back to project',exact:true}).click();
+ await expect(overview).toHaveCount(0);
  await atlas.getByRole('button',{name:'Collapse project Atlas',exact:true}).click();
  await expect(atlas.getByRole('button',{name:'Expand project Atlas',exact:true})).toHaveAttribute('aria-expanded','false');
  await expect(atlas.locator('.visual-section-items')).toBeHidden();
