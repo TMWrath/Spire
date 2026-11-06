@@ -25,6 +25,21 @@ async function openLetterDocument(page:any){
  await expect(page.locator('.document-editor.letter-paginated')).toBeVisible();
 }
 
+test('shared file toolbar supports Undo and Redo in source and rich editing',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await openLetterDocument(page);
+ const toolbar=page.getByRole('toolbar',{name:'File actions',exact:true});
+ await expect(toolbar.getByRole('button',{name:'Star file',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Source',exact:true}).click();
+ const source=page.getByLabel('Markdown source',{exact:true});await source.fill('Original');
+ await toolbar.getByRole('button',{name:'Undo',exact:true}).click();await expect(source).not.toHaveValue('Original');
+ await toolbar.getByRole('button',{name:'Redo',exact:true}).click();await expect(source).toHaveValue('Original');
+ await page.getByRole('button',{name:'Editor',exact:true}).click();
+ const body=page.locator('.document-editor [contenteditable=true]').first();await body.click();await page.keyboard.press('Control+End');await page.keyboard.type(' changed');
+ await expect(body).toContainText('Original changed');await toolbar.getByRole('button',{name:'Undo',exact:true}).click();await expect(body).not.toContainText('changed');
+ await toolbar.getByRole('button',{name:'Redo',exact:true}).click();await expect(body).toContainText('Original changed');
+ const bounds=await toolbar.boundingBox();expect(bounds!.x+bounds!.width).toBeLessThanOrEqual(390);
+});
+
 test('browser viewport is locked while ctrl-wheel zooms only the Letter canvas',async({page})=>{
  await page.setViewportSize({width:1280,height:900});
  await openLetterDocument(page);

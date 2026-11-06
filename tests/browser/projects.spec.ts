@@ -36,7 +36,7 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await expect(overview).toBeVisible();
  await expect(overview.getByRole('heading',{name:'Atlas',exact:true})).toBeVisible();
  await expect(overview.getByRole('toolbar',{name:'Overview formatting'})).toHaveCount(0);
- for(const name of ['Bold','Italic','Heading','Bullets','Numbered list','Undo','Redo'])await expect(overview.getByRole('button',{name,exact:true})).toHaveCount(0);
+ for(const name of ['Bold','Italic','Heading','Bullets','Numbered list'])await expect(overview.getByRole('button',{name,exact:true})).toHaveCount(0);
  await expect(overview.getByText('Saved on server',{exact:true})).toHaveCount(0);
  await page.getByRole('button',{name:'Toggle context',exact:true}).click();
  const projectContext=page.getByRole('complementary',{name:'Project Context',exact:true});
@@ -54,14 +54,22 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await page.getByRole('complementary',{name:'Project Context',exact:true}).getByRole('textbox',{name:'Project title',exact:true}).fill('Atlas design');
  await page.getByRole('complementary',{name:'Project Context',exact:true}).getByRole('textbox',{name:'Project description',exact:true}).fill('Our live project description');
  await expect(overview.getByRole('heading',{name:'Atlas design',exact:true})).toBeVisible();
+ await expect(overview.getByRole('textbox',{name:'File path'})).toHaveValue('Projects/Atlas/overview.html');
+ await expect(overview.getByRole('button',{name:'Star file'})).toHaveCount(0);
  await overview.locator('.overview-content').fill('Designed without code');
+ await overview.getByRole('button',{name:'Undo',exact:true}).click();
+ await expect(overview.locator('.overview-content')).not.toContainText('Designed without code');
+ await overview.getByRole('button',{name:'Redo',exact:true}).click();
+ await expect(overview.locator('.overview-content')).toContainText('Designed without code');
+ if(!await projectContext.isVisible())await page.getByRole('button',{name:'Toggle context',exact:true}).click();
  await page.getByRole('complementary',{name:'Project Context',exact:true}).getByLabel('Project background image',{exact:true}).setInputFiles({name:'background.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64')});
  await expect(overview.locator('.overview-design')).toHaveCSS('background-image',/data:image\/png/);
- await overview.getByRole('button',{name:'Save overview',exact:true}).click();
+ await overview.getByRole('button',{name:'Save file',exact:true}).click();
  await expect(overview.getByRole('status')).toHaveCount(0);
  await expect(overview.getByText('Saved on server',{exact:true})).toHaveCount(0);
 
- await overview.getByRole('button',{name:'Back to project',exact:true}).click();
+ await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+ await page.getByRole('button',{name:'Home',exact:true}).click();
  await expect(overview).toHaveCount(0);
  // Overview participates in normal workspace navigation, never an overlay above it.
  for(const width of [390,1280]){
@@ -85,7 +93,7 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
  await atlas.getByRole('button',{name:'Overview',exact:true}).click();
  await expect(overview.locator('.overview-content')).toContainText('Designed without code');
- await overview.getByRole('button',{name:'Back to project',exact:true}).click();
+ await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
  await atlas.getByRole('button',{name:'Overview',exact:true}).click();
  await expect(overview.getByRole('heading',{name:'Atlas design',exact:true})).toBeVisible();
  await expect(overview.locator('.overview-content')).toContainText('Designed without code');
@@ -93,7 +101,7 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await page.getByRole('button',{name:'Toggle context',exact:true}).click();
  await page.getByRole('complementary',{name:'Project Context',exact:true}).getByRole('button',{name:'Remove background image',exact:true}).click();
  await expect(overview.locator('.overview-design')).toHaveCSS('background-image','none');
- await overview.getByRole('button',{name:'Back to project',exact:true}).click();
+ await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
 
  await atlas.getByRole('button',{name:'Collapse project Atlas',exact:true}).click();
  await expect(atlas.getByRole('button',{name:'Expand project Atlas',exact:true})).toHaveAttribute('aria-expanded','false');
