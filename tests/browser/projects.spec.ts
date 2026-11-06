@@ -64,6 +64,11 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
   const canvas=overview.locator('.overview-workspace'),overlay=overview.locator('.overview-controls-overlay');
   const originalCanvas=await canvas.boundingBox(),originalTitle=await title.boundingBox(),fileBar=await overview.locator('.note-toolbar').boundingBox();
   await title.click();await expect(overlay).toBeVisible();
+  const controls=overlay.locator('.overview-placement-controls'),labelBox=await controls.locator(':scope > span').boundingBox();
+  const buttons=await controls.getByRole('button').all();const controlBoxes=await Promise.all(buttons.map(button=>button.boundingBox()));
+  expect(controlBoxes.length).toBe(9);
+  for(const box of controlBoxes){expect(Math.abs(box!.y-controlBoxes[0]!.y)).toBeLessThan(1);expect(box!.y).toBeGreaterThanOrEqual(labelBox!.y+labelBox!.height);}
+  expect(await controls.locator('.placement-actions').evaluate(node=>node.scrollWidth<=node.clientWidth)).toBe(true);
   expect(await canvas.boundingBox()).toEqual(originalCanvas);expect(await title.boundingBox()).toEqual(originalTitle);expect(await overview.locator('.note-toolbar').boundingBox()).toEqual(fileBar);
   const paneBox=await overview.boundingBox(),barBox=await overlay.boundingBox();
   expect(Math.abs(barBox!.y+barBox!.height-(paneBox!.y+paneBox!.height))).toBeLessThan(1);
