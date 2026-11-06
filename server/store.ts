@@ -143,6 +143,7 @@ export class Store {
  }
  saveProjectTasks(project:string,board:TaskBoard){
  const parsed=taskBoardSchema.parse(board);const current=this.projectTaskBoards()[project]??emptyTaskBoard();
+ for(const task of parsed.tasks)if(task.fileId&&task.fileId!==current.tasks.find(t=>t.id===task.id)?.fileId){const note=this.state.notes[task.fileId];if(!note||note.deleted)throw new HttpError(400,'The selected file is unavailable or in Trash.');}
  if(current.revision!==parsed.revision)throw new HttpError(409,'Tasks changed elsewhere. Reopen Tasks before saving again.');
  if(!(this.state.folders??[]).includes('Projects/'+project)&&!Object.values(this.state.notes).some(n=>!n.deleted&&n.path.startsWith('Projects/'+project+'/')))throw new HttpError(404,'Project not found');
  const next=structuredClone(this.state);const saved={...parsed,revision:current.revision+1};next.projectTasks={...next.projectTasks,[project]:saved};const p=`Projects/${project}/tasks.json`;next.attachments=next.attachments.filter(a=>a.path!==p);next.attachments.push({path:p,data:Buffer.from(JSON.stringify(saved,null,2)+'\n').toString('base64')});next.seq++;this.commit(next);return saved;
