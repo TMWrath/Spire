@@ -68,6 +68,11 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await expect(title).toHaveCSS('font-size','34px');
  const movedTitle=await title.boundingBox();expect(movedTitle!.x).toBeGreaterThan(initialTitle!.x);expect(movedTitle!.y).toBeGreaterThan(initialTitle!.y);
  await expect(description).toHaveCSS('font-size','18px');
+ const layer=await overview.locator('.overview-text-layer').boundingBox();
+ await titleControls.getByRole('button',{name:'Center title horizontally',exact:true}).click();
+ let centered=await title.boundingBox();expect(Math.abs(centered!.x+centered!.width/2-(layer!.x+layer!.width/2))).toBeLessThan(1);expect(Math.abs(centered!.y-movedTitle!.y)).toBeLessThan(1);
+ await titleControls.getByRole('button',{name:'Center title vertically',exact:true}).click();
+ centered=await title.boundingBox();expect(Math.abs(centered!.y+centered!.height/2-(layer!.y+layer!.height/2))).toBeLessThan(1);
  await description.click();
  const descriptionControls=page.getByRole('toolbar',{name:'description position and size',exact:true});
  await expect(titleControls).toHaveCount(0);
@@ -77,6 +82,12 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await overview.getByRole('button',{name:'Undo',exact:true}).click();await expect(description).toHaveCSS('font-size','18px');
  await overview.getByRole('button',{name:'Redo',exact:true}).click();await expect(description).toHaveCSS('font-size','20px');
  await expect(title).toHaveCSS('font-size','34px');
+ await description.click();
+ await descriptionControls.getByRole('button',{name:'Center description horizontally',exact:true}).click();
+ await descriptionControls.getByRole('button',{name:'Center description vertically',exact:true}).click();
+ const centeredDescription=await description.boundingBox();
+ expect(Math.abs(centeredDescription!.x+centeredDescription!.width/2-(layer!.x+layer!.width/2))).toBeLessThan(1);
+ expect(Math.abs(centeredDescription!.y+centeredDescription!.height/2-(layer!.y+layer!.height/2))).toBeLessThan(1);
  await overview.locator('.overview-content').click();await expect(descriptionControls).toHaveCount(0);
  await page.setViewportSize({width:1280,height:900});
  await expect(overview.getByRole('textbox',{name:'File path'})).toHaveValue('Projects/Atlas/overview.html');
