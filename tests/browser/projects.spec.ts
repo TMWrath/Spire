@@ -58,6 +58,23 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await page.setViewportSize({width:390,height:900});
  const title=overview.getByRole('heading',{name:'Atlas design',exact:true});
  const description=overview.locator('.overview-description');
+ // Selection controls float over the bottom of this pane, without changing canvas geometry.
+ for(const width of [390,1280]){
+  await page.setViewportSize({width,height:450});
+  const canvas=overview.locator('.overview-workspace'),overlay=overview.locator('.overview-controls-overlay');
+  const originalCanvas=await canvas.boundingBox(),originalTitle=await title.boundingBox(),fileBar=await overview.locator('.note-toolbar').boundingBox();
+  await title.click();await expect(overlay).toBeVisible();
+  expect(await canvas.boundingBox()).toEqual(originalCanvas);expect(await title.boundingBox()).toEqual(originalTitle);expect(await overview.locator('.note-toolbar').boundingBox()).toEqual(fileBar);
+  const paneBox=await overview.boundingBox(),barBox=await overlay.boundingBox();
+  expect(Math.abs(barBox!.y+barBox!.height-(paneBox!.y+paneBox!.height))).toBeLessThan(1);
+  await canvas.evaluate(node=>{node.scrollTop=20;});
+  expect(await canvas.evaluate(node=>node.scrollTop)).toBeGreaterThan(0);
+  expect(await overlay.boundingBox()).toEqual(barBox);
+  await page.getByRole('button',{name:'Close text controls',exact:true}).click();await expect(overlay).toHaveCount(0);
+  expect(await canvas.boundingBox()).toEqual(originalCanvas);
+  await canvas.evaluate(node=>{node.scrollTop=0;});
+ }
+ await page.setViewportSize({width:390,height:900});
  await title.click();
  const titleControls=page.getByRole('toolbar',{name:'title position and size',exact:true});
  await expect(titleControls).toBeVisible();
