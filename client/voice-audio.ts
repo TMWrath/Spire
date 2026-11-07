@@ -1,6 +1,7 @@
 import type {DetectedVoiceLanguage,VoiceLanguage} from './voice-language';
 export const VOICE_RATE=16000,MAX_VOICE_SECONDS=15*60;
 export function joinSamples(chunks:Float32Array[]):Float32Array {const result=new Float32Array(chunks.reduce((n,c)=>n+c.length,0));let offset=0;for(const c of chunks){result.set(c,offset);offset+=c.length;}return result;}
+export function sanitizeVoiceSamples(samples:Float32Array):Float32Array {const result=new Float32Array(samples.length);for(let i=0;i<samples.length;i++){const sample=samples[i];result[i]=Number.isFinite(sample)?Math.max(-1,Math.min(1,sample)):0;}return result;}
 export function resampleMono(input:Float32Array,rate:number):Float32Array {
  if(rate===VOICE_RATE)return input.slice();
  const ratio=rate/VOICE_RATE,result=new Float32Array(Math.floor(input.length/ratio));
@@ -23,8 +24,8 @@ export class LocalTranscriber {
  private reject:((error:Error)=>void)|null=null;
  async transcribe(samples:Float32Array,onStatus:(status:string)=>void,options:VoiceTranscriptionOptions={language:'auto',keywords:[]}):Promise<VoiceResult>{
   if(this.reject)throw new Error('Transcription is already running.');
-  const worker=new Worker(new URL('./voice.worker.ts',import.meta.url),{type:'module'});this.worker=worker;
-  return new Promise((resolve,reject)=>{this.reject=reject;worker.onmessage=event=>{if(event.data.status)onStatus(event.data.status);if(event.data.error){this.reject=null;reject(new Error(event.data.error));}else if(event.data.result){this.reject=null;resolve(event.data.result);}};worker.onerror=()=>{this.reject=null;worker.terminate();if(this.worker===worker)this.worker=null;reject(new Error('Whistle could not start. Check the bundled speech assets and available memory.'));};worker.postMessage({samples,language:options.language==='auto'?undefined:options.language,keywords:options.keywords});});
+  const worker=new Worker(new URL('./voice.worker.ts',import.meta.url),{type:'module'});this.worker=worker;const safeSamples=sanitizeVoiceSamples(samples);
+  return new Promise((resolve,reject)=>{this.reject=reject;worker.onmessage=event=>{if(event.data.status)onStatus(event.data.status);if(event.data.error){this.reject=null;reject(new Error(event.data.error));}else if(event.data.result){this.reject=null;resolve(event.data.result);}};worker.onerror=()=>{this.reject=null;worker.terminate();if(this.worker===worker)this.worker=null;reject(new Error('Whistle could not start. Check the bundled speech assets and available memory.'));};worker.postMessage({samples:safeSamples,language:options.language==='auto'?undefined:options.language,keywords:options.keywords},[safeSamples.buffer]);});
  }
  cancel(){this.worker?.terminate();this.worker=null;this.reject?.(new Error('Transcription cancelled. Your audio is retained for retry.'));this.reject=null;}
 }
