@@ -61,6 +61,8 @@ async function composerLayout(page:Page,username:string){
  await expect(dialog.getByLabel('Transcript mode')).toHaveValue('verbatim');
  await expect(dialog.getByLabel('Vocabulary hints')).toBeVisible();
  await expect(dialog.getByLabel('Transcript file path')).toBeVisible();
+ await expect(dialog.getByRole('button',{name:'Details & Limits'})).toHaveAttribute('aria-expanded','false');
+ await dialog.getByRole('button',{name:'Details & Limits'}).click();
  await expect(dialog.getByText('Max 15 min')).toBeVisible();
  await expect(dialog.getByText('Max 10 MB')).toBeVisible();
  await expect(dialog.getByText('Local Only')).toBeVisible();
@@ -69,5 +71,6 @@ async function composerLayout(page:Page,username:string){
 
 test('Audio Note composer follows the canonical desktop layout',async({page})=>composerLayout(page,'audio-note-layout-desktop'));
 test('Audio Note composer preserves the canonical structure on mobile',async({browser})=>{const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await composerLayout(page,'audio-note-layout-mobile');await context.close();});
+test('Quick audio opens a dated Audio Note in its own folder',async({page})=>{await signIn(page,'quick-audio');await page.getByRole('button',{name:'Record quick audio'}).click();const dialog=page.getByRole('dialog',{name:'New Audio Note'});await expect(dialog).toBeVisible();await expect(dialog.getByLabel('Transcript file path')).toHaveValue(/^Quick Audio\/\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2}\.md$/);});
 test('Audio Note is offered from Files and converts without replacing the original',async({page})=>journey(page,'audio-note-desktop'));
 test('Audio Note edit and conversion works on mobile',async({browser})=>{const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await journey(page,'audio-note-mobile');await context.close();});
