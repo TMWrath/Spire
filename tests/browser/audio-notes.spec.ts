@@ -71,6 +71,28 @@ async function composerLayout(page:Page,username:string){
 
 test('Audio Note composer follows the canonical desktop layout',async({page})=>composerLayout(page,'audio-note-layout-desktop'));
 test('Audio Note composer preserves the canonical structure on mobile',async({browser})=>{const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await composerLayout(page,'audio-note-layout-mobile');await context.close();});
-test('Quick audio opens a dated Audio Note in its own folder',async({page})=>{await signIn(page,'quick-audio');await page.getByRole('button',{name:'Record quick audio'}).click();const dialog=page.getByRole('dialog',{name:'New Audio Note'});await expect(dialog).toBeVisible();await expect(dialog.getByLabel('Transcript file path')).toHaveValue(/^Quick Audio\/\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2}\.md$/);});
+test('Quick audio records in place and creates the dated Audio Note on the second press',async({page})=>{
+ await page.addInitScript(()=>{
+  const track={enabled:true,stop(){}};
+  Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{getUserMedia:async()=>({getTracks:()=>[track]})}});
+  class FakeAudioContext{
+   sampleRate=16000;destination={};
+   async resume(){} async suspend(){} async close(){}
+   createMediaStreamSource(){return {connect(){},disconnect(){}};}
+   createScriptProcessor(){return {onaudioprocess:null,connect(){},disconnect(){}};}
+  }
+  Object.defineProperty(window,'AudioContext',{configurable:true,value:FakeAudioContext});
+ });
+ await page.route('**/api/voice/transcribe?*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({engine:'whistle',text:'Quick recorded words',language:'en'})}));
+ await signIn(page,'quick-audio');
+ const button=page.getByRole('button',{name:'Record quick audio'});
+ await button.click();
+ await expect(page.getByRole('dialog',{name:'New Audio Note'})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Stop quick audio'})).toHaveAttribute('aria-pressed','true');
+ await expect(page.locator('.quick-audio-wave')).toBeVisible();
+ await page.getByRole('button',{name:'Stop quick audio'}).click();
+ await expect(page.getByRole('region',{name:'Audio Note'})).toBeVisible();
+ await expect(page.getByRole('region',{name:'Audio Note'})).toContainText('Quick recorded words');
+});
 test('Audio Note is offered from Files and converts without replacing the original',async({page})=>journey(page,'audio-note-desktop'));
 test('Audio Note edit and conversion works on mobile',async({browser})=>{const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await journey(page,'audio-note-mobile');await context.close();});
