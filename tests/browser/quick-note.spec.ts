@@ -14,7 +14,9 @@ for(const touch of [false,true]){
    await expect(composer).toBeVisible();
    await expect(composer.getByRole('button',{name:'Add quick note'})).toBeDisabled();
    await composer.getByRole('textbox',{name:'Quick note text'}).fill('Remember the blueprints on the workbench.');
+   await page.route('**/api/folders',async route=>{await new Promise(resolve=>setTimeout(resolve,300));await route.continue();},{times:1});
    await composer.getByRole('button',{name:'Add quick note'}).click();
+   await expect(composer.getByRole('button',{name:'Saving quick note…'})).toBeVisible();
 
    await expect(page.getByLabel('File path',{exact:true})).toHaveValue(/^Quick Notes\/\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2}(?:-\d+)?\.md$/);
    await page.getByRole('button',{name:'Source',exact:true}).click();
