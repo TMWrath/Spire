@@ -93,6 +93,12 @@ test('Quick audio records in place and creates the dated Audio Note on the secon
  await page.getByRole('button',{name:'Stop quick audio'}).click();
  await expect(page.getByRole('region',{name:'Audio Note'})).toBeVisible();
  await expect(page.getByRole('region',{name:'Audio Note'})).toContainText('Quick recorded words');
+ await page.getByRole('button',{name:'Home'}).click();
+ await page.getByRole('button',{name:'Toggle folders'}).click();
+ await page.getByRole('button',{name:'Create',exact:true}).click();
+ await page.getByRole('dialog',{name:'Create from file'}).getByRole('button',{name:/Audio Note/}).click();
+ await expect(page.getByLabel('Transcript file path')).toHaveValue('Audio Notes/Audio Note.md');
+ await page.getByRole('button',{name:'Close Audio Note'}).click();
 });
 test('Audio Note is offered from Files and converts without replacing the original',async({page})=>journey(page,'audio-note-desktop'));
 test('Audio Note edit and conversion works on mobile',async({browser})=>{const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await journey(page,'audio-note-mobile');await context.close();});
