@@ -44,5 +44,30 @@ async function journey(page:Page,username:string){
  await expect(page.getByRole('navigation',{name:'Linked normal files'})).toContainText('Writing/Meeting transcript.md');
 }
 
+async function composerLayout(page:Page,username:string){
+ await signIn(page,username);
+ if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();
+ await page.getByRole('button',{name:'Create',exact:true}).click();
+ await page.getByRole('dialog',{name:'Create from file'}).getByRole('button',{name:/Audio Note/}).click();
+ const dialog=page.getByRole('dialog',{name:'New Audio Note'});
+ await expect(dialog).toBeVisible();
+ await expect(dialog.getByText('Markdown / Audio')).toBeVisible();
+ await expect(dialog.getByText('Record or import audio and transcribe it to text. Files stay local on this device.')).toBeVisible();
+ await expect(dialog.getByText('00:00:00')).toBeVisible();
+ await expect(dialog.getByRole('tab',{name:'Record'})).toHaveAttribute('aria-selected','true');
+ await expect(dialog.getByRole('tab',{name:'Import File'})).toBeVisible();
+ await expect(dialog.getByRole('tab',{name:'Existing Audio'})).toBeVisible();
+ await expect(dialog.getByLabel('Transcription language')).toBeVisible();
+ await expect(dialog.getByLabel('Transcript mode')).toHaveValue('verbatim');
+ await expect(dialog.getByLabel('Vocabulary hints')).toBeVisible();
+ await expect(dialog.getByLabel('Transcript file path')).toBeVisible();
+ await expect(dialog.getByText('Max 15 min')).toBeVisible();
+ await expect(dialog.getByText('Max 10 MB')).toBeVisible();
+ await expect(dialog.getByText('Local Only')).toBeVisible();
+ await expect(dialog.getByRole('button',{name:'Save Audio Note'})).toBeDisabled();
+}
+
+test('Audio Note composer follows the canonical desktop layout',async({page})=>composerLayout(page,'audio-note-layout-desktop'));
+test('Audio Note composer preserves the canonical structure on mobile',async({browser})=>{const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await composerLayout(page,'audio-note-layout-mobile');await context.close();});
 test('Audio Note is offered from Files and converts without replacing the original',async({page})=>journey(page,'audio-note-desktop'));
 test('Audio Note edit and conversion works on mobile',async({browser})=>{const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await journey(page,'audio-note-mobile');await context.close();});
