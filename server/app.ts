@@ -17,6 +17,7 @@ import { unpack, exportVault } from './archive.ts';
 import {sourceInputSchema} from '../shared/sources.ts';
 import { safePath,templateInputSchema } from '../shared/model.ts';
 import {visualGroupsSchema} from '../shared/visual-groups.ts';
+import {transcribeOnServer} from './voice-transcription.ts';
 type Session = {csrf:string;expires:number};
 type Auth = {owner?:{id:string;username:string;salt:string;hash:string};sessions:Record<string,Session>};
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
@@ -42,6 +43,12 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
   const data=req.body;if(!Buffer.isBuffer(data)||!data.length)throw new HttpError(400,'Expected captured media');
   const magic=extension==='jpg'?data.subarray(0,3).equals(Buffer.from([255,216,255])):extension==='webm'?data.subarray(0,4).equals(Buffer.from([26,69,223,163])):data.subarray(4,8).toString()==='ftyp';if(!magic)throw new HttpError(400,'Capture format does not match its media');
   res.json(store.captureVideo(sourceInputSchema.parse(input),id,extension,data));
+ });
+ app.post('/api/voice/transcribe',express.raw({type:'application/octet-stream',limit:'10mb'}),async(req,res)=>{
+  if(!Buffer.isBuffer(req.body)||!req.body.length)throw new HttpError(400,'Expected recorded audio');
+  const language=z.enum(['en','de','fr','es','it','nl','pl']).optional().parse(req.query.language||undefined);
+  const keywords=z.string().max(500).optional().transform(value=>value?.split(',').map(item=>item.trim()).filter(Boolean).slice(0,20)??[]).parse(req.query.keywords||undefined);
+  try{res.json(await transcribeOnServer(req.body,{language,keywords}));}catch(error){const status=(error as {status?:number}).status;if(status)throw new HttpError(status,error instanceof Error?error.message:'Transcription failed');throw error;}
  });
  registerVideo(app);
  const identity=(res:Response)=>({owner:auth.owner!.id,username:auth.owner!.username,server:serverIdentity,csrf:res.locals.session.csrf,browser:true});

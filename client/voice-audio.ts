@@ -20,14 +20,18 @@ export async function decodeVoice(blob:Blob):Promise<Float32Array> {
 export type VoiceResult={text:string;language?:DetectedVoiceLanguage;engine?:'whistle';chunks?:{text:string;timestamp:[number,number|null]}[]};
 export type VoiceTranscriptionOptions={language:VoiceLanguage;keywords:string[]};
 export class LocalTranscriber {
- private worker:Worker|null=null;
- private reject:((error:Error)=>void)|null=null;
- async transcribe(samples:Float32Array,onStatus:(status:string)=>void,options:VoiceTranscriptionOptions={language:'auto',keywords:[]}):Promise<VoiceResult>{
-  if(this.reject)throw new Error('Transcription is already running.');
-  const worker=new Worker(new URL('./voice.worker.ts',import.meta.url),{type:'module'});this.worker=worker;const safeSamples=sanitizeVoiceSamples(samples);
-  return new Promise((resolve,reject)=>{this.reject=reject;worker.onmessage=event=>{if(event.data.status)onStatus(event.data.status);if(event.data.error){this.reject=null;reject(new Error(event.data.error));}else if(event.data.result){this.reject=null;resolve(event.data.result);}};worker.onerror=()=>{this.reject=null;worker.terminate();if(this.worker===worker)this.worker=null;reject(new Error('Whistle could not start. Check the bundled speech assets and available memory.'));};worker.postMessage({samples:safeSamples,language:options.language==='auto'?undefined:options.language,keywords:options.keywords},[safeSamples.buffer]);});
+ private controller:AbortController|null=null;
+ private async request(audio:Blob,options:VoiceTranscriptionOptions,onStatus:(status:string)=>void):Promise<VoiceResult>{
+  if(this.controller)throw new Error('Transcription is already running.');
+  this.controller=new AbortController();onStatus('Uploading audio to the self-hosted server transcription server…');
+  try{const identity=await fetch('/api/me',{signal:this.controller.signal});if(!identity.ok)throw new Error('Sign in to use server transcription.');const {csrf}=await identity.json();
+   const query=new URLSearchParams();if(options.language!=='auto')query.set('language',options.language);if(options.keywords.length)query.set('keywords',options.keywords.join(','));onStatus('Whistle is transcribing on self-hosted server…');
+   const response=await fetch('/api/voice/transcribe?'+query,{method:'POST',headers:{'Content-Type':'application/octet-stream','X-CSRF-Token':csrf},body:audio,signal:this.controller.signal});const body=await response.json().catch(()=>({error:'Server transcription failed.'}));if(!response.ok)throw new Error(body.error??'Server transcription failed.');return body;
+  }finally{this.controller=null;}
  }
- cancel(){this.worker?.terminate();this.worker=null;this.reject?.(new Error('Transcription cancelled. Your audio is retained for retry.'));this.reject=null;}
+ transcribe(samples:Float32Array,onStatus:(status:string)=>void,options:VoiceTranscriptionOptions={language:'auto',keywords:[]}){return this.request(encodeWave(sanitizeVoiceSamples(samples)),options,onStatus);}
+ transcribeBlob(audio:Blob,onStatus:(status:string)=>void,options:VoiceTranscriptionOptions={language:'auto',keywords:[]}){return this.request(audio,options,onStatus);}
+ cancel(){this.controller?.abort();this.controller=null;}
 }
 /** Microphone capture uses only Web Audio; no platform speech service is contacted. */
 export class VoiceCapture {
