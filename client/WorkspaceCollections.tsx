@@ -1,0 +1,29 @@
+import React,{useMemo,useState} from 'react';
+import {CheckSquare,Folder,Image as ImageIcon,Plus,Tag} from 'lucide-react';
+import type {Attachment,Note} from '../shared/model';
+import {collectImages,collectTasks,type CollectionScope,type WorkspaceImage,type WorkspaceTask} from '../shared/workspace-collections';
+import {attachmentUrl} from './attachment-urls';
+
+const scopeKey=(scope:CollectionScope)=>scope.kind==='all'?'all':scope.kind==='files'?'files':`project:${scope.project}`;
+function ScopePicker({scope,setScope,projects,all=false}:{scope:CollectionScope;setScope:(scope:CollectionScope)=>void;projects:string[];all?:boolean}){
+ return <div className="collection-scopes" aria-label="Collection scope">{all&&<button aria-pressed={scope.kind==='all'} onClick={()=>setScope({kind:'all'})}><ImageIcon/>All</button>}<button aria-pressed={scope.kind==='files'} onClick={()=>setScope({kind:'files'})}><Folder/>Files</button>{projects.map(project=><button key={project} aria-pressed={scope.kind==='project'&&scope.project===project} onClick={()=>setScope({kind:'project',project})}><Folder/>{project}</button>)}</div>;
+}
+
+export function TasksCollection({notes,projects,onOpen,onToggle,onAdd}:{notes:Note[];projects:string[];onOpen:(note:Note)=>void;onToggle:(task:WorkspaceTask)=>void;onAdd:(scope:CollectionScope,group:string,text:string)=>Promise<void>}){
+ const[scope,setScope]=useState<CollectionScope>({kind:'files'}),[group,setGroup]=useState('General'),[text,setText]=useState(''),[busy,setBusy]=useState(false);
+ const tasks=useMemo(()=>collectTasks(notes,scope),[notes,scopeKey(scope)]),groups=useMemo(()=>[...new Set(tasks.map(task=>task.group))],[tasks]);
+ const add=async(event:React.FormEvent)=>{event.preventDefault();if(!text.trim())return;setBusy(true);try{await onAdd(scope,group,text);setText('');}finally{setBusy(false);}};
+ return <section id="sidebar-tasks" role="tabpanel" aria-label="Tasks" className="workspace-collection"><ScopePicker scope={scope} setScope={setScope} projects={projects}/><form className="collection-add" onSubmit={add}><label>Group<input aria-label="Task group" value={group} onChange={event=>setGroup(event.target.value)} list="task-groups"/></label><datalist id="task-groups">{groups.map(value=><option key={value} value={value}/>)}</datalist><label>Task<input aria-label="New task" value={text} onChange={event=>setText(event.target.value)}/></label><button className="primary" disabled={busy||!text.trim()}><Plus/>Add</button></form>{groups.map(name=><section className="task-group" key={name}><h3>{name}<small>{tasks.filter(task=>task.group===name&&!task.checked).length}</small></h3>{tasks.filter(task=>task.group===name).map(task=><div className="collection-task" key={`${task.noteId}-${task.markerOffset}`}><input type="checkbox" checked={task.checked} aria-label={`${task.checked?'Reopen':'Complete'} ${task.text}`} onChange={()=>onToggle(task)}/><button title={task.path} onClick={()=>{const note=notes.find(note=>note.id===task.noteId);if(note)onOpen(note);}}><span>{task.text}</span><small>{scope.kind==='files'?`${task.folder} · `:''}{task.path.split('/').at(-1)?.replace(/\.md$/,'')}</small></button></div>)}</section>)}{!tasks.length&&<p className="muted">No tasks in this scope yet. Add one above or use task checkboxes inside any file.</p>}</section>;
+}
+
+function ImageCard({image,onOpen,onTag,notes}:{image:WorkspaceImage;onOpen:(note:Note)=>void;onTag:(image:WorkspaceImage,tags:string[])=>Promise<void>;notes:Note[]}){
+ const[editing,setEditing]=useState(false),[value,setValue]=useState(image.tags.join(', ')),[busy,setBusy]=useState(false);
+ const save=async()=>{setBusy(true);try{await onTag(image,value.split(','));setEditing(false);}finally{setBusy(false);}};
+ return <article className="gallery-card"><button className="gallery-image" aria-label={`Open ${image.notePath}`} onClick={()=>{const note=notes.find(note=>note.id===image.noteId);if(note)onOpen(note);}}><img src={attachmentUrl(image.path)} alt={image.alt||image.path.split('/').at(-1)}/></button><div><strong>{image.alt||image.path.split('/').at(-1)}</strong><small>{image.notePath}</small><div className="image-tags">{image.tags.map(tag=><span key={tag}>{tag}</span>)}</div>{editing?<div className="image-tag-editor"><input autoFocus aria-label="Image tags" value={value} onChange={event=>setValue(event.target.value)} placeholder="Concept art, Proof of work"/><button disabled={busy} onClick={save}>Save</button><button onClick={()=>setEditing(false)}>Cancel</button></div>:<button className="tag-image" onClick={()=>{setValue(image.tags.join(', '));setEditing(true);}}><Tag/>Tag image</button>}</div></article>;
+}
+export function GalleryCollection({notes,attachments,projects,onOpen,onTag}:{notes:Note[];attachments:Pick<Attachment,'path'>[];projects:string[];onOpen:(note:Note)=>void;onTag:(image:WorkspaceImage,tags:string[])=>Promise<void>}){
+ const[scope,setScope]=useState<CollectionScope>({kind:'all'}),[filter,setFilter]=useState('');
+ const images=useMemo(()=>collectImages(notes,attachments,scope),[notes,attachments,scopeKey(scope)]),tags=[...new Set(images.flatMap(image=>image.tags))].sort();
+ const shown=filter?images.filter(image=>image.tags.includes(filter)):images;
+ return <section id="sidebar-gallery" role="tabpanel" aria-label="Gallery" className="workspace-collection"><ScopePicker all scope={scope} setScope={setScope} projects={projects}/><div className="gallery-filters"><button aria-pressed={!filter} onClick={()=>setFilter('')}>All</button>{tags.map(tag=><button key={tag} aria-pressed={filter===tag} onClick={()=>setFilter(tag)}>{tag}</button>)}</div><div className="image-gallery">{shown.map(image=><ImageCard key={`${image.noteId}-${image.path}`} image={image} notes={notes} onOpen={onOpen} onTag={onTag}/>)}</div>{!shown.length&&<p className="muted"><ImageIcon/> No referenced images in this scope{filter?' with that tag':''}.</p>}</section>;
+}

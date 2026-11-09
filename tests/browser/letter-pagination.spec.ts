@@ -7,7 +7,7 @@ test('Letter sheets overflow, reflow, split at cursor, and retain manual breaks 
  const source=page.getByLabel('Markdown source');
  const saved=async(expected:string)=>{await page.getByRole('button',{name:'Save file',exact:true}).click();await expect.poll(async()=>{const r=await page.request.get('/api/snapshot');const data=await r.json();return data.notes?.find((n:any)=>n.path==='Images/Letter pages.md')?.content;}).toBe(expected);};
  const original=Array.from({length:75},(_,i)=>`Paragraph ${i}. This is a paragraph to check automatic page overflow without adding page breaks to the source.`).join('\n\n');
- await source.fill(original);await saved(original);await expect(page.locator('.network').getByText('Synchronized',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Editor',exact:true}).click();
+ await source.fill(original);await saved(original);await expect(page.locator('.network').getByText('Saved on server',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Editor',exact:true}).click();
  const surface=page.getByRole('textbox',{name:'Document editor',exact:true}),sheets=page.locator('.letter-page-sheet');
  await expect.poll(()=>sheets.count()).toBeGreaterThan(2);
  const sizes=await sheets.evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {width:r.width,height:r.height,top:r.top};}));
@@ -24,12 +24,12 @@ test('Letter sheets overflow, reflow, split at cursor, and retain manual breaks 
  expect(longViolations).toEqual([]);
  await surface.click();await page.keyboard.press('Control+End');await page.keyboard.type(' Added at the end.');await expect(surface).toContainText('Added at the end.');await page.keyboard.press('Control+z');await expect(surface).not.toContainText('Added at the end.');
  await page.getByRole('button',{name:'Source',exact:true}).click();await expect(source).toHaveValue(long);
- await source.fill('Alpha before. Omega after.');await saved('Alpha before. Omega after.');await expect(page.locator('.network').getByText('Synchronized',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Editor',exact:true}).click();await expect(sheets).toHaveCount(1);
+ await source.fill('Alpha before. Omega after.');await saved('Alpha before. Omega after.');await expect(page.locator('.network').getByText('Saved on server',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Editor',exact:true}).click();await expect(sheets).toHaveCount(1);
  await surface.locator('p').first().evaluate(el=>{const range=document.createRange();range.setStart(el.firstChild!,14);range.collapse(true);const selection=getSelection()!;selection.removeAllRanges();selection.addRange(range);(el.closest('[contenteditable]') as HTMLElement).focus();document.dispatchEvent(new Event('selectionchange'));});await page.keyboard.press('ArrowLeft');
  await page.getByRole('button',{name:'Page',exact:true}).click();await page.getByRole('button',{name:'New page',exact:true}).click();await expect(sheets).toHaveCount(2);
  await expect(surface).toContainText('Alpha before.');await expect(surface).toContainText('Omega after.');
  await page.getByRole('button',{name:'Source',exact:true}).click();await expect(source).toHaveValue(/Alpha before\.[\s\S]*break-after: page;[\s\S]*Omega after\./);
- await saved(await source.inputValue());await expect(page.locator('.network').getByText('Synchronized',{exact:true})).toBeVisible();await page.reload();await page.getByRole('button',{name:'Letter pages Images',exact:true}).click();await page.getByRole('button',{name:'Editor',exact:true}).click();await expect(sheets).toHaveCount(2);
+ await saved(await source.inputValue());await expect(page.locator('.network').getByText('Saved on server',{exact:true})).toBeVisible();await page.reload();await page.getByRole('button',{name:'Letter pages Images',exact:true}).click();await page.getByRole('button',{name:'Editor',exact:true}).click();await expect(sheets).toHaveCount(2);
  await page.screenshot({path:'/tmp/spire-letter-pages-desktop.png'});
  await page.setViewportSize({width:390,height:900});await expect(sheets).toHaveCount(2);const mobileSizes=await sheets.evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {width:r.width,height:r.height};}));for(const size of mobileSizes)expect(size.height/size.width).toBeCloseTo(11/8.5,2);await expect(surface).toContainText('Omega after.');
 });

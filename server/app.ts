@@ -1,9 +1,9 @@
 import {byteRange} from '../shared/byte-range';
-import {workspaceIndex,workspaceCompare,workspaceSnapshot} from './workspace-index.ts';
+import {workspaceSnapshot} from './workspace-index.ts';
 import {workspaceDirectory} from '../shared/workspace-directory.ts';
 import {quickActionInputSchema} from '../shared/quick-actions.ts';
 import {registerVideo} from './video.ts';
-import {readTransfer,createTransfer,removeTransfer} from './transfer.ts';
+
 import express, { type Request, type Response, type NextFunction } from 'express';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
@@ -15,30 +15,26 @@ import { Store, HttpError, atomic } from './store.ts';
 import { unpack, exportVault } from './archive.ts';
 import {sourceInputSchema} from '../shared/sources.ts';
 import { safePath,templateInputSchema } from '../shared/model.ts';
-import {DeviceWorkspaces} from './device-workspaces.ts';
-type Device = {id:string;name:string;created:string;revoked:boolean;installation?:{id:string;hash:string}};
-type Session = {device:string;csrf:string;expires:number;browser?:boolean};
-type Auth = {owner?:{id:string;username:string;salt:string;hash:string};devices:Device[];sessions:Record<string,Session>};
+type Session = {csrf:string;expires:number};
+type Auth = {owner?:{id:string;username:string;salt:string;hash:string};sessions:Record<string,Session>};
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
-const publicDevice=({installation,...device}:Device)=>device;
-const installationSchema=z.object({id:z.string().uuid(),secret:z.string().min(64).max(200)});
 export function createApp(root:string,origin:string,options:{contentDirectory?:string;staticDirectory?:string}={}){
- const app=express(),store=new Store(root,options),deviceWorkspaces=new DeviceWorkspaces(root);const url=new URL(origin);if(url.origin!==origin)throw new Error('SPIRE_ORIGIN must be an exact origin');if(url.protocol!=='https:'&&!['127.0.0.1','localhost','[::1]'].includes(url.hostname))throw new Error('Non-loopback origins require HTTPS');
+ const app=express(),store=new Store(root,options);const url=new URL(origin);if(url.origin!==origin)throw new Error('SPIRE_ORIGIN must be an exact origin');if(url.protocol!=='https:'&&!['127.0.0.1','localhost','[::1]'].includes(url.hostname))throw new Error('Non-loopback origins require HTTPS');
  app.set('trust proxy',1);
- let auth:Auth=store.load('auth.json')??{devices:[],sessions:{}};const saveAuth=()=>atomic(store.file('auth.json'),JSON.stringify(auth));
+ let auth:Auth=store.load('auth.json')??{sessions:{}};const saveAuth=()=>atomic(store.file('auth.json'),JSON.stringify(auth));
  const serverIdentity:{id:string;name:string}=store.load('server-identity.json')??{id:randomUUID(),name:'Server'};if(!store.load('server-identity.json'))atomic(store.file('server-identity.json'),JSON.stringify(serverIdentity));
  app.disable('x-powered-by');app.use(helmet({contentSecurityPolicy:{directives:{defaultSrc:["'self'"],scriptSrc:["'self'","'wasm-unsafe-eval'"],styleSrc:["'self'","'unsafe-inline'"],imgSrc:["'self'",'data:','blob:'],mediaSrc:["'self'",'blob:'],objectSrc:["'none'"],frameSrc:["'none'"],upgradeInsecureRequests:url.protocol==='https:'?[]:null}},strictTransportSecurity:url.protocol==='https:'?undefined:false}));
  app.use((req,res,next)=>{if(req.headers.host!==url.host)return res.status(403).json({error:'Host rejected'});next();});
  app.use('/api',(req,res,next)=>{res.set('Cache-Control','no-store');if(!['GET','HEAD'].includes(req.method)){const started=Date.now();res.on('finish',()=>console.info(JSON.stringify({event:'api_mutation',method:req.method,path:req.path,status:res.statusCode,durationMs:Date.now()-started})));}if(!['GET','HEAD'].includes(req.method)&&req.headers.origin!==origin)return res.status(403).json({error:'Origin rejected'});next();});
- app.use(cookieParser());app.use('/api/transfers',express.json({limit:'48mb'}));app.use(express.json({limit:'2mb'}));
+ app.use(cookieParser());app.use(express.json({limit:'2mb'}));
  app.get('/api/health',(_req,res)=>res.json({ok:!store.poisoned}));
  app.get('/api/bootstrap',(_req,res)=>res.json({setup:!auth.owner}));
- const credentials=z.object({username:z.string().trim().min(1).max(80),password:z.string().min(12).max(256),device:z.string().trim().min(1).max(80).optional(),installation:z.object({id:z.string().uuid(),secret:z.string().min(64).max(200)}).optional()});
- const issue=(res:Response,name?:string,installation?:{id:string;secret:string})=>{if(!name){const token=randomBytes(32).toString('hex'),csrf=randomBytes(32).toString('hex');auth.sessions[hash(token)]={device:'browser',browser:true,csrf,expires:Date.now()+30*24*3600*1000};saveAuth();res.cookie('spire_session',token,{httpOnly:true,secure:url.protocol==='https:',sameSite:'strict',path:'/',maxAge:30*24*3600*1000});res.json({owner:auth.owner!.id,username:auth.owner!.username,server:serverIdentity,csrf,browser:true});return;}const existing=installation?auth.devices.find(d=>d.installation?.id===installation.id):undefined;if(existing&&(existing.revoked||existing.installation!.hash!==hash(installation!.secret)))throw new HttpError(403,'Installation proof rejected');if(!existing&&auth.devices.some(d=>!d.revoked&&d.name.trim().toLocaleLowerCase()===name!.trim().toLocaleLowerCase()))throw new HttpError(409,'Device name already in use. Existing files and publication were retained; reconnect from the original signed-in installation or review its identity before creating another device.');name=name.trim();const device:Device=existing??{id:randomUUID(),name,created:new Date().toISOString(),revoked:false,...(installation?{installation:{id:installation.id,hash:hash(installation.secret)}}:{})};const token=randomBytes(32).toString('hex');const csrf=randomBytes(32).toString('hex');if(!existing)auth.devices.push(device);auth.sessions[hash(token)]={device:device.id,csrf,expires:Date.now()+30*24*3600*1000};for(const [key,s]of Object.entries(auth.sessions))if(s.expires<Date.now())delete auth.sessions[key];saveAuth();res.cookie('spire_session',token,{httpOnly:true,secure:url.protocol==='https:',sameSite:'strict',path:'/',maxAge:30*24*3600*1000});res.json({owner:auth.owner!.id,username:auth.owner!.username,server:serverIdentity,device:{id:device.id,name:device.name,created:device.created,revoked:device.revoked},csrf});};
+ const credentials=z.object({username:z.string().trim().min(1).max(80),password:z.string().min(12).max(256)});
+ const issue=(res:Response)=>{const token=randomBytes(32).toString('hex'),csrf=randomBytes(32).toString('hex');auth.sessions[hash(token)]={csrf,expires:Date.now()+30*24*3600*1000};for(const [key,session] of Object.entries(auth.sessions))if(session.expires<Date.now())delete auth.sessions[key];saveAuth();res.cookie('spire_session',token,{httpOnly:true,secure:url.protocol==='https:',sameSite:'strict',path:'/',maxAge:30*24*3600*1000});res.json({owner:auth.owner!.id,username:auth.owner!.username,server:serverIdentity,csrf,browser:true});};
  app.use(['/api/setup','/api/login'],rateLimit({windowMs:15*60*1000,limit:20,standardHeaders:'draft-8',legacyHeaders:false}));
- app.post('/api/setup',(req,res)=>{if(auth.owner)throw new HttpError(409,'Owner already exists');const c=credentials.extend({reliquary:z.string().trim().min(1).max(100)}).parse(req.body);const salt=randomBytes(16).toString('hex');const owner={id:randomUUID(),username:c.username,salt,hash:scryptSync(c.password,salt,64,{N:32768,r:8,p:1,maxmem:64*1024*1024}).toString('hex')};store.moveReliquary(c.reliquary);auth.owner=owner;issue(res,c.device,c.installation);});
- app.post('/api/login',(req,res)=>{const c=credentials.parse(req.body);const owner=auth.owner;const computed=scryptSync(c.password,owner?.salt??'no-owner',64,{N:32768,r:8,p:1,maxmem:64*1024*1024});if(!owner||!timingSafeEqual(computed,Buffer.from(owner.hash,'hex'))||c.username!==owner.username)throw new HttpError(401,'Invalid credentials');issue(res,c.device,c.installation);});
- app.use('/api',(req,res,next)=>{const token=req.cookies.spire_session;const session=typeof token==='string'?auth.sessions[hash(token)]:undefined;const device=session?.browser?{id:'browser',name:'Browser session'}:auth.devices.find(d=>d.id===session?.device&&!d.revoked);if(!session||session.expires<Date.now()||!device||!auth.owner)return res.status(401).json({error:'Sign in required'});if(!['GET','HEAD'].includes(req.method)&&req.headers['x-csrf-token']!==session.csrf)return res.status(403).json({error:'CSRF token rejected'});res.locals.session=session;res.locals.device=device;next();});
+ app.post('/api/setup',(req,res)=>{if(auth.owner)throw new HttpError(409,'Owner already exists');const c=credentials.extend({reliquary:z.string().trim().min(1).max(100)}).parse(req.body);const salt=randomBytes(16).toString('hex');const owner={id:randomUUID(),username:c.username,salt,hash:scryptSync(c.password,salt,64,{N:32768,r:8,p:1,maxmem:64*1024*1024}).toString('hex')};store.moveReliquary(c.reliquary);auth.owner=owner;issue(res);});
+ app.post('/api/login',(req,res)=>{const c=credentials.parse(req.body);const owner=auth.owner;const computed=scryptSync(c.password,owner?.salt??'no-owner',64,{N:32768,r:8,p:1,maxmem:64*1024*1024});if(!owner||!timingSafeEqual(computed,Buffer.from(owner.hash,'hex'))||c.username!==owner.username)throw new HttpError(401,'Invalid credentials');issue(res);});
+ app.use('/api',(req,res,next)=>{const token=req.cookies.spire_session;const session=typeof token==='string'?auth.sessions[hash(token)]:undefined;if(!session||session.expires<Date.now()||!auth.owner)return res.status(401).json({error:'Sign in required'});if(!['GET','HEAD'].includes(req.method)&&req.headers['x-csrf-token']!==session.csrf)return res.status(403).json({error:'CSRF token rejected'});res.locals.session=session;res.locals.device={id:'server',name:'Server'};next();});
  app.post('/api/video/capture',express.raw({type:'application/octet-stream',limit:'8mb'}),(req,res)=>{
   const id=z.string().uuid().parse(req.query.id),extension=z.enum(['jpg','webm','mp4']).parse(req.query.extension);let input;try{input=JSON.parse(z.string().max(16000).parse(req.query.source));}catch{throw new HttpError(400,'Invalid video source metadata');}
   const data=req.body;if(!Buffer.isBuffer(data)||!data.length)throw new HttpError(400,'Expected captured media');
@@ -46,34 +42,12 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
   res.json(store.captureVideo(sourceInputSchema.parse(input),id,extension,data));
  });
  registerVideo(app);
- const identity=(res:Response)=>({owner:auth.owner!.id,username:auth.owner!.username,server:serverIdentity,...(res.locals.session.browser?{browser:true}:{device:publicDevice(res.locals.device)}),csrf:res.locals.session.csrf});
+ const identity=(res:Response)=>({owner:auth.owner!.id,username:auth.owner!.username,server:serverIdentity,csrf:res.locals.session.csrf,browser:true});
  app.get('/api/me',(_req,res)=>res.json(identity(res)));
- app.post('/api/browser-session',(_req,res)=>{res.locals.session.browser=true;res.locals.session.device='browser';saveAuth();res.json(identity(res));});
- app.post('/api/device-installation',(req,res)=>{
-  if(res.locals.session.browser)throw new HttpError(403,'Browser sessions cannot claim device identities');
-  const {installation}=z.object({installation:installationSchema}).parse(req.body),device=auth.devices.find(d=>d.id===res.locals.device.id)!;
-  const registered=auth.devices.find(d=>d.installation?.id===installation.id);
-  if(registered&&registered.id!==device.id)throw new HttpError(409,'Installation is already bound to another device; review required');
-  if(device.installation&&(device.installation.id!==installation.id||device.installation.hash!==hash(installation.secret)))throw new HttpError(403,'Installation proof rejected');
-  device.installation={id:installation.id,hash:hash(installation.secret)};saveAuth();res.json(identity(res));
- });
  app.get('/api/reliquary',(_req,res)=>res.json(store.location()));
  app.post('/api/reliquary/migrate',(req,res)=>res.json(store.moveReliquary(z.object({name:z.string().trim().min(1).max(100)}).parse(req.body).name)));
  app.post('/api/logout',(req,res)=>{delete auth.sessions[hash(req.cookies.spire_session)];saveAuth();res.clearCookie('spire_session',{path:'/'});res.json({ok:true});});
- app.get('/api/devices',(_req,res)=>res.json(auth.devices.map(({installation,...device})=>device)));
- app.delete('/api/devices/:id',(req,res)=>{const d=auth.devices.find(d=>d.id===req.params.id);if(!d)throw new HttpError(404,'Device not found');d.revoked=true;for(const[k,s]of Object.entries(auth.sessions))if(s.device===d.id)delete auth.sessions[k];saveAuth();res.json({ok:true});});
- app.get('/api/device-workspaces',(_req,res)=>res.json(auth.devices.filter(d=>!d.revoked).map(d=>({id:d.id,name:d.name,created:d.created,revoked:d.revoked,published:deviceWorkspaces.has(d.id)}))));
- app.head('/api/device-workspaces/self/attachment',(req,res)=>{if(res.locals.session.browser)throw new HttpError(403,'Browser sessions have no Local workspace');const target=safePath.parse(req.query.path),expected=z.string().regex(/^[0-9a-f]{64}$/).parse(req.query.hash);res.sendStatus(deviceWorkspaces.attachmentMatches(res.locals.device.id,target,expected)?204:404);});
- app.put('/api/device-workspaces/self/attachment',express.raw({type:'application/octet-stream',limit:'48mb'}),(req,res)=>{if(res.locals.session.browser)throw new HttpError(403,'Browser sessions have no Local workspace');const target=safePath.parse(req.query.path),expected=z.string().regex(/^[0-9a-f]{64}$/).parse(req.query.hash);if(!Buffer.isBuffer(req.body))throw new HttpError(400,'Expected attachment bytes');res.json(deviceWorkspaces.putAttachment(res.locals.device.id,target,expected,req.body,z.string().max(2048).optional().parse(req.query.workspace),z.string().regex(/^(missing|[0-9a-f]{64})$/).optional().parse(req.query.base)));});
- app.get('/api/device-workspaces/self/attachment-info',(req,res)=>{if(res.locals.session.browser)throw new HttpError(403,'Browser sessions have no Local workspace');res.json(deviceWorkspaces.attachmentInfo(res.locals.device.id,safePath.parse(req.query.path),z.string().max(2048).optional().parse(req.query.workspace)));});
- app.get('/api/device-workspaces/self/attachment',(req,res)=>{if(res.locals.session.browser)throw new HttpError(403,'Browser sessions have no Local workspace');res.type('application/octet-stream').send(deviceWorkspaces.attachment(res.locals.device.id,safePath.parse(req.query.path),z.string().max(2048).optional().parse(req.query.workspace)));});
- app.put('/api/device-workspaces/self/snapshot',(req,res)=>{if(res.locals.session.browser)throw new HttpError(403,'Browser sessions have no Local workspace');const body=z.object({base:z.number().int().nonnegative(),snapshot:z.unknown()}).parse(req.body);res.json(deviceWorkspaces.publish(res.locals.device.id,body.base,body.snapshot));});
- app.post('/api/device-workspaces/self/patch',(req,res)=>{if(res.locals.session.browser)throw new HttpError(403,'Browser sessions have no Local workspace');res.json(deviceWorkspaces.publishPatch(res.locals.device.id,req.body));});
- app.get('/api/device-workspaces/self/delta',(req,res)=>{if(res.locals.session.browser)throw new HttpError(403,'Browser sessions have no Local workspace');const after=z.coerce.number().int().nonnegative().parse(req.query.after??0);res.json(deviceWorkspaces.changes(res.locals.device.id,after));});
- app.get('/api/device-workspaces/self/changes',(req,res)=>{if(res.locals.session.browser)throw new HttpError(403,'Browser sessions have no Local workspace');z.coerce.number().int().nonnegative().parse(req.query.after??0);res.json(deviceWorkspaces.read(res.locals.device.id));});
- app.get('/api/device-workspaces/:id/snapshot',(req,res)=>{const device=auth.devices.find(d=>d.id===req.params.id&&!d.revoked);if(!device)throw new HttpError(404,'Device not found');res.json(deviceWorkspaces.read(device.id));});
- app.get('/api/device-workspaces/:id/attachment',(req,res)=>{const device=auth.devices.find(d=>d.id===req.params.id&&!d.revoked);if(!device)throw new HttpError(404,'Device not found');res.type('application/octet-stream').send(deviceWorkspaces.attachment(device.id,safePath.parse(req.query.path)));});
- app.post('/api/device-workspaces/:id/mutate',(req,res)=>{const device=auth.devices.find(d=>d.id===req.params.id&&!d.revoked);if(!device)throw new HttpError(404,'Device not found');const body=z.object({workspaceRevision:z.number().int().nonnegative(),mutation:z.unknown()}).parse(req.body),result=deviceWorkspaces.mutate(device.id,body.workspaceRevision,body.mutation);res.json({workspaceRevision:result.revision,snapshot:result.snapshot});});
+
  app.post('/api/workspace/fields',(req,res)=>res.json(store.updateWorkspaceFields(req.body)));
  app.post('/api/quick-actions',(req,res)=>res.status(201).json(store.saveQuickAction(req.body)));
  app.put('/api/quick-actions/order',(req,res)=>{const body=z.object({ids:z.array(z.string().uuid()),expected:z.array(z.string().uuid())}).parse(req.body);res.json(store.reorderQuickActions(body.ids,body.expected));});
@@ -85,21 +59,12 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
  app.post('/api/sources',(req,res)=>res.status(201).json(store.saveSource(sourceInputSchema.parse(req.body))));
  app.put('/api/sources/:id',(req,res)=>{const body=sourceInputSchema.extend({expectedRevision:z.number().int().positive()}).parse(req.body);const {expectedRevision,...input}=body;res.json(store.saveSource(input,String(req.params.id),expectedRevision));});
  app.delete('/api/sources/:id',(req,res)=>res.json(store.deleteSource(String(req.params.id),z.coerce.number().int().positive().parse(req.query.revision))));
- app.post('/api/local/refresh',(_req,res)=>{store.refreshDirectory();res.json({ok:true,warnings:[]});});
- app.get('/api/local/recovery',(_req,res)=>res.json({items:store.recoveryItems()}));
- app.post('/api/local/reconcile',(req,res)=>{const b=z.object({token:z.string().uuid(),action:z.enum(['restore','adopt'])}).parse(req.body);res.json(store.reconcileDirectory(b.token,b.action));});
- app.get('/api/workspace/manifest',(_req,res)=>{
-  const directory=workspaceDirectory(store.state),snapshot=workspaceSnapshot(store);
-  res.json({index:workspaceIndex(store),snapshot:{seq:directory.seq,notes:directory.files.map(n=>({...n,content:'',history:[],contentLoaded:false})),folders:directory.folders,attachments:snapshot.attachments,styles:{},conflicts:snapshot.conflicts,templates:snapshot.templates,sources:snapshot.sources,quickActions:snapshot.quickActions}});
- });
  app.get('/api/workspace/directory',(_req,res)=>res.json(workspaceDirectory(store.state)));
- app.get('/api/workspace/files/:id/content',(req,res)=>{const note=store.state.notes[String(req.params.id)];if(!note||note.deleted&&req.query.deleted!=='true')throw new HttpError(404,'File unavailable');const events=store.state.events.filter(event=>event.id===note.id),metadata=workspaceDirectory({seq:store.state.seq,notes:{[note.id]:note},attachments:[],events}).files[0];res.json({...metadata,content:note.content});});
+ app.get('/api/workspace/files/:id/content',(req,res)=>{const note=store.state.notes[String(req.params.id)];if(!note||note.deleted)throw new HttpError(404,'File unavailable');const directory=workspaceDirectory(store.state).files.find(file=>file.id===note.id)!;res.json({id:note.id,path:note.path,rev:note.rev,deleted:note.deleted,time:note.time,content:note.content,createdTime:directory.createdTime,editTimes:directory.editTimes,...(note.navigation?{navigation:note.navigation}:{}),...(note.templateIds?{templateIds:note.templateIds}:{})});});
  app.get('/api/workspace/files/:id/history',(req,res)=>{const note=store.state.notes[String(req.params.id)];if(!note)throw new HttpError(404,'File unavailable');res.json(note.history);});
- app.get('/api/workspace/files/:id',(req,res)=>{const note=store.state.notes[String(req.params.id)];if(!note||note.deleted)throw new HttpError(404,'File unavailable');res.json(note);});
- app.get('/api/workspace/head',(_req,res)=>res.json({version:1,revision:workspaceIndex(store).revision}));
- app.get('/api/workspace/index',(_req,res)=>res.json(workspaceIndex(store)));
- app.post('/api/workspace/compare',(req,res)=>res.json(workspaceCompare(store,req.body.index)));
  app.get('/api/snapshot',(_req,res)=>res.json(workspaceSnapshot(store)));
+ app.get('/api/projects',(_req,res)=>{const prefix='Projects/';const names=new Set<string>();for(const folder of store.state.folders??[])if(folder.startsWith(prefix)){const name=folder.slice(prefix.length).split('/')[0];if(name)names.add(name);}for(const note of Object.values(store.state.notes))if(!note.deleted&&note.path.startsWith(prefix)){const name=note.path.slice(prefix.length).split('/')[0];if(name)names.add(name);}res.json([...names].sort((a,b)=>a.localeCompare(b)).map(name=>({name,path:prefix+name})));});
+ app.post('/api/projects',(req,res)=>{const name=z.string().trim().min(1).max(100).refine(value=>!/[\\/]/.test(value)&&value!=='.'&&value!=='..','Use a project name without slashes').parse(req.body?.name);const projectPath='Projects/'+name;if((store.state.folders??[]).some(folder=>folder.toLowerCase()===projectPath.toLowerCase())||Object.values(store.state.notes).some(note=>!note.deleted&&note.path.toLowerCase().startsWith(projectPath.toLowerCase()+'/')))throw new HttpError(409,'A project with this name already exists');store.createFolder(projectPath);res.status(201).json({name,path:projectPath});});
  app.put('/api/styles',(req,res)=>{const body=z.object({path:safePath.refine(p=>p.toLowerCase().endsWith('.css'),'Stylesheets must end in .css'),content:z.string().max(100_000)}).parse(req.body);res.json(store.putStyle(body.path,body.content));});
  app.post('/api/folders',(req,res)=>res.status(201).json(store.createFolder(z.object({path:safePath}).parse(req.body).path)));
  app.post('/api/folders/move',(req,res)=>{const body=z.object({path:safePath,destination:safePath}).parse(req.body);res.json(store.moveFolder(body.path,body.destination,res.locals.device.id));});
@@ -107,9 +72,7 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
  app.post('/api/folders/rename',(req,res)=>{const body=z.object({path:safePath,name:safePath}).parse(req.body);res.json(store.moveFolder(body.path,body.path.split('/').slice(0,-1).join('/'),res.locals.device.id,body.name));});
  app.get('/api/events',(req,res)=>{const after=z.coerce.number().int().nonnegative().parse(req.query.after??0);res.json(store.state.events.filter(e=>e.seq>after));});
  app.get('/api/search',(req,res)=>{const q=z.string().max(300).parse(req.query.q??'').toLowerCase();res.json(Object.values(store.state.notes).filter(n=>!n.deleted&&(n.path+'\n'+n.content).toLowerCase().includes(q)).map(n=>({id:n.id,path:n.path})));});
- app.get('/api/transfers',(req,res)=>res.json(readTransfer(store,safePath.parse(req.query.path))));
- app.post('/api/transfers',(req,res)=>res.json(createTransfer(store,req.body,res.locals.device.id)));
- app.post('/api/transfers/remove',(req,res)=>res.json(removeTransfer(store,req.body,res.locals.device.id)));
+
  app.post('/api/mutate',(req,res)=>res.json(store.mutate(req.body,res.locals.device.id)));
  app.post('/api/restore/:id',(req,res)=>{const b=z.object({base:z.number().int(),rev:z.number().int(),op:z.string().uuid()}).parse(req.body);const n=store.state.notes[String(req.params.id)];if(!n)throw new HttpError(404,'Note not found');const revision=[...n.history,n].find(h=>h.rev===b.rev);if(!revision)throw new HttpError(404,'Revision not found');res.json(store.mutate({...revision,id:n.id,base:b.base,op:b.op,deleted:false},res.locals.device.id));});
  app.delete('/api/trash/:id',(req,res)=>{const base=z.coerce.number().int().nonnegative().parse(req.query.base);res.json(store.purge(String(req.params.id),base,res.locals.device.id));});
@@ -119,8 +82,7 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
   z.object({action:z.literal('keep-both'),expectedServerRevision:z.number().int().nonnegative(),path:safePath.refine(p=>p.endsWith('.md'),'Files must end in .md')}),
   z.object({action:z.literal('merge'),expectedServerRevision:z.number().int().nonnegative(),content:z.string().max(1_000_000)})
  ]).parse(req.body);res.json(store.resolveConflict(String(req.params.id),body,res.locals.device.id));});
- app.put('/api/attachments/sync',express.raw({type:'application/octet-stream',limit:'10mb'}),(req,res)=>{if(!Buffer.isBuffer(req.body))throw new HttpError(400,'Expected binary upload');res.json(store.syncAttachment(safePath.parse(req.query.path),z.string().parse(req.query.expected),req.body));});
- app.delete('/api/attachments/sync',(req,res)=>res.json(store.syncAttachment(safePath.parse(req.query.path),z.string().parse(req.query.expected),null)));
+
  app.post('/api/attachments',express.raw({type:'application/octet-stream',limit:'10mb'}),(req,res)=>{const p=safePath.parse(req.query.path);if(!Buffer.isBuffer(req.body))throw new HttpError(400,'Expected binary upload');store.attachment(p,req.body);res.json({path:p});});
  app.get('/api/attachment',(req,res)=>{const p=safePath.parse(req.query.path);const a=store.state.attachments.find(a=>a.path===p);if(!a)throw new HttpError(404,'Attachment not found');const ext=path.extname(p).toLowerCase();const types:Record<string,string>={'.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.gif':'image/gif','.mp3':'audio/mpeg','.mp4':'video/mp4','.webm':'video/webm','.ogv':'video/ogg','.pdf':'application/pdf'};res.set('Content-Security-Policy',"sandbox; default-src 'none'");res.type(types[ext]??'application/octet-stream');res.set('Content-Disposition',`${types[ext]?'inline':'attachment'}; filename*=UTF-8''${encodeURIComponent(path.basename(p))}`);const bytes=Buffer.from(a.data,'base64');res.set('Accept-Ranges','bytes');if(req.headers.range){const range=byteRange(req.headers.range,bytes.length);if(!range){res.status(416).set('Content-Range',`bytes */${bytes.length}`).end();return;}res.status(206).set('Content-Range',`bytes ${range.start}-${range.end}/${bytes.length}`).send(bytes.subarray(range.start,range.end+1));return;}res.send(bytes);});
  app.post('/api/import',express.raw({type:'application/zip',limit:'25mb'}),(req,res)=>{if(!Buffer.isBuffer(req.body))throw new HttpError(400,'Expected ZIP');res.json(store.importFiles(unpack(req.body),res.locals.device.id));});

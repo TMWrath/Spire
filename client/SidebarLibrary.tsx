@@ -1,10 +1,10 @@
 import React,{useState} from 'react';
-import {FileText,Tag,LayoutTemplate,BookOpen} from 'lucide-react';
+import {FileText,Tag,LayoutTemplate,BookOpen,FolderKanban,CheckSquare,Images} from 'lucide-react';
 import {noteNavigation,type Note,type SavedTemplate} from '../shared/model';
-export type SidebarTab='files'|'tags'|'templates'|'sources';
+export type SidebarTab='files'|'projects'|'tasks'|'gallery'|'tags'|'templates'|'sources';
 export function SidebarTabs({tab,onChange}:{tab:SidebarTab;onChange:(tab:SidebarTab)=>void}){
- const ids=['files','tags','templates','sources'] as const;
- return <div className="sidebar-tabs" role="tablist" aria-label="Workspace sections">{ids.map((id,at)=><button key={id} role="tab" aria-selected={tab===id} aria-controls={`sidebar-${id}`} onKeyDown={event=>{const next=event.key==='ArrowRight'?ids[(at+1)%ids.length]:event.key==='ArrowLeft'?ids[(at+ids.length-1)%ids.length]:event.key==='Home'?'files':event.key==='End'?'sources':null;if(next){event.preventDefault();onChange(next);event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role=tab]')[ids.indexOf(next)]?.focus();}}} onClick={()=>onChange(id)}>{id==='files'?<FileText aria-hidden="true"/>:id==='tags'?<Tag aria-hidden="true"/>:id==='sources'?<BookOpen aria-hidden="true"/>:<LayoutTemplate aria-hidden="true"/>}{id[0].toUpperCase()+id.slice(1)}</button>)}</div>;
+ const ids=['files','projects','tasks','gallery','tags','templates','sources'] as const;
+ return <div className="sidebar-tabs" role="tablist" aria-label="Workspace sections">{ids.map((id,at)=><button key={id} role="tab" aria-selected={tab===id} aria-controls={`sidebar-${id}`} onKeyDown={event=>{const next=event.key==='ArrowRight'?ids[(at+1)%ids.length]:event.key==='ArrowLeft'?ids[(at+ids.length-1)%ids.length]:event.key==='Home'?'files':event.key==='End'?'sources':null;if(next){event.preventDefault();onChange(next);event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role=tab]')[ids.indexOf(next)]?.focus();}}} onClick={()=>onChange(id)}>{id==='files'?<FileText aria-hidden="true"/>:id==='projects'?<FolderKanban aria-hidden="true"/>:id==='tasks'?<CheckSquare aria-hidden="true"/>:id==='gallery'?<Images aria-hidden="true"/>:id==='tags'?<Tag aria-hidden="true"/>:id==='sources'?<BookOpen aria-hidden="true"/>:<LayoutTemplate aria-hidden="true"/>}{id[0].toUpperCase()+id.slice(1)}</button>)}</div>;
 }
 export function SidebarLibrary({tab,notes,templates,builtins,query,canInsert,onOpen,onInsert,preview,onPreview}:{preview:string|null;onPreview:(id:string|null)=>void;tab:'tags'|'templates';notes:Note[];templates:SavedTemplate[];builtins:{id:string;title:string;category:'section'|'full';content:string}[];query:string;canInsert:boolean;onOpen:(note:Note)=>void;onInsert:(content:string,id:string)=>void}){
  const setPreview=onPreview;const q=query.trim().toLowerCase();const active=notes.filter(n=>!n.deleted);
