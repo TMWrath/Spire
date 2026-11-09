@@ -30,9 +30,13 @@ test('normal file tasks live inside Files and write authoritative Markdown',asyn
  const collection=page.getByRole('region',{name:'File tasks',exact:true});
  await expect(collection).toBeVisible();
  await expect(collection).toHaveClass(/project-tasks-page/);
+ await expect(page.locator('.sidebar')).toBeHidden();
+ await expect(collection.getByRole('button',{name:'Back to files',exact:true})).toBeVisible();
  await expect(collection.getByPlaceholder('What needs to be done?')).toBeVisible();
  await expect(collection.getByRole('status')).toContainText('complete');
- await collection.getByLabel('Task group',{exact:true}).fill('Today');
+ await expect(collection.getByLabel('New task deadline',{exact:true})).toBeVisible();
+ await expect(collection.getByRole('button',{name:'Link file',exact:true})).toBeVisible();
+ await expect(collection.getByRole('button',{name:'Group tasks',exact:true})).toBeVisible();
  await collection.getByLabel('New task',{exact:true}).fill('Draft scene');
  await collection.getByRole('button',{name:'Add task',exact:true}).click();
  const checkbox=collection.getByRole('checkbox',{name:'Complete Draft scene',exact:true});
@@ -44,7 +48,7 @@ test('normal file tasks live inside Files and write authoritative Markdown',asyn
  await expect(collection.getByRole('checkbox',{name:'Reopen Draft scene',exact:true})).toBeChecked();
  await collection.getByRole('button',{name:'Open file for Draft scene',exact:true}).click();
  await page.getByRole('button',{name:'Source',exact:true}).click();
- await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue(/## Today\n- \[x\] Draft scene/);
+ await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue(/# Tasks\n\n- \[x\] Draft scene/);
 });
 
 test('each project has its own nested gallery and purpose tags persist without copying images',async({page})=>{
