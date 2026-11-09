@@ -23,12 +23,15 @@ async function createProject(page:any,name:string){
 }
 
 test('normal file tasks live inside Files and write authoritative Markdown',async({page})=>{
+ await page.setViewportSize({width:390,height:900});
  await login(page);
  await expect(page.getByRole('tab',{name:'Tasks',exact:true})).toHaveCount(0);
  await page.getByRole('tab',{name:'Files',exact:true}).click();
  await page.getByRole('button',{name:'Tasks',exact:true}).click();
  const collection=page.getByRole('region',{name:'File tasks',exact:true});
  await expect(collection).toBeVisible();
+ await expect(page.getByText('Open a file from the sidebar to begin.',{exact:true})).toHaveCount(0);
+ await expect(collection.getByLabel('New task',{exact:true})).toBeInViewport();
  await expect(collection).toHaveClass(/project-tasks-page/);
  await expect(page.locator('.sidebar')).toBeHidden();
  await expect(collection.getByRole('button',{name:'Back to files',exact:true})).toBeVisible();
