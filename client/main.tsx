@@ -129,8 +129,8 @@ function CalendarView({notes,onBack,onOpen,onCreate}:{notes:Note[];onBack:()=>vo
 }
 
 function App(){
- const [desktop,setDesktop]=useState(()=>window.matchMedia('(min-width:1100px)').matches);
- useEffect(()=>{const media=window.matchMedia('(min-width:1100px)');const update=()=>setDesktop(media.matches);media.addEventListener('change',update);return()=>media.removeEventListener('change',update);},[]);
+ const [desktop,setDesktop]=useState(()=>window.matchMedia('(min-width:980px)').matches);
+ useEffect(()=>{const media=window.matchMedia('(min-width:980px)');const update=()=>setDesktop(media.matches);media.addEventListener('change',update);return()=>media.removeEventListener('change',update);},[]);
  const[,render]=useState(0);const[ready,setReady]=useState(false),[setup,setSetup]=useState(false),[error,setError]=useState('');
  const [sidebarTab,setSidebarTab]=useState<SidebarTab>('files');
  const [collectionNotes,setCollectionNotes]=useState<Note[]|null>(null),[collectionsLoading,setCollectionsLoading]=useState(false);
