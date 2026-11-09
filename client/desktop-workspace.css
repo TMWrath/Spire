@@ -1,0 +1,16 @@
+/* Desktop is a persistent 1:3:1 workspace; compact layouts retain drawers. */
+@media (min-width:1100px){
+ .workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,3fr) minmax(0,1fr)}
+ .workspace>.sidebar,.workspace>.context,.workspace>.context.context-expanded,.workspace>.context:has(.context-definitions){position:relative;inset:auto;width:auto;max-width:none;min-width:0;transition:none}
+ .workspace>.main{min-width:0;width:100%;max-width:none}
+ .app>header [data-panel-toggle],.sidebar-mobile-head,.sidebar-backdrop{display:none!important}
+ .workspace>.sidebar,.workspace>.context{font-size:17px;padding:20px 16px}
+ .sidebar button,.sidebar summary,.sidebar input,.sidebar .note-link,.sidebar .item-name,.context button,.context input,.context label,.context summary{font-size:16px}
+ .sidebar small,.sidebar .muted,.context small,.context .muted,.context-stats>div,.context-stats strong,.context-tags span{font-size:14px}
+ .sidebar svg,.context svg{width:22px;height:22px}
+ .sidebar-tabs button{font-size:15px;min-height:58px}
+ .context-head h2{font-size:24px}
+ .context-description{font-size:16px}
+ .desktop-context-empty h2{font-size:20px;text-transform:none;letter-spacing:0}
+ .desktop-context-empty p{font-size:16px;color:#aaa}
+}
