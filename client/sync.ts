@@ -1,7 +1,8 @@
 import {mutationSchema,type Conflict,type Mutation,type Note,type SavedTemplate} from '../shared/model';
+import {rememberRecent} from './recent-files';
 
 export type Identity={owner:string;username:string;csrf:string;browser?:boolean;server?:{id:string;name:string};device?:{id:string;name:string}};
-export type Snapshot={visualGroups?:Record<string,import('../shared/visual-groups').VisualGroup[]>;quickActions?:import('../shared/quick-actions').QuickAction[];sources?:import('../shared/sources').Source[];templates?:SavedTemplate[];seq:number;notes:Note[];folders:string[];styles:Record<string,string>;conflicts:Conflict[];attachments:{path:string;size:number}[]};
+export type Snapshot={visualGroups?:Record<string,import('../shared/visual-groups').VisualGroup[]>;quickActions?:import('../shared/quick-actions').QuickAction[];recentFiles?:string[];sources?:import('../shared/sources').Source[];templates?:SavedTemplate[];seq:number;notes:Note[];folders:string[];styles:Record<string,string>;conflicts:Conflict[];attachments:{path:string;size:number}[]};
 type Cache={identity?:Identity;snapshot:Snapshot;outbox:Mutation[]};
 const blank=():Cache=>({snapshot:{seq:0,notes:[],folders:[],styles:{},conflicts:[],attachments:[]},outbox:[]});
 const listeners=new Set<()=>void>();
@@ -22,6 +23,7 @@ export class Engine{
  async loadMergeParents(_note:Note){return [];}
  attachmentURL(target:string){return '/api/attachment?path='+encodeURIComponent(target);}
  async save(note:Note){if(!this.cache.identity)throw Error('Sign in first');const current=this.cache.snapshot.notes.find(item=>item.id===note.id);const base=current?.rev??note.rev;const mutation=mutationSchema.parse({op:crypto.randomUUID(),id:note.id,base,path:note.path,content:note.content,deleted:note.deleted,templateIds:note.templateIds});this.status='Saving…';this.emit();try{const saved:Note=await this.request('/mutate',{method:'POST',body:JSON.stringify(mutation)},this.cache.identity.csrf);this.cache.snapshot.notes=this.cache.snapshot.notes.filter(item=>item.id!==saved.id);this.cache.snapshot.notes.push(saved);this.status='Saved on server';this.emit();return saved;}catch(error){this.status=error instanceof Error?error.message:'Save failed';this.emit();throw error;}}
+ async rememberRecent(id:string){if(!this.cache.identity)return;for(let attempt=0;attempt<2;attempt++){const expected=this.cache.snapshot.recentFiles??[],changes=rememberRecent(expected,id);try{await this.request('/workspace/fields',{method:'POST',body:JSON.stringify({expected:{recentFiles:expected},changes:{recentFiles:changes}})},this.cache.identity.csrf);this.cache.snapshot.recentFiles=changes;this.emit();return;}catch(error){if(!(error instanceof ApiError)||error.status!==409||attempt)return await Promise.reject(error);await this.sync();}}}
  async persist(){this.emit();}
  async logout(){if(!this.cache.identity)return;await this.request('/logout',{method:'POST'},this.cache.identity.csrf);this.cache=blank();this.authRequired=false;this.status='Signed out';this.emit();}
  async resolveConflict(id:string,choice:{action:'keep-server'|'keep-device'|'keep-both'|'merge';expectedServerRevision:number;path?:string;content?:string}){await this.request('/conflicts/'+id+'/resolve',{method:'POST',body:JSON.stringify(choice)},this.cache.identity?.csrf);await this.sync();}

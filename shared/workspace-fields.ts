@@ -3,9 +3,9 @@ import {safePath,savedTemplateSchema,type State} from './model';
 import {quickActionSchema} from './quick-actions';
 import {sourceSchema} from './sources';
 import {snapshotHash} from './publication-patch';
-const fields=z.object({folders:z.array(safePath).max(20000).optional(),styles:z.record(safePath.refine(p=>p.endsWith('.css')),z.string().max(100000)).optional(),templates:z.array(savedTemplateSchema).max(1000).optional(),sources:z.array(sourceSchema).max(1000).optional(),quickActions:z.array(quickActionSchema).max(1000).optional()}).strict();
+const fields=z.object({folders:z.array(safePath).max(20000).optional(),styles:z.record(safePath.refine(p=>p.endsWith('.css')),z.string().max(100000)).optional(),templates:z.array(savedTemplateSchema).max(1000).optional(),sources:z.array(sourceSchema).max(1000).optional(),quickActions:z.array(quickActionSchema).max(1000).optional(),recentFiles:z.array(z.string().uuid()).max(30).optional()}).strict();
 export const workspaceFieldsSchema=z.object({expected:fields,changes:fields}).strict();
-export const portableWorkspaceFields=['folders','styles','templates','sources','quickActions'] as const;
+export const portableWorkspaceFields=['folders','styles','templates','sources','quickActions','recentFiles'] as const;
 const equal=(a:unknown,b:unknown)=>snapshotHash({value:a})===snapshotHash({value:b});
 /** Validate the whole CAS before creating a candidate; never import device credentials. */
 export function applyWorkspaceFields(state:State,input:unknown):State{
