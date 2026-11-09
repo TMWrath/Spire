@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {collectTasks,collectImages,setImageTags,appendGroupedTask} from '../shared/workspace-collections';
+import {collectTasks,collectImages,setImageTags,appendGroupedTask,renameTask,removeTask} from '../shared/workspace-collections';
 import type {Note} from '../shared/model';
 
 const note=(path:string,content:string,id=path):Note=>({id,path,content,rev:1,deleted:false,time:'2026-11-09T00:00:00.000Z',history:[]});
@@ -32,4 +32,11 @@ test('collects referenced images once per file and preserves image classificatio
 test('appends a task beneath an existing or new named group',()=>{
  assert.equal(appendGroupedTask('# Tasks\n\n## Build\n- [ ] Existing\n','Build','New'),'# Tasks\n\n## Build\n- [ ] Existing\n- [ ] New\n');
  assert.equal(appendGroupedTask('# Tasks\n','Research','Find source'),'# Tasks\n\n## Research\n- [ ] Find source\n');
+});
+
+test('renames and removes the exact Markdown task selected in the file task editor',()=>{
+ const content='# Plan\n\n## Today\n- [ ] Repeat\n- [x] Repeat\n\nNotes stay here.\n';
+ const tasks=collectTasks([note('Plan.md',content)],{kind:'files'});
+ assert.equal(renameTask(content,tasks[1],'Finished copy'),'# Plan\n\n## Today\n- [ ] Repeat\n- [x] Finished copy\n\nNotes stay here.\n');
+ assert.equal(removeTask(content,tasks[0]),'# Plan\n\n## Today\n- [x] Repeat\n\nNotes stay here.\n');
 });

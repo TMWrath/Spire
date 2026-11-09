@@ -76,3 +76,21 @@ export function appendGroupedTask(content:string,group:string,text:string):strin
  const section=content.slice(start,end).replace(/\s*$/,'');
  return content.slice(0,start)+section+`\n- [ ] ${cleanText}\n`+content.slice(end).replace(/^\n?/,next?'\n':'');
 }
+
+function taskLine(content:string,task:WorkspaceTask){
+ const start=content.lastIndexOf('\n',task.markerOffset)+1,next=content.indexOf('\n',task.markerOffset),end=next<0?content.length:next+1;
+ const line=content.slice(start,end),match=/^(\s*[-*+]\s+\[[ xX]\]\s+)(.+?)(\s*)(\r?\n)?$/.exec(line);
+ if(!match||match[2]!==task.text)throw new Error('That task changed. Refresh the collection and try again.');
+ return {start,end,match};
+}
+
+export function renameTask(content:string,task:WorkspaceTask,text:string):string{
+ const clean=text.trim();if(!clean)throw new Error('Enter a task.');
+ const {start,end,match}=taskLine(content,task);
+ return content.slice(0,start)+match[1]+clean+match[3]+(match[4]??'')+content.slice(end);
+}
+
+export function removeTask(content:string,task:WorkspaceTask):string{
+ const {start,end}=taskLine(content,task);
+ return content.slice(0,start)+content.slice(end);
+}
