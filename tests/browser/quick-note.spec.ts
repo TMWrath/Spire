@@ -31,6 +31,8 @@ for(const touch of [false,true]){
      expect(box.x+box.width).toBeLessThanOrEqual(width);
     }
    }}
+   await expect(page.locator('.network').filter({hasText:'Saved on server'})).toHaveCount(0);
+   await expect(page.getByRole('button',{name:'Show editing tools',exact:true})).toHaveAttribute('aria-expanded','false');
    await page.getByRole('button',{name:'Source',exact:true}).click();
    await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue('Remember the blueprints on the workbench.\n');
 
