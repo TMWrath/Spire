@@ -14,3 +14,16 @@
  .desktop-context-empty h2{font-size:20px;text-transform:none;letter-spacing:0}
  .desktop-context-empty p{font-size:16px;color:#aaa}
 }
+
+@media (min-width:980px){
+ .workspace:not(:has(>.context)){grid-template-columns:minmax(0,1fr) minmax(0,4fr)}
+ .app>header .calendar-launcher{display:none}
+ .sidebar-calendar{margin-top:16px;padding:12px 0 0;border-top:1px solid #333;width:100%;min-width:0}
+ .sidebar-calendar .calendar-title{display:block;margin:0 0 8px}
+ .sidebar-calendar .calendar-month-controls{display:flex;justify-content:space-between;gap:2px}
+ .sidebar-calendar .calendar-month-controls strong{font-size:13px;text-align:center}
+ .sidebar-calendar .calendar-month-controls button{padding:3px;min-width:0}
+ .sidebar-calendar .calendar-grid{gap:2px}
+ .sidebar-calendar .calendar-grid button,.sidebar-calendar .calendar-empty{min-height:26px;height:28px;padding:2px;font-size:12px;aspect-ratio:auto}
+ .sidebar-calendar .calendar-weekday{font-size:10px;padding:2px 0}
+}
