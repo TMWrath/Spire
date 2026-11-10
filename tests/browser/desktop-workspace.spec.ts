@@ -40,6 +40,13 @@ test('desktop keeps a 1:3:1 workspace and returns to mobile drawers on resize',a
  expect((await page.locator('.context').boundingBox())!.width).toBeCloseTo(360,0);
  await drag('Resize Context panel',52);
  expect((await page.locator('.context').boundingBox())!.width).toBeCloseTo(300,0);
+ await page.getByRole('tab',{name:/Revision/}).click();
+ const revisionWidth=(await page.locator('.context').boundingBox())!.width;
+ await drag('Resize Context panel',-120);
+ expect((await page.locator('.context').boundingBox())!.width).toBeGreaterThan(revisionWidth+80);
+ await page.getByRole('separator',{name:'Resize Context panel'}).dblclick();
+ await page.getByRole('tab',{name:'Details',exact:true}).click();
+
 
  await page.getByRole('button',{name:'Home',exact:true}).click();
  await expect(page.locator('.context')).toHaveCount(0);

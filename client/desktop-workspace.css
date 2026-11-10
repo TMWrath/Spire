@@ -81,7 +81,7 @@
 @media (min-width:980px){
  .workspace{grid-template-columns:var(--left-panel-width,20%) minmax(0,1fr) var(--right-panel-width,20%)}
  .workspace:not(:has(>.context)){grid-template-columns:var(--left-panel-width,20%) minmax(0,1fr)}
- .workspace:has(>.context-expanded){grid-template-columns:var(--left-panel-width,20%) minmax(0,1fr) clamp(320px,var(--right-panel-width,26%),480px)}
+ .workspace:has(>.context-expanded){grid-template-columns:var(--left-panel-width,20%) minmax(0,1fr) var(--right-panel-width,clamp(320px,26%,440px))}
  .workspace>.sidebar,.workspace>.context{overflow:visible}
  .workspace>.context{overflow-y:auto;overflow-x:hidden}
  .panel-resize{display:block;position:absolute;top:0;bottom:0;width:10px;z-index:10;cursor:col-resize;touch-action:none}
@@ -97,3 +97,9 @@
  .context-revisions pre{white-space:pre-wrap;overflow-wrap:anywhere;min-width:0;max-width:100%}
  .context-revisions button{white-space:normal;overflow-wrap:anywhere;max-width:100%}
 }
+
+/* Avoid the extra carousel bottom gutter and inherited paragraph margins. */
+.empty>.recent-files>p:last-child{margin:12px 0 0}
+.empty>.recent-files header p{margin:6px 0 12px}
+.empty .recent-file-carousel{padding-bottom:8px}
+.empty .recent-file-card{aspect-ratio:auto;min-height:112px;height:auto;justify-content:flex-start}

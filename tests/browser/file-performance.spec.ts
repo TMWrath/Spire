@@ -1,0 +1,30 @@
+import {test,expect} from './fixtures';
+
+test('opening is independent of slow recent tracking and confirmed saving needs no full refresh',async({page})=>{
+ await page.setViewportSize({width:1280,height:900});await page.goto('/');
+ await page.getByLabel('Username',{exact:true}).fill('performance-owner');
+ await page.getByLabel('Password',{exact:true}).fill('disposable-performance-password');
+ await page.getByRole('button',{name:'Create Reliquary',exact:true}).click();
+ await page.getByLabel('Quick note text').fill('Performance fixture');
+ await page.getByRole('button',{name:'Add quick note'}).click();
+ await expect(page.getByLabel('File path',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Home',exact:true}).click();
+ let reads=0,snapshots=0;
+ page.on('request',request=>{if(request.url().includes('/content'))reads++;if(request.url().endsWith('/api/snapshot'))snapshots++;});
+ await page.route('**/api/workspace/fields',async route=>{await new Promise(resolve=>setTimeout(resolve,2000));await route.continue();});
+ const start=performance.now();await page.locator('.recent-file-card').first().click();
+ await expect(page.getByLabel('File path',{exact:true})).toBeVisible({timeout:1000});
+ console.log('Warm open with 2000ms recent-tracking delay:',Math.round(performance.now()-start),'ms');
+ expect(reads).toBe(0);
+ await page.getByRole('button',{name:'Source',exact:true}).click();
+ await page.getByLabel('Markdown source').fill('Performance saved and verified.');
+ const saved=page.waitForResponse(response=>response.url().endsWith('/api/mutate')&&response.request().method()==='POST');
+ const before=snapshots,saveStart=performance.now();await page.getByRole('button',{name:'Save file',exact:true}).click();
+ expect((await saved).status()).toBe(200);
+ console.log('Confirmed save response:',Math.round(performance.now()-saveStart),'ms');
+ expect(snapshots).toBe(before);
+ await page.reload();await expect(page.getByRole('button',{name:'Home',exact:true})).toBeVisible();
+ if(await page.locator('.recent-file-card').count())await page.locator('.recent-file-card').first().click();
+ await page.getByRole('button',{name:'Source',exact:true}).click();
+ await expect(page.getByLabel('Markdown source')).toHaveValue('Performance saved and verified.');
+});
