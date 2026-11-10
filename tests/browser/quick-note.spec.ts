@@ -19,6 +19,18 @@ for(const touch of [false,true]){
    await expect(composer.getByRole('button',{name:'Saving quick note…'})).toBeVisible();
 
    await expect(page.getByLabel('File path',{exact:true})).toHaveValue(/^Quick Notes\/\d{4}-\d{2}-\d{2} \d{2}-\d{2}-\d{2}(?:-\d+)?\.md$/);
+   if(touch){for(const width of [320,390,760]){
+    await page.setViewportSize({width,height:844});
+    const pathBox=(await page.getByLabel('File path',{exact:true}).boundingBox())!;
+    const buttons=page.getByRole('toolbar',{name:'File actions'}).getByRole('button');
+    let rowY:number|undefined;
+    for(let i=0;i<await buttons.count();i++){
+     const box=(await buttons.nth(i).boundingBox())!;
+     expect(box.y).toBeGreaterThanOrEqual(pathBox.y+pathBox.height);
+     if(rowY===undefined)rowY=box.y;else expect(box.y).toBeCloseTo(rowY,0);
+     expect(box.x+box.width).toBeLessThanOrEqual(width);
+    }
+   }}
    await page.getByRole('button',{name:'Source',exact:true}).click();
    await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue('Remember the blueprints on the workbench.\n');
 
