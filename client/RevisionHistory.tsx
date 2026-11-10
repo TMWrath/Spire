@@ -19,7 +19,6 @@ export function RevisionHistory({note,restore,loadHistory,loadParents}:{note:Not
  if(error)return <div role="alert">{error}<button onClick={()=>setRetry(n=>n+1)}>Retry history</button></div>;
  if(!ready)return <p role="status">Loading this file’s revision history…</p>;
  return <div className="history-shell history-inline">
-  <header className="history-header"><div><span className="history-eyebrow">DOCUMENT HISTORY</span><h2>{note.path.split('/').at(-1)}</h2><p>{note.path}</p></div></header>
   {parents.length>0&&<details className="history-branches"><summary>Retained merge versions ({parents.length})</summary><p>Original branch versions are identified separately; equal revision numbers do not mean equal content.</p>{parents.map(parent=><details key={parent.hash}><summary>{parent.revision.path} · original revision {parent.revision.rev} · {parent.hash.slice(0,12)}</summary><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{parent.revision.content}</pre></details>)}</details>}
   <div className="history-workspace">
    <nav className="history-timeline" aria-label="Revisions">{[...revisions].reverse().map(r=><button key={r.rev} aria-pressed={r.rev===current.rev} onClick={()=>setSelected(r.rev)}><strong>Revision {r.rev}{r.rev===note.rev&&<span className="history-current">Current</span>}</strong><time>{new Date(r.time).toLocaleString()}</time></button>)}</nav>
