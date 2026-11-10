@@ -1,3 +1,4 @@
+import {isOrdinaryPath} from './journal';
 import {isMap,parseDocument} from 'yaml';
 import {metadata,type Attachment,type Note} from './model';
 
@@ -5,7 +6,7 @@ export type CollectionScope={kind:'all'}|{kind:'files'}|{kind:'project';project:
 export type WorkspaceTask={noteId:string;path:string;folder:string;group:string;text:string;checked:boolean;markerOffset:number};
 export type WorkspaceImage={noteId:string;notePath:string;path:string;alt:string;tags:string[]};
 
-const inScope=(path:string,scope:CollectionScope)=>scope.kind==='all'||(scope.kind==='files'?!path.startsWith('Projects/'):path.startsWith(`Projects/${scope.project}/`));
+const inScope=(path:string,scope:CollectionScope)=>scope.kind==='all'||(scope.kind==='files'?isOrdinaryPath(path):path.startsWith(`Projects/${scope.project}/`));
 const folderOf=(path:string)=>path.includes('/')?path.slice(0,path.lastIndexOf('/')):'Root';
 
 export function collectTasks(notes:Note[],scope:CollectionScope):WorkspaceTask[]{
