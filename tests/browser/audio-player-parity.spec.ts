@@ -20,6 +20,24 @@ for(const width of [390,1500])test(`Audio Notes share the custom player and reta
  await player.getByRole('button',{name:'More options for lantern-chime.mp3'}).click();await page.getByRole('menuitem',{name:'Show speaker button'}).click();
  await expect.poll(async()=>{const r=await page.request.get('/api/workspace/files/'+id+'/content');return (await r.json()).content;}).toContain('data-spire-display="simple"');
  await open();await expect(region.locator('.media-audio-row-speaker')).toBeVisible();
- await region.getByRole('button',{name:'Edit transcript'}).click();await page.getByLabel('Edit transcript').fill('Edited words');await region.getByRole('button',{name:'Save transcript'}).click();await expect(region.getByText('Edited words',{exact:true})).toBeVisible();
- page.once('dialog',dialog=>dialog.accept('Writing/Player transcript.md'));await region.getByRole('button',{name:'Convert to normal file'}).click();await expect(page.getByRole('textbox',{name:'Document editor',exact:true})).toContainText('Edited words');await expect(page.locator('.editor-audio-player .media-audio-row')).toBeVisible();
+ await expect(region.getByRole('button',{name:'Edit transcript'})).toHaveCount(0);
+ await expect(region.getByRole('button',{name:'Convert to normal file'})).toHaveCount(0);
+ await expect(page.getByRole('toolbar',{name:'File actions'}).getByRole('button',{name:'Convert to normal file'})).toBeVisible();
+ await region.getByRole('textbox',{name:'Transcript',exact:true}).fill('Edited words');
+ await page.getByRole('button',{name:'Save file',exact:true}).click();
+ await open();await expect(region.getByRole('textbox',{name:'Transcript',exact:true})).toHaveValue('Edited words');
+ // Re-transcription uses the existing engine boundary; mock only the inference response.
+ let calls=0;await page.route('**/api/voice/transcribe?*',async route=>{calls++;await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({text:'New transcript from original recording',engine:'whistle'})});});
+ page.once('dialog',dialog=>dialog.dismiss());await region.getByRole('button',{name:'Re-transcribe',exact:true}).click();expect(calls).toBe(0);await expect(region.getByRole('textbox',{name:'Transcript',exact:true})).toHaveValue('Edited words');
+ page.once('dialog',dialog=>dialog.accept());await region.getByRole('button',{name:'Re-transcribe',exact:true}).click();await expect(region.getByRole('textbox',{name:'Transcript',exact:true})).toHaveValue('New transcript from original recording');expect(calls).toBe(1);
+ await page.getByRole('button',{name:'Undo',exact:true}).click();await expect(region.getByRole('textbox',{name:'Transcript',exact:true})).toHaveValue('Edited words');
+ await page.unroute('**/api/voice/transcribe?*');
+ let release!:()=>void;let started!:()=>void;const waiting=new Promise<void>(resolve=>{started=resolve;}),gate=new Promise<void>(resolve=>{release=resolve;});
+ await page.route('**/api/voice/transcribe?*',async route=>{started();await gate;await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({text:'Stale result'})}).catch(()=>{});});
+ page.once('dialog',dialog=>dialog.accept());await region.getByRole('button',{name:'Re-transcribe',exact:true}).click();await waiting;
+ await page.getByRole('textbox',{name:'File path',exact:true}).fill('Audio Notes/Renamed.md');release();
+ await expect(region.getByRole('alert')).toContainText('changed while transcribing');await expect(region.getByRole('textbox',{name:'Transcript',exact:true})).toHaveValue('Edited words');await page.getByRole('textbox',{name:'File path',exact:true}).fill(path);
+ await page.unroute('**/api/voice/transcribe?*');await page.route('**/api/voice/transcribe?*',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Transcription is unavailable. Try again.'})}));
+ page.once('dialog',dialog=>dialog.accept());await region.getByRole('button',{name:'Re-transcribe',exact:true}).click();await expect(region.getByRole('alert')).toContainText('Transcription is unavailable');await expect(region.getByRole('textbox',{name:'Transcript',exact:true})).toHaveValue('Edited words');
+ page.once('dialog',dialog=>dialog.accept('Writing/Player transcript.md'));await page.getByRole('toolbar',{name:'File actions'}).getByRole('button',{name:'Convert to normal file'}).click();await expect(page.getByRole('textbox',{name:'Document editor',exact:true})).toContainText('Edited words');await expect(page.locator('.editor-audio-player .media-audio-row')).toBeVisible();
 });

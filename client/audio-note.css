@@ -1,0 +1,7 @@
+.audio-note-view {padding:20px;overflow:auto;min-height:0;}
+.audio-note-transcript-heading {display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:24px 0 10px;}
+.audio-note-transcript-heading label {font-size:1.2rem;font-weight:600;margin-right:auto;}
+.audio-note-transcript-heading button {display:inline-flex;align-items:center;gap:7px;}
+.audio-note-transcript-heading svg {width:16px;height:16px;}
+.audio-note-view textarea {display:block;width:100%;box-sizing:border-box;min-height:260px;resize:vertical;font:inherit;line-height:1.65;padding:14px;}
+@media(max-width:979px){.audio-note-view {padding:16px;}.audio-note-view textarea {min-height:220px;}}

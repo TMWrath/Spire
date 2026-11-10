@@ -28,11 +28,10 @@ async function journey(page:Page,username:string){
  await page.reload();
  await page.getByRole('button',{name:/Meeting audio Audio Notes/}).click();
  await expect(page.getByRole('region',{name:'Audio Note'})).toBeVisible();
- await expect(page.getByText('Original words',{exact:true})).toBeVisible();
- await page.getByRole('button',{name:'Edit transcript'}).click();
- await page.getByLabel('Edit transcript').fill('Edited words');
- await page.getByRole('button',{name:'Save transcript'}).click();
- await expect(page.getByText('Edited words',{exact:true})).toBeVisible();
+ await expect(page.getByRole('textbox',{name:'Transcript',exact:true})).toHaveValue('Original words');
+  await page.getByRole('textbox',{name:'Transcript',exact:true}).fill('Edited words');
+ await page.getByRole('button',{name:'Save file',exact:true}).click();
+ await expect(page.getByRole('textbox',{name:'Transcript',exact:true})).toHaveValue('Edited words');
  page.once('dialog',dialog=>dialog.accept('Writing/Meeting transcript.md'));
  await page.getByRole('button',{name:'Convert to normal file'}).click();
  await expect(page.getByRole('textbox',{name:'Document editor',exact:true})).toContainText('Edited words');
@@ -92,7 +91,7 @@ test('Quick audio records in place and creates the dated Audio Note on the secon
  await expect(page.locator('.quick-audio-wave')).toBeVisible();
  await page.getByRole('button',{name:'Stop quick audio'}).click();
  await expect(page.getByRole('region',{name:'Audio Note'})).toBeVisible();
- await expect(page.getByRole('region',{name:'Audio Note'})).toContainText('Quick recorded words');
+ await expect(page.getByRole('textbox',{name:'Transcript',exact:true})).toHaveValue('Quick recorded words');
  await page.getByRole('button',{name:'Home'}).click();
  await page.getByRole('button',{name:'Toggle folders'}).click();
  await page.getByRole('button',{name:'Create',exact:true}).click();
