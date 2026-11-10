@@ -41,3 +41,38 @@
  .empty .quick-audio{justify-content:flex-start;gap:24px}
  .empty .quick-audio button{margin-top:auto}
 }
+
+/* Home cards scale their controls to the space they actually receive. */
+.main>.empty{--home-card-space:clamp(16px,2vw,26px)}
+.empty>.recent-files,.empty>.quick-actions-home,.empty .quick-note,.empty .quick-audio{
+ background:#181818;border:1px solid #363636;border-radius:16px;
+ padding:var(--home-card-space);min-width:0;container-type:inline-size;
+ box-shadow:0 3px 14px #00000018;
+}
+.empty .quick-note,.empty .quick-audio{width:100%;margin:0}
+.empty .recent-files>header{height:auto;padding:0;background:none;flex-wrap:wrap}
+.empty .recent-files h2,.empty .quick-actions-home h2,.empty .quick-note h2,.empty .quick-audio h2{font-size:clamp(15px,1.2vw,19px);line-height:1.35}
+.empty .recent-files p,.empty .quick-actions-home p,.empty .quick-note p,.empty .quick-audio p{line-height:1.5;font-size:14px;overflow-wrap:anywhere}
+.empty .quick-action-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px}
+.empty .quick-action-button{width:100%;min-width:0;min-height:64px;height:auto;white-space:normal;text-align:left}
+.empty .quick-action-copy{min-width:0;overflow-wrap:anywhere}
+.empty .quick-note{display:flex;flex-direction:column;gap:16px}
+.empty .quick-note form{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-width:0}
+.empty .quick-note textarea{width:100%;min-height:112px;max-height:320px;resize:vertical;font-size:16px;line-height:1.5;padding:12px 14px}
+.empty .quick-note button,.empty .quick-audio button,.empty .manage-quick-actions{min-height:44px;height:auto;padding:11px 16px;font-size:14px;line-height:1.4;white-space:normal;max-width:100%;overflow-wrap:anywhere}
+.empty .quick-note button{min-width:0;width:auto;justify-self:start;align-self:start}
+.empty .quick-audio{gap:16px;justify-content:flex-start}
+.empty .quick-audio button{width:100%;margin-top:0}
+.empty .manage-quick-actions{margin-top:16px}
+@container (min-width:520px){
+ .empty .quick-note form{grid-template-columns:minmax(0,1fr) auto;align-items:end}
+ .empty .quick-note button{max-width:180px}
+}
+@container (max-width:300px){
+ .empty .quick-note button,.empty .manage-quick-actions{width:100%;justify-self:stretch}
+ .empty .quick-note textarea{min-height:104px}
+}
+@media (max-width:600px){
+ .empty>.quick-capture{gap:16px}
+ .empty>.recent-files,.empty>.quick-actions-home{margin-top:16px;margin-bottom:16px}
+}

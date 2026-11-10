@@ -33,6 +33,14 @@ test('desktop keeps a 1:3:1 workspace and returns to mobile drawers on resize',a
  await expect(page.locator('.context')).toBeVisible();
  await page.getByRole('button',{name:'Home',exact:true}).click();
  await expect(page.locator('.context')).toHaveCount(0);
+ for(const width of [360,390,768,1280,1920]){
+  await page.setViewportSize({width,height:950});
+  const sizes=await page.locator('.empty').evaluate(el=>({overflow:el.scrollWidth>el.clientWidth+1,cards:Array.from(el.querySelectorAll('.recent-files,.quick-actions-home,.quick-note,.quick-audio')).map(card=>({border:getComputedStyle(card).borderRadius,overflow:card.scrollWidth>card.clientWidth+1})),controls:Array.from(el.querySelectorAll('.quick-note textarea,.quick-note button,.quick-audio button')).map(n=>({w:n.getBoundingClientRect().width,h:n.getBoundingClientRect().height}))}));
+  expect(sizes.overflow).toBe(false);
+  for(const card of sizes.cards){expect(card.border).toBe('16px');expect(card.overflow).toBe(false);}
+  for(const control of sizes.controls){expect(control.w).toBeGreaterThan(90);expect(control.h).toBeGreaterThanOrEqual(44);}
+ }
+ await page.setViewportSize({width:1500,height:950});
  await page.getByRole('button',{name:'Settings',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Reliquary settings'})).toBeVisible();
  await check();
