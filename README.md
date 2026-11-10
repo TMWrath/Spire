@@ -1,43 +1,150 @@
 # Spire
 
-Spire is a self-hosted, local-first knowledge and writing workspace. Portable Markdown and attachments are the canonical user content; the service keeps revision, synchronization, and conflict metadata separately.
+**A self-hosted workspace for writing, research, and projects.**
 
-## Terminology
+Write in a visual editor or work directly in Markdown. Keep notes, images, audio, references, and project plans together—without turning your files into a proprietary format.
 
-- **Spire** is the application.
-- A **Reliquary** is the complete collection of stored knowledge and items.
-- Product-specific names for folders and Markdown documents remain provisional. Codex, Cluster, and Shard are candidates rather than established interface language.
+Spire calls your collection of files and attachments a **Reliquary**. Documents live in folders; projects have their own space under `Projects/`.
 
-Every Markdown document must belong to a folder. Loose Markdown files are not permitted at the Reliquary root; creation, import, and move operations must always provide a destination folder.
+> **Preview software.** Spire is under active development. Back up your data before upgrades. This is currently a single-owner application, not a multi-user collaboration service.
 
-## Preview with Docker
+## Screenshots
 
-Requirements: Docker Engine with the Compose plugin.
+Screenshots use the fictional, redistributable [showcase collection](examples/showcase/). No personal workspace or private server appears in these captures.
+
+### Desktop
+
+![Spire desktop writing workspace](documents/screenshots/desktop-editor.png)
+
+![Spire desktop home](documents/screenshots/desktop-home.png)
+
+### Mobile
+
+<img src="documents/screenshots/mobile-editor.png" alt="Spire mobile writing workspace" width="360">
+<img src="documents/screenshots/mobile-home.png" alt="Spire mobile home" width="360">
+
+## Main features
+
+### Writing and editing
+
+- Visual **Editor**, Markdown **Source**, and explicit **Split** views.
+- Headings, lists, checklists, quotes, code blocks, links, tables, and highlighting.
+- Formatting tools that stay collapsed until needed, plus keyboard and editing controls.
+- Reusable templates, quick-create actions, and a block chooser.
+- Document zoom, word counts, page layout, table of contents, and running headers/footers.
+- File-specific CSS for presentation without replacing the underlying Markdown.
+
+### Files and knowledge
+
+- Folder-based organization, import, renaming, favorites, and trash.
+- Recent files, quick notes, and quick audio capture from Home.
+- Wiki links, ordinary links, backlinks, linked files, tags, and YAML properties.
+- Definitions, research sources, and citations.
+- Document-derived lists and tables in the Context panel.
+- File maps and relationship views for exploring connected material.
+
+### Projects and collections
+
+- A dedicated Projects area, separate from the ordinary Files tree.
+- Project overviews and task boards with file associations.
+- Link a task to an existing file or create a new file for it; unlinking keeps the file.
+- Task and gallery collections scoped to the workspace or a project.
+- Image tags, including tagging directly from image options in project documents.
+
+### Images, audio, and video
+
+- Embedded attachments with portable Markdown/HTML references.
+- Image preparation, percentage sizing, alignment, and inline/block/wrapped text flow.
+- Centered image options with accessible width, layout, and deletion controls.
+- Audio recording, attachment playback, and audio-note views.
+- Video attachment playback and capture controls where the browser supports them.
+- Voice authoring and transcription features; availability depends on browser permissions, platform capabilities, and configured voice assets.
+
+### History and safe saving
+
+- Server-confirmed saves and revision-aware writes.
+- Revision history with changes, preview, source, comparison, and restoration.
+- Conflict detection and recovery controls rather than silent overwrites.
+- Opened-content reuse and background Recent Files tracking to avoid unnecessary waits.
+
+### Responsive workspace
+
+- Desktop side panels with draggable widths and snap-to-default behavior.
+- Context controls appear only where relevant to the active file or project.
+- Mobile drawers, touch-friendly controls, and a full-width file path above the action row.
+- Home cards adapt to the available width.
+- Sidebar calendar on desktop, with a calendar entry point on mobile.
+
+## Run with Docker
+
+Requirements: Docker Engine and the Compose plugin.
 
 ```sh
 docker compose up --build -d
 docker compose ps
 ```
 
-Open [https://spire.example](https://spire.example) on a device connected to the project owner's Tailscale network. Caddy on self-hosted server provides HTTPS and listens only on the self-hosted server Tailscale IP; the Compose port is bound to loopback only. The hostname's A record points to self-hosted server's Tailscale IP. Persistent app state and Markdown files are isolated in the named `spire-preview_spire_data` Docker volume. This preview does not mount or import the real Wrath Vault. The first visitor creates the sole owner account; use a unique password of at least 12 characters. Do not share the preview endpoint or use a reused password.
+Open **http://localhost:4173**. The first visitor creates the owner account; choose a unique password of at least 12 characters.
 
-To stop while keeping data: `docker compose down`. To permanently erase this preview and its data: `docker compose down -v` (destructive).
+The default Compose configuration binds only to loopback and stores data in the `spire_data` named volume. It does not depend on a particular hostname, VPN, external Docker network, or host filesystem path.
 
-For access from another device, use an authenticated private tunnel or a properly configured HTTPS reverse proxy. Set `SPIRE_ORIGIN` to the exact browser origin when using HTTPS; do not publish port 4173 directly. Back up the Docker volume before upgrades. No encryption at rest or end-to-end encryption is implemented.
+For access from other devices, put Spire behind a properly configured HTTPS reverse proxy and set the exact external browser origin:
+
+```sh
+SPIRE_ORIGIN=https://notes.example.com docker compose up --build -d
+```
+
+Configure the reverse proxy separately; changing the origin does not install HTTPS or expose the loopback listener. Do not publish the internal application port directly to the internet. Recording and other browser APIs can require HTTPS or localhost.
+
+Stop without deleting data:
+
+```sh
+docker compose down
+```
+
+Back up the named data volume before changing versions. **Do not use `docker compose down -v` unless you intend to permanently delete the stored data.**
+
+### Configuration
+
+- `SPIRE_ORIGIN`: exact browser origin; Docker default `http://localhost:4173`.
+- `SPIRE_DATA`: application data directory; Docker uses `/data`.
+- `HOST`: listening address; the container uses `0.0.0.0` behind a loopback-only published port.
+- `PORT`: application port, default `4173`.
+
+Spire does not currently provide end-to-end encryption or encryption at rest. Secure and back up the host and storage appropriately.
+
+## Try the showcase files
+
+The optional `examples/showcase/` collection contains writing samples, linked research, tables, tasks, a fictional project, tagged image examples, and a short generated audio sample. It is not automatically loaded into a new installation. See its [guide](examples/showcase/README.md) for the folder layout and safe import instructions.
 
 ## Development
 
-- Node.js >=22.12.0
-- `npm ci`
-- `npm test`
-- `npm run build`
-- `npm start` (serves built `dist`; default loopback on port 4173)
-- `npm run test:browser`
+Requires Node.js **22.12 or newer**.
 
-The browser client has an IndexedDB offline cache/outbox and a service-worker app shell; validate the installed offline flow before relying on it. Single-owner preview, not a multi-user service.
+```sh
+npm ci
+npm test
+npm run build
+npm start
+```
 
-Project plans and clean-room capability research are in `documents/`. No Obsidian implementation code, brand assets, or real Vault content is included in the image.
+The built app is served on `http://localhost:4173` by default. Browser checks:
 
-## Canonical source and platforms
+```sh
+npm run test:browser
+```
 
-One repository contains Server/web (`client/`, `server/`, `shared/`), Windows (`windows/`), and Android (`android/`). See [source layout](documents/source-layout.md). Do not develop in retired worktrees or the archived standalone Android repository.
+Voice assets are prepared by the build workflow; see `scripts/prepare-voice-assets.mjs` and `documents/voice-assets.lock.json` for downloads and their pinned metadata. Some browser, voice, and native-platform capabilities need separate validation on the intended device.
+
+## Source layout
+
+- `client/`: web interface and shared editor UI.
+- `server/`: authentication, storage, revisions, and APIs.
+- `shared/`: portable formats and shared data rules.
+- `android/`: Android client source.
+- `windows/`: Windows client source.
+- `tests/`: automated tests and browser scenarios.
+- `examples/`: optional sample content.
+- `documents/`: technical and project documentation.
+
+The responsive web app is the simplest way to try Spire. Native-client source is included; native distribution and feature parity should be verified separately for each release. See [source layout](documents/source-layout.md) for implementation details.

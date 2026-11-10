@@ -1,7 +1,7 @@
 services:
   spire:
-    image: spire-preview:bottom-bar-20261031
-    container_name: spire-preview
+    build: .
+    image: spire:local
     restart: unless-stopped
     ports:
       - "127.0.0.1:4173:4173"
@@ -9,21 +9,14 @@ services:
       PORT: "4173"
       HOST: "0.0.0.0"
       SPIRE_DATA: /data
-      SPIRE_ORIGIN: ${SPIRE_ORIGIN:-https://spire.example}
+      SPIRE_ORIGIN: ${SPIRE_ORIGIN:-http://localhost:4173}
     volumes:
       - spire_data:/data
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get({hostname:'127.0.0.1',port:4173,path:'/api/health',headers:{Host:'spire.example'}},r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get({hostname:'127.0.0.1',port:4173,path:'/api/health',headers:{Host:new URL(process.env.SPIRE_ORIGIN).host}},r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
-    networks:
-      - default
-      - caddy
 volumes:
   spire_data:
-networks:
-  caddy:
-    external: true
-    name: caddy_default
