@@ -21,6 +21,6 @@ test('capture public showcase on desktop and mobile',async({page})=>{
  await page.getByRole('button',{name:'Field journal',exact:true}).click();
  await expect(page.getByRole('textbox',{name:'Document editor',exact:true})).toContainText('Where the light settles');
  await expect(page.locator('.document-editor img').first()).toBeVisible();await expect.poll(()=>page.locator('.document-editor img').first().evaluate((el:HTMLImageElement)=>el.complete&&el.naturalWidth>0)).toBeTruthy();await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:'documents/screenshots/desktop-editor.png'});
- await page.setViewportSize({width:390,height:844});await page.screenshot({path:'documents/screenshots/mobile-editor.png'});
+ await page.setViewportSize({width:390,height:844});if(await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();await expect(page.locator('.sidebar')).not.toBeVisible();await expect(page.getByRole('textbox',{name:'Document editor',exact:true})).toBeVisible();await page.screenshot({path:'documents/screenshots/mobile-editor.png'});
  await page.getByRole('button',{name:'Home',exact:true}).click();await page.screenshot({path:'documents/screenshots/mobile-home.png'});
 });
