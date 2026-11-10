@@ -1,0 +1,22 @@
+import {test,expect} from './fixtures';
+import {readFileSync,mkdirSync} from 'node:fs';
+import {randomUUID} from 'node:crypto';
+import {audioNoteContent} from '../../shared/audio-notes';
+for(const width of [390,1500])test(`Audio Notes share the custom player and retain transcript flows at ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:950});await page.goto('/');
+ await page.getByLabel('Username',{exact:true}).fill('audio-parity');await page.getByLabel('Password',{exact:true}).fill('audio-parity-test-password');await page.getByRole('button',{name:'Create Reliquary',exact:true}).click();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
+ const me=await(await page.request.get('/api/me')).json(),headers={Origin:'http://127.0.0.1:4179','X-CSRF-Token':me.csrf};
+ for(const path of ['Attachments','Audio Notes','Writing'])expect((await page.request.post('/api/folders',{headers,data:{path}})).ok()).toBeTruthy();
+ const asset='Attachments/lantern-chime.mp3';expect((await page.request.post('/api/attachments?path='+encodeURIComponent(asset),{headers:{...headers,'Content-Type':'application/octet-stream'},data:readFileSync('examples/showcase/vault/'+asset)})).ok()).toBeTruthy();
+ const id=randomUUID(),path='Audio Notes/Sound sketch.md';expect((await page.request.post('/api/mutate',{headers,data:{op:randomUUID(),id,base:0,path,content:audioNoteContent(path,asset,'A short sound sketch for the Lantern Trail project. Listen to the sample, edit this transcript, or convert it into a linked writing file.'),deleted:false}})).ok()).toBeTruthy();
+ const open=async()=>{await page.reload();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();const recent=page.getByRole('button',{name:'Sound sketch Audio Notes',exact:true});if(await recent.isVisible()){await recent.click();return;}if(width>=980)await expect(page.locator('.sidebar')).toBeVisible();else if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();const folder=page.getByRole('navigation',{name:'Files',exact:true}).getByText('Audio Notes',{exact:true});if(!await page.getByRole('button',{name:'Sound sketch',exact:true}).isVisible())await folder.click();await page.getByRole('button',{name:'Sound sketch',exact:true}).click();};
+ await open();const region=page.getByRole('region',{name:'Audio Note'});await expect(region).toBeVisible();
+ const player=region.getByRole('group',{name:'Audio player for lantern-chime.mp3'});await expect(player).toBeVisible();await expect(region.locator('audio[controls]')).toHaveCount(0);
+ await expect.poll(()=>player.locator('audio').evaluate((a:HTMLAudioElement)=>a.duration)).toBeGreaterThan(2);
+ if(width<980&&await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+ if(width<980)await expect(page.locator('.sidebar')).not.toBeVisible();
+ await expect(player).toBeVisible();await page.evaluate(()=>document.fonts.ready);
+ const bounds=await player.boundingBox();expect(bounds!.x).toBeGreaterThanOrEqual(0);expect(bounds!.x+bounds!.width).toBeLessThanOrEqual(width+1);
+ mkdirSync('/home/spire/tmp/spire-audio-note-screenshots',{recursive:true});
+ await page.screenshot({path:'/home/spire/tmp/spire-audio-note-screenshots/'+(width<980?'mobile':'desktop')+'-audio-note.png'});
+});
