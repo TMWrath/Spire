@@ -103,3 +103,9 @@
 .empty>.recent-files header p{margin:6px 0 12px}
 .empty .recent-file-carousel{padding-bottom:8px}
 .empty .recent-file-card{aspect-ratio:auto;min-height:112px;height:auto;justify-content:flex-start}
+
+.context-head h2{min-width:0;flex:1}
+.context-head .context-title-edit{display:block;width:100%;min-width:0;min-height:44px;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;white-space:normal;overflow-wrap:anywhere;cursor:text}
+.context-head .context-title-edit:focus-visible{outline:1px solid #888;outline-offset:3px;border-radius:4px}
+.context-head .context-inline{min-width:0;flex:1;flex-wrap:wrap}
+.context-head .context-inline input{min-width:0;max-width:100%;box-sizing:border-box}

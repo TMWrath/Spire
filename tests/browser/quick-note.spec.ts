@@ -36,6 +36,18 @@ for(const touch of [false,true]){
    await page.getByRole('button',{name:'Source',exact:true}).click();
    await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue('Remember the blueprints on the workbench.\n');
 
+   if(touch)await page.getByRole('button',{name:'Toggle context'}).click();
+   const head=page.locator('.context-head');
+   await expect(head.getByRole('button',{name:'More file actions'})).toHaveCount(0);
+   await expect(head.locator('button svg')).toHaveCount(0);
+   await head.getByRole('button',{name:'Edit file title'}).click();
+   await expect(head.getByRole('textbox',{name:'File title'})).toBeFocused();
+   await head.getByRole('textbox',{name:'File title'}).fill('Cancelled name');
+   await head.getByRole('button',{name:'Cancel',exact:true}).click();
+   await expect(head.getByRole('button',{name:'Edit file title'})).not.toContainText('Cancelled name');
+   await head.getByRole('button',{name:'Edit file title'}).click();
+   await head.getByRole('button',{name:'Save',exact:true}).click();
+   await expect(head.getByRole('textbox',{name:'File title'})).toHaveCount(0);
    const snapshot=await (await page.request.get('/api/snapshot')).json();
    expect(snapshot.folders).toContain('Quick Notes');
    expect(snapshot.notes).toHaveLength(1);
