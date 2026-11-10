@@ -5,7 +5,7 @@ test('tree actions separate trash, icon hold-drag and name hold-rename',async({p
  const me=await(await page.request.get('/api/me')).json(),headers={Origin:new URL(page.url()).origin,'X-CSRF-Token':me.csrf};
  for(const path of ['Writing','Archive','Empty'])expect((await page.request.post('/api/folders',{headers,data:{path}})).ok()).toBe(true);
  const id=crypto.randomUUID();expect((await page.request.post('/api/mutate',{headers,data:{id,op:crypto.randomUUID(),base:0,path:'Writing/Original.md',content:'Keep every word',deleted:false}})).ok()).toBe(true);
- await page.reload();await expect(page.locator('.network')).toHaveText('Saved on server');
+ await page.reload();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
  const tree=page.locator('.sidebar');if(!await tree.isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();
  const folder=page.locator('details[data-folder="Writing"]');await folder.locator(':scope > summary').click();
  await expect(page.getByRole('button',{name:'Delete folder Empty',exact:true})).toBeVisible();
@@ -19,5 +19,5 @@ test('tree actions separate trash, icon hold-drag and name hold-rename',async({p
  const folderRename=page.getByRole('dialog',{name:'Rename folder',exact:true});await expect(folderRename).toBeVisible();await folderRename.getByLabel('New name',{exact:true}).fill('Library');await folderRename.getByRole('button',{name:'Rename',exact:true}).click();await expect(folderRename).toBeHidden();
  await expect.poll(async()=>{const s=await(await page.request.get('/api/snapshot')).json();return s.notes.find((n:any)=>n.id===id)?.path;}).toBe('Library/Renamed.md');
  await page.getByRole('button',{name:'Delete folder Empty',exact:true}).click();const deletion=page.getByRole('dialog',{name:'Delete empty folder'});await expect(deletion).toBeVisible();await deletion.getByRole('button',{name:'Cancel',exact:true}).click();await expect(page.locator('details[data-folder="Empty"]')).toBeVisible();
- await page.reload();await expect(page.locator('.network')).toHaveText('Saved on server');const snapshot=await(await page.request.get('/api/snapshot')).json();expect(snapshot.notes.find((n:any)=>n.id===id)).toMatchObject({path:'Library/Renamed.md',content:'Keep every word',deleted:false});
+ await page.reload();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();const snapshot=await(await page.request.get('/api/snapshot')).json();expect(snapshot.notes.find((n:any)=>n.id===id)).toMatchObject({path:'Library/Renamed.md',content:'Keep every word',deleted:false});
 });

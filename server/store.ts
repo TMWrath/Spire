@@ -9,7 +9,7 @@ import { randomUUID } from 'node:crypto';
 import {sha256} from '@noble/hashes/sha2.js';
 import {bytesToHex} from '@noble/hashes/utils.js';
 import {sourceInputSchema,sourceArchiveSchema,sourcePath,sourceRecordMarkdown,citations,rebaseCitations,type SourceInput} from '../shared/sources.ts';
-import { navigationIndex, emptyState, mutationSchema, safePath, refactor, type State, type Mutation, type Note } from '../shared/model.ts';
+import { navigationIndex, emptyState, mutationSchema, safePath, refactor, createLinkResolver, type State, type Mutation, type Note } from '../shared/model.ts';
 import {mergeMarkdown} from '../shared/markdown-sync.ts';
 import {snapshotHash} from '../shared/publication-patch.ts';
 import {applyWorkspaceFields} from '../shared/workspace-fields.ts';
@@ -233,46 +233,71 @@ export class Store {
   next.folders=[...new Set([...folders.filter(f=>!inside(f)),...folders.filter(inside).map(translate)])];next.attachments=next.attachments.map(a=>inside(a.path)?{...a,path:translate(a.path)}:a);next.styles=Object.fromEntries(Object.entries(next.styles??{}).map(([p,css])=>[inside(p)?translate(p):p,css]));this.commit(next);return {path:target,moved:movingNotes.length};
  }
  deleteFolder(folder:string,action:{mode:'empty'}|{mode:'trash'}|{mode:'reassign';destination:string},device:string){
-  const source=safePath.parse(folder);this.guardLocalFolder(source);const sourceLower=source.toLowerCase();const folders=this.state.folders??[];
+  const source=safePath.parse(folder),sourceLower=source.toLowerCase();
   const inside=(p:string)=>p.toLowerCase().startsWith(sourceLower+'/');
-  const knownPaths=[...folders,...Object.values(this.state.notes).filter(n=>!n.deleted).map(n=>n.path),...this.state.attachments.map(a=>a.path),...Object.keys(this.state.styles??{})];
-  if(!folders.some(f=>f.toLowerCase()===sourceLower)&&!knownPaths.some(inside))throw new HttpError(404,'Folder not found');
+  const folders=this.state.folders??[],remainingFolders=folders.filter(f=>f.toLowerCase()!==sourceLower&&!inside(f));
+  const active=Object.values(this.state.notes).filter(n=>!n.deleted),affected=active.filter(n=>inside(n.path));
+  const assets=this.state.attachments.filter(a=>inside(a.path)),styles=Object.entries(this.state.styles??{}).filter(([p])=>inside(p));
+  if(!folders.some(f=>f.toLowerCase()===sourceLower)&&!active.some(n=>inside(n.path))&&!assets.length&&!styles.length&&!folders.some(inside))throw new HttpError(404,'Folder not found');
+  this.guardLocalFolder(source);
   if(action.mode==='empty'){
-   const hasContents=Object.values(this.state.notes).some(n=>!n.deleted&&inside(n.path))||this.state.attachments.some(a=>inside(a.path))||Object.keys(this.state.styles??{}).some(inside)||folders.some(f=>inside(f));
-   if(hasContents)throw new HttpError(409,'Folder is no longer empty; refresh before deleting it');
-   const next=structuredClone(this.state);next.folders=folders.filter(f=>f.toLowerCase()!==sourceLower);next.seq++;
-   this.commit(next);const old=this.vault(source);if(this.contentDirectory)this.removeLocalEmptyFolder(source);else if(fs.existsSync(old))fs.rmSync(old,{recursive:true,force:true});return {moved:0,destination:null};
+   if(affected.length||assets.length||styles.length)throw new HttpError(409,'Folder is no longer empty; refresh before deleting it');
+   const next=structuredClone(this.state);next.folders=remainingFolders;next.seq++;this.commit(next);this.removeLocalEmptyFolder(source);return {moved:0,destination:null};
   }
-  const managed=(p:string)=>/^Projects\/[^/]+\/(overview\.html|tasks\.json)$/.test(p);
-  if(this.state.attachments.some(a=>inside(a.path)&&!managed(a.path)))throw new HttpError(409,'Move attachments out of this folder before deleting it');
-  const affected=Object.values(this.state.notes).filter(n=>!n.deleted&&inside(n.path));
-  const next=structuredClone(this.state);let destination:string|null=null;
-  if(action.mode==='trash'){
-   for(const n of affected)this.revise(next,n.id,{path:n.path,content:n.content,deleted:true},device);
-  }else{
-   destination=safePath.parse(action.destination);
-   const destinationLower=destination.toLowerCase();
-   if(destinationLower===sourceLower||destinationLower.startsWith(sourceLower+'/'))throw new HttpError(409,'Choose a destination outside the folder being deleted');
-   const moves=new Map(affected.map(n=>[n.id,destination+'/'+n.path.slice(source.length+1)]));
-   const occupied=[...Object.values(this.state.notes).filter(n=>!n.deleted&&!moves.has(n.id)).map(n=>n.path.toLowerCase()),...this.state.attachments.map(a=>a.path.toLowerCase())];
-   for(const target of moves.values())if(occupied.includes(target.toLowerCase()))throw new HttpError(409,`Destination path is occupied: ${target}`);
-   const original=Object.values(this.state.notes);
-   for(const n of affected)this.revise(next,n.id,{path:moves.get(n.id)!,content:n.content,deleted:false},device);
-   for(const current of Object.values(next.notes).filter(n=>!n.deleted)){
-    let content=current.content;const sourceNote=original.find(n=>n.id===current.id)??current;
-    for(const moved of affected)content=refactor({...sourceNote,content},original,moved.id,moves.get(moved.id)!);
-    if(content!==current.content)this.revise(next,current.id,{path:current.path,content,deleted:false},device);
-   }
-   const required=new Set<string>([destination]);
-   for(const target of moves.values()){const parts=target.split('/').slice(0,-1);for(let i=1;i<=parts.length;i++)required.add(parts.slice(0,i).join('/'));}
-   next.folders=[...new Set([...folders.filter(f=>!inside(f)&&f.toLowerCase()!==sourceLower),...required])];
+  const next=structuredClone(this.state);let destination:string|null=null,recovery:string|undefined;
+  if(action.mode==='reassign'){
+   destination=safePath.parse(action.destination);const lower=destination.toLowerCase();
+   if(lower===sourceLower||lower.startsWith(sourceLower+'/'))throw new HttpError(409,'Choose a destination outside the folder being deleted');
+  }else if(assets.length||styles.length){
+   // Non-note bytes have no note revision history. Keep them in canonical, exported recovery storage.
+   const base=source.startsWith('Projects/')?'Recovered Projects':'Recovered Folders';
+   recovery=base+'/'+source.split('/').at(-1)+'-'+randomUUID();destination=recovery;
   }
-  const generated=next.attachments.filter(a=>inside(a.path)&&managed(a.path));
-  if(generated.length){const recovery='Recovered Projects/'+source.split('/').at(-1)+'-'+randomUUID();next.attachments=next.attachments.map(a=>generated.includes(a)?{...a,path:recovery+'/'+a.path.slice(source.length+1)}:a);next.folders=[...(next.folders??[]),'Recovered Projects',recovery];}
+  const translate=(p:string)=>safePath.parse(destination+'/'+p.slice(source.length+1));
+  const movingFiles=[...(action.mode==='reassign'?affected.map(n=>n.path):[]),...assets.map(a=>a.path),...styles.map(([p])=>p)];
+  const movingFolders=destination?[destination,...folders.filter(inside).map(translate)]:[];
+  const stationaryFiles=[...active.filter(n=>!inside(n.path)).map(n=>n.path),...this.state.attachments.filter(a=>!inside(a.path)).map(a=>a.path),...Object.keys(this.state.styles??{}).filter(p=>!inside(p))].map(p=>p.toLowerCase());
+  const stationaryFolders=remainingFolders.map(p=>p.toLowerCase());
+  for(const target of movingFiles.map(translate)){
+   const lower=target.toLowerCase();if(stationaryFiles.some(p=>p===lower||p.startsWith(lower+'/')||lower.startsWith(p+'/'))||stationaryFolders.some(p=>p===lower||p.startsWith(lower+'/')))throw new HttpError(409,'Destination path is occupied: '+target);
+  }
+  for(const target of movingFolders){const lower=target.toLowerCase();if(stationaryFiles.some(p=>p===lower||lower.startsWith(p+'/')))throw new HttpError(409,'Destination path is occupied: '+target);}
+  const paths=new Map(movingFiles.map(p=>[p.toLowerCase(),translate(p)]));
+  const resolveNote=createLinkResolver(active),existingAssets=[...this.state.attachments.map(a=>a.path),...Object.keys(this.state.styles??{})];
+  // Resolve against the original source, then relativize against the final source in one pass.
+  const rewrite=(content:string,oldPath:string,newPath:string)=>{
+   const rewriteTarget=(target:string,wiki=false)=>{
+    let decoded:string;try{decoded=decodeURIComponent(target);}catch{return target;}
+    if(!decoded||/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(decoded))return target;
+    const match=decoded.match(/^([^#?]*)([?#].*)?$/)!;const raw=match[1],suffix=match[2]??'';
+    const relative=path.posix.normalize(path.posix.join(path.posix.dirname(oldPath),raw));
+    const sourceNote=active.find(n=>n.path===oldPath);
+    const linkedNote=sourceNote?resolveNote({raw:target,target:raw,heading:'',label:'',wiki,start:0,end:0},sourceNote):undefined;
+    // Match the renderer's canonical-root-first attachment lookup, then relative lookup.
+    const found=[raw,relative].map(c=>existingAssets.find(p=>p===c)).find(Boolean)??linkedNote?.path;
+    if(!found)return target;const final=paths.get(found.toLowerCase())??found;
+    if(final===found&&oldPath===newPath)return target;
+    return wiki?final.replace(/\.md$/i,'')+suffix:encodeURI(path.posix.relative(path.posix.dirname(newPath),final)+suffix);
+   };
+   return content.replace(/```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`|\[\[([^\]\n]+)\]\]|(\[[^\]\n]*\]\()([^\s)]+)(\))|((?:src|href)\s*=\s*["'])([^"']+)(["'])/gi,(whole,wiki,open,target,close,attr,url,quote)=>{
+    if(wiki!==undefined){const [dest,...label]=wiki.split('|');return '[['+rewriteTarget(dest,true)+(label.length?'|'+label.join('|'):'')+']]';}
+    if(open)return open+rewriteTarget(target)+close;
+    if(attr)return attr+rewriteTarget(url)+quote;return whole;
+   });
+  };
+  for(const n of active){
+   const deleted=action.mode==='trash'&&inside(n.path),newPath=action.mode==='reassign'&&inside(n.path)?translate(n.path):n.path;
+   const content=deleted?n.content:rewrite(n.content,n.path,newPath);
+   if(deleted||newPath!==n.path||content!==n.content)this.revise(next,n.id,{path:newPath,content,deleted},device);
+  }
+  next.attachments=next.attachments.map(a=>inside(a.path)?{...a,path:translate(a.path)}:a);
+  next.styles=Object.fromEntries(Object.entries(next.styles??{}).map(([p,css])=>[inside(p)?translate(p):p,css]));
+  const required=new Set([...remainingFolders,...movingFolders]);
+  for(const p of [...movingFiles.map(translate),...movingFolders]){const parts=p.split('/');for(let i=1;i<parts.length;i++)required.add(parts.slice(0,i).join('/'));}
+  next.folders=[...required];
   if(/^Projects\/[^/]+$/.test(source)&&next.projectTasks)delete next.projectTasks[source.slice(9)];
-  if(action.mode==='trash')next.folders=(next.folders??folders).filter(f=>!inside(f)&&f.toLowerCase()!==sourceLower);
-  this.commit(next);const old=this.vault(source);if(this.contentDirectory)this.removeLocalEmptyFolder(source);else if(fs.existsSync(old))fs.rmSync(old,{recursive:true,force:true});
-  return {moved:affected.length,destination};
+  next.seq++;this.commit(next);this.removeLocalEmptyFolder(source);
+  return {moved:affected.length,destination:action.mode==='reassign'?destination:null,...(recovery?{recovery}:{})};
  }
  syncAttachment(p:string,expected:string,data:Buffer|null,actualBytes?:Buffer){
   safePath.parse(p);if(!/^(missing|[0-9a-f]{64})$/.test(expected))throw new HttpError(400,'Expected attachment hash required');
