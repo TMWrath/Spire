@@ -34,6 +34,8 @@ test('desktop authentication content uses the same card surface as Home sections
    shadow:style.boxShadow,
    center:box.left+box.width/2,
    viewport:innerWidth/2,
+   verticalCenter:box.top+box.height/2,
+   viewportVerticalCenter:innerHeight/2,
   };
  });
  expect(surface.background).toBe('rgb(24, 24, 24)');
@@ -42,4 +44,5 @@ test('desktop authentication content uses the same card surface as Home sections
  expect(surface.radius).toBe('16px');
  expect(surface.shadow).not.toBe('none');
  expect(Math.abs(surface.center-surface.viewport)).toBeLessThan(1);
+ expect(Math.abs(surface.verticalCenter-surface.viewportVerticalCenter)).toBeLessThan(1);
 });
