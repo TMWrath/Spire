@@ -17,3 +17,29 @@ test('authentication screen centers the Spire mark and name above the form',asyn
  expect(Math.abs(geometry.imageCenter-geometry.viewport)).toBeLessThan(1);
  expect(Math.abs(geometry.textCenter-geometry.viewport)).toBeLessThan(1);
 });
+
+test('desktop authentication content uses the same card surface as Home sections',async({page})=>{
+ await page.setViewportSize({width:1440,height:900});
+ await page.goto('/');
+ const auth=page.locator('.auth');
+ await expect(auth).toBeVisible();
+ const surface=await auth.evaluate(el=>{
+  const style=getComputedStyle(el);
+  const box=el.getBoundingClientRect();
+  return {
+   background:style.backgroundColor,
+   borderColor:style.borderTopColor,
+   borderWidth:style.borderTopWidth,
+   radius:style.borderTopLeftRadius,
+   shadow:style.boxShadow,
+   center:box.left+box.width/2,
+   viewport:innerWidth/2,
+  };
+ });
+ expect(surface.background).toBe('rgb(24, 24, 24)');
+ expect(surface.borderColor).toBe('rgb(54, 54, 54)');
+ expect(surface.borderWidth).toBe('1px');
+ expect(surface.radius).toBe('16px');
+ expect(surface.shadow).not.toBe('none');
+ expect(Math.abs(surface.center-surface.viewport)).toBeLessThan(1);
+});
