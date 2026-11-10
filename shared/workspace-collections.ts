@@ -55,7 +55,7 @@ export function setImageTags(content:string,path:string,tags:string[]):string{
  const match=/^---\r?\n([\s\S]*?)\r?\n---(\r?\n|$)/.exec(content);
  const doc=parseDocument(match?.[1]??'');
  if(doc.errors.length||(doc.contents&&!isMap(doc.contents)))throw new Error('Fix invalid YAML frontmatter before tagging images.');
- const current=doc.get('spire_image_tags');
+ const current=doc.toJS()?.spire_image_tags;
  const map=current&&typeof current==='object'&&!Array.isArray(current)?{...(current as Record<string,unknown>)}:{};
  const clean=[...new Set(tags.map(tag=>tag.trim()).filter(Boolean))];
  if(clean.length)map[path]=clean;else delete map[path];

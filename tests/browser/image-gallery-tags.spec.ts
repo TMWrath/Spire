@@ -1,0 +1,34 @@
+import {test,expect} from './fixtures';
+import {readFileSync} from 'node:fs';
+import {selectDropdown} from './dropdown';
+import {collectImages} from '../../shared/workspace-collections';
+for(const width of [390,1280])test(`project image tagging and centering at ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:900});await page.route('https://example.com/*.png',route=>route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400"><rect width="800" height="400" fill="gray"/></svg>'}));await page.goto('/');await page.getByLabel('Username',{exact:true}).fill('image-size');await page.getByLabel('Password',{exact:true}).fill('disposable-image-password');await page.getByRole('button',{name:await page.getByRole('button',{name:'Create Reliquary',exact:true}).isVisible()?'Create Reliquary':'Sign in',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();const me=await (await page.request.get('/api/me')).json();for(const name of ['first','second'])expect((await page.request.post('/api/attachments?path=Attachments/'+name+'.png',{headers:{Origin:'http://127.0.0.1:4179','X-CSRF-Token':me.csrf,'Content-Type':'application/octet-stream'},data:readFileSync('tests/fixtures/media/image.png')})).ok()).toBeTruthy();await page.reload();
+ if(width>=980)await expect(page.locator('.sidebar')).toBeVisible();
+ if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();await page.getByRole('button',{name:'Create',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Create from file'});await dialog.getByRole('button',{name:/New file/}).click();await dialog.getByRole('button',{name:/New blank file/}).click();await page.getByLabel('File name',{exact:true}).fill('Image sizing');await selectDropdown(page.getByLabel('Save in folder'),'__new__');await page.getByLabel('New folder path').fill('Projects/Gallery');await page.getByRole('button',{name:'Create file',exact:true}).click();await page.getByRole('button',{name:'Source',exact:true}).click();
+ const original='Before\n\n![First](../../Attachments/first.png "Caption")\n\n![Second](../../Attachments/second.png)\n\nAfter';await page.getByLabel('Markdown source').fill(original);await page.getByRole('button',{name:'Save file',exact:true}).click();await page.getByRole('button',{name:'Editor',exact:true}).click();
+ const surface=page.getByRole('textbox',{name:'Document editor',exact:true});const first=surface.getByRole('img',{name:'First',exact:true});
+ await first.click();
+ const menu=page.getByRole('dialog',{name:'Image options'});
+ const bounds=(await menu.boundingBox())!;
+ expect(Math.abs(bounds.x+bounds.width/2-width/2)).toBeLessThan(2);
+ expect(Math.abs(bounds.y+bounds.height/2-450)).toBeLessThan(2);
+ await menu.getByRole('textbox',{name:'Image gallery tags'}).fill('Reference, Landscape');
+ await menu.getByRole('button',{name:'Save image tags'}).click();
+ await menu.getByRole('button',{name:'Close image options'}).click();
+ await surface.getByRole('img',{name:'Second',exact:true}).click();
+ await menu.getByRole('textbox',{name:'Image gallery tags'}).fill('Other');
+ await menu.getByRole('button',{name:'Save image tags'}).click();
+ await menu.getByRole('button',{name:'Close image options'}).click();
+
+ await page.getByRole('button',{name:'Save file',exact:true}).click();
+ const snapshot=await (await page.request.get('/api/snapshot')).json();
+ const file=snapshot.notes.find((n:any)=>n.path.startsWith('Projects/Gallery/'));
+ const response=await page.request.get('/api/workspace/files/'+file.id+'/content');const hydrated=await response.json();
+ const images=collectImages([hydrated],snapshot.attachments,{kind:'all'});
+ expect(images.find(i=>i.path==='Attachments/first.png')?.tags).toEqual(['Reference','Landscape']);
+ expect(images.find(i=>i.path==='Attachments/second.png')?.tags).toEqual(['Other']);
+ await page.getByRole('button',{name:'Source',exact:true}).click();
+ await expect(page.getByLabel('Markdown source')).toHaveValue(/Before[\s\S]*!\[First\][\s\S]*After/);
+});

@@ -109,3 +109,7 @@
 .context-head .context-title-edit:focus-visible{outline:1px solid #888;outline-offset:3px;border-radius:4px}
 .context-head .context-inline{min-width:0;flex:1;flex-wrap:wrap}
 .context-head .context-inline input{min-width:0;max-width:100%;box-sizing:border-box}
+
+.image-options-tags{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0}
+.image-options-tags>input{flex:1 1 100%;min-width:0;width:100%;box-sizing:border-box;min-height:42px}
+.image-options-tags>span{font-size:12px;color:#aaa;overflow-wrap:anywhere}

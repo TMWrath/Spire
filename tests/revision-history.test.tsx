@@ -8,7 +8,7 @@ test('history renders the inline revision panel without a redundant launcher or 
  const r={rev:1,path:'Notes/One.md',content:'old',deleted:false,time:'2026-01-01'};
  const html=renderToStaticMarkup(<RevisionHistory note={{...r,id:'one',rev:2,content:'<script>alert(1)</script>',history:[r]}} restore={()=>{}}/>);
  assert.match(html,/history-shell history-inline/);
- assert.match(html,/DOCUMENT HISTORY/);
+ assert.doesNotMatch(html,/DOCUMENT HISTORY/);
  assert.match(html,/<nav[^>]+aria-label="Revisions"/);
  assert.match(html,/aria-pressed="true"><strong>Revision 2/);
  assert.match(html,/aria-pressed="false"><strong>Revision 1/);
