@@ -27,3 +27,17 @@
  .sidebar-calendar .calendar-grid button,.sidebar-calendar .calendar-empty{min-height:26px;height:28px;padding:2px;font-size:12px;aspect-ratio:auto}
  .sidebar-calendar .calendar-weekday{font-size:10px;padding:2px 0}
 }
+
+/* Home uses the available desktop canvas, with a comfortable ultrawide limit. */
+@media (min-width:980px){
+ .main>.empty{max-width:1560px;padding:clamp(24px,3vw,56px);text-align:left}
+ .main>.empty>h1{font-size:clamp(30px,2.5vw,42px);margin:8px 0 12px}
+ .main>.empty>p{font-size:16px;margin-bottom:32px}
+ .empty>.recent-files,.empty>.quick-actions-home,.empty>.quick-capture{width:100%;max-width:none;margin-left:0;margin-right:0}
+ .empty>.recent-files,.empty>.quick-actions-home{margin-top:28px;margin-bottom:28px}
+ .empty>.quick-capture{grid-template-columns:minmax(0,2fr) minmax(240px,1fr);gap:20px;margin-top:28px}
+ .empty .quick-note,.empty .quick-audio{padding:24px}
+ .empty .quick-note textarea{min-height:132px}
+ .empty .quick-audio{justify-content:flex-start;gap:24px}
+ .empty .quick-audio button{margin-top:auto}
+}

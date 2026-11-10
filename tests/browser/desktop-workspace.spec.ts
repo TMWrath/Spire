@@ -16,6 +16,11 @@ test('desktop keeps a 1:3:1 workspace and returns to mobile drawers on resize',a
   expect(widths[0]).toBeCloseTo(300,0);expect(widths[1]).toBeCloseTo(1200,0);
  };
  await check();
+ const home=await page.locator('.empty').boundingBox();
+ const recent=await page.locator('.recent-files').boundingBox();
+ expect(recent!.width).toBeGreaterThan(1000);
+ expect(recent!.width).toBeGreaterThan(home!.width*.85);
+
  await expect(page.getByRole('button',{name:'Calendar',exact:true})).toBeHidden();
  await expect(page.getByRole('region',{name:'Sidebar calendar'})).toBeVisible();
  const placement=await page.locator('.sidebar').evaluate(el=>({actions:el.querySelector('.sidebar-actions')!.getBoundingClientRect().bottom,calendar:el.querySelector('.sidebar-calendar')!.getBoundingClientRect().top}));
