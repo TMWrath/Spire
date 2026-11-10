@@ -76,3 +76,24 @@
  .empty>.quick-capture{gap:16px}
  .empty>.recent-files,.empty>.quick-actions-home{margin-top:16px;margin-bottom:16px}
 }
+
+.panel-resize{display:none}
+@media (min-width:980px){
+ .workspace{grid-template-columns:var(--left-panel-width,20%) minmax(0,1fr) var(--right-panel-width,20%)}
+ .workspace:not(:has(>.context)){grid-template-columns:var(--left-panel-width,20%) minmax(0,1fr)}
+ .workspace:has(>.context-expanded){grid-template-columns:var(--left-panel-width,20%) minmax(0,1fr) clamp(320px,var(--right-panel-width,26%),480px)}
+ .workspace>.sidebar,.workspace>.context{overflow:visible}
+ .workspace>.context{overflow-y:auto;overflow-x:hidden}
+ .panel-resize{display:block;position:absolute;top:0;bottom:0;width:10px;z-index:10;cursor:col-resize;touch-action:none}
+ .panel-resize-left{right:-5px}
+ .panel-resize-right{left:0}
+ .panel-resize:hover,.panel-resize:focus-visible{background:#8885;outline:none}
+ .resizing-panels,.resizing-panels *{cursor:col-resize!important;user-select:none!important}
+ .sidebar-calendar .calendar-grid button,.sidebar-calendar .calendar-empty{height:34px;min-height:34px}
+ .context-revisions,.context-revisions .history-shell,.context-revisions .history-detail{min-width:0;max-width:100%}
+ .context-revisions .history-workspace{flex-direction:column}
+ .context-revisions .history-timeline{width:100%;max-height:150px;overflow:auto;border-right:0;border-bottom:1px solid #333;flex-shrink:0}
+ .context-revisions .history-detail-head,.context-revisions .history-tabs,.context-revisions .history-header{flex-wrap:wrap;padding:12px;gap:8px}
+ .context-revisions pre{white-space:pre-wrap;overflow-wrap:anywhere;min-width:0;max-width:100%}
+ .context-revisions button{white-space:normal;overflow-wrap:anywhere;max-width:100%}
+}

@@ -31,6 +31,16 @@ test('desktop keeps a 1:3:1 workspace and returns to mobile drawers on resize',a
  await page.getByLabel('File name',{exact:true}).fill('Desktop context check');
  await page.getByRole('button',{name:'Create file',exact:true}).click();
  await expect(page.locator('.context')).toBeVisible();
+ const drag=async(label:string,dx:number)=>{const edge=page.getByRole('separator',{name:label});const box=(await edge.boundingBox())!;await page.mouse.move(box.x+box.width/2,box.y+70);await page.mouse.down();await page.mouse.move(box.x+box.width/2+dx,box.y+70,{steps:8});await page.mouse.up();};
+ await drag('Resize navigation panel',70);
+ expect((await page.locator('.sidebar').boundingBox())!.width).toBeCloseTo(370,0);
+ await drag('Resize navigation panel',-62);
+ expect((await page.locator('.sidebar').boundingBox())!.width).toBeCloseTo(300,0);
+ await drag('Resize Context panel',-60);
+ expect((await page.locator('.context').boundingBox())!.width).toBeCloseTo(360,0);
+ await drag('Resize Context panel',52);
+ expect((await page.locator('.context').boundingBox())!.width).toBeCloseTo(300,0);
+
  await page.getByRole('button',{name:'Home',exact:true}).click();
  await expect(page.locator('.context')).toHaveCount(0);
  for(const width of [360,390,768,1280,1920]){
