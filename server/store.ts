@@ -251,7 +251,7 @@ export class Store {
   }else if(assets.length||styles.length){
    // Non-note bytes have no note revision history. Keep them in canonical, exported recovery storage.
    const base=source.startsWith('Projects/')?'Recovered Projects':'Recovered Folders';
-   recovery=base+'/'+source.split('/').at(-1)+'-'+randomUUID();destination=recovery;
+   recovery=source===base?base+'-'+randomUUID():base+'/'+source.split('/').at(-1)+'-'+randomUUID();destination=recovery;
   }
   const translate=(p:string)=>safePath.parse(destination+'/'+p.slice(source.length+1));
   const movingFiles=[...(action.mode==='reassign'?affected.map(n=>n.path):[]),...assets.map(a=>a.path),...styles.map(([p])=>p)];
