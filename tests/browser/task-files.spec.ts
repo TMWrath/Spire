@@ -28,7 +28,7 @@ for(const width of [390,1280])test(`Overview tasks and optional corresponding fi
  await page.route('**/api/project-tasks/*',async route=>{await held;await route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:'Simulated save conflict'})});});
  await checkbox.check();await expect(checkbox).toBeDisabled();await expect(checkbox).toBeChecked();release();await expect(summary.getByRole('alert')).toContainText('Simulated save conflict');await expect(checkbox).not.toBeChecked();await expect(checkbox).toBeEnabled();await page.unroute('**/api/project-tasks/*');
  await summary.getByRole('checkbox',{name:'Complete Plan the build'}).check();await expect(summary.getByRole('checkbox',{name:'Complete Plan the build'})).toBeEnabled();
- await page.reload();await expect(page.getByRole('button',{name:'Toggle folders',exact:true})).toBeVisible();
+ await page.reload();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
  if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();await page.getByRole('tab',{name:'Projects',exact:true}).click();
  if(!await project.getByRole('button',{name:'Overview',exact:true}).isVisible())await project.getByRole('button',{name:'Expand project Task Files'}).click();
  await project.getByRole('button',{name:'Overview',exact:true}).click();await expect(summary.getByRole('checkbox',{name:'Complete Plan the build'})).toBeChecked();
