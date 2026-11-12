@@ -187,6 +187,8 @@ export class Store {
  const next=structuredClone(this.state);const all=Object.values(this.state.notes);if(old&&old.path!==m.path&&!m.deleted){for(const n of all)if(!n.deleted&&n.id!==m.id){const content=refactor(n,all,m.id,m.path);if(content!==n.content)this.revise(next,n.id,{path:n.path,content,deleted:false},device);}const oldStyle=old.path.replace(/\.md$/i,'.css'),newStyle=m.path.replace(/\.md$/i,'.css');if(next.styles?.[oldStyle]!==undefined){if(next.styles[newStyle]!==undefined)throw new HttpError(409,'Destination stylesheet already exists');next.styles[newStyle]=next.styles[oldStyle];delete next.styles[oldStyle];}}
  const note=this.revise(next,m.id,{path:m.path,content:m.content,deleted:m.deleted,templateIds:m.templateIds},device);if(mergeParents?.length)note.mergeParents=mergeParents;next.operations[m.op]={id:m.id,rev:note.rev};this.commit(next);return note;}
  purge(id:string,base:number,device:string){const n=this.state.notes[id];if(!n)throw new HttpError(404,'Note not found');if(n.rev!==base)throw new HttpError(409,'Conflict: note changed since deletion request');if(!n.deleted)throw new HttpError(409,'Move note to trash before permanent deletion');const next=structuredClone(this.state);delete next.notes[id];next.purged=[...(next.purged??[]),id];next.conflicts=next.conflicts.filter(c=>c.mutation.id!==id);for(const [op,value] of Object.entries(next.operations))if(value.id===id)delete next.operations[op];next.events=next.events.filter(e=>e.id!==id);next.events.push({seq:++next.seq,id,rev:0,device,time:new Date().toISOString()});this.commit(next);return {ok:true};}
+ restoreTrashedFile(id:string){const item=this.state.trashedFiles?.find(file=>file.id===id);if(!item)throw new HttpError(404,'Trashed file not found');this.assertFree(item.path);const next=structuredClone(this.state);next.trashedFiles=next.trashedFiles?.filter(file=>file.id!==id);if(item.kind==='style')next.styles={...(next.styles??{}),[item.path]:Buffer.from(item.data,'base64').toString('utf8')};else next.attachments.push({path:item.path,data:item.data});const parts=item.path.split('/');for(let i=1;i<parts.length;i++){const folder=parts.slice(0,i).join('/');if(!(next.folders??[]).includes(folder))next.folders=[...(next.folders??[]),folder];}next.seq++;this.commit(next);return {path:item.path};}
+ purgeTrashedFile(id:string){if(!this.state.trashedFiles?.some(file=>file.id===id))throw new HttpError(404,'Trashed file not found');const next=structuredClone(this.state);next.trashedFiles=next.trashedFiles?.filter(file=>file.id!==id);next.seq++;this.commit(next);return {ok:true};}
  resolveConflict(id:string,choice:{action:'keep-server'|'keep-device'|'keep-both'|'merge';expectedServerRevision:number;path?:string;content?:string},device:string){
   const conflict=this.state.conflicts.find(c=>c.id===id);if(!conflict)throw new HttpError(404,'Conflict not found');
   const current=this.state.notes[conflict.mutation.id];if(!current||current.rev!==choice.expectedServerRevision)throw new HttpError(409,'Server file changed since this conflict was opened');
@@ -244,17 +246,13 @@ export class Store {
    if(affected.length||assets.length||styles.length)throw new HttpError(409,'Folder is no longer empty; refresh before deleting it');
    const next=structuredClone(this.state);next.folders=remainingFolders;next.seq++;this.commit(next);this.removeLocalEmptyFolder(source);return {moved:0,destination:null};
   }
-  const next=structuredClone(this.state);let destination:string|null=null,recovery:string|undefined;
+  const next=structuredClone(this.state);let destination:string|null=null;
   if(action.mode==='reassign'){
    destination=safePath.parse(action.destination);const lower=destination.toLowerCase();
    if(lower===sourceLower||lower.startsWith(sourceLower+'/'))throw new HttpError(409,'Choose a destination outside the folder being deleted');
-  }else if(assets.length||styles.length){
-   // Non-note bytes have no note revision history. Keep them in canonical, exported recovery storage.
-   const base=source.startsWith('Projects/')?'Recovered Projects':'Recovered Folders';
-   recovery=source===base?base+'-'+randomUUID():base+'/'+source.split('/').at(-1)+'-'+randomUUID();destination=recovery;
   }
   const translate=(p:string)=>safePath.parse(destination+'/'+p.slice(source.length+1));
-  const movingFiles=[...(action.mode==='reassign'?affected.map(n=>n.path):[]),...assets.map(a=>a.path),...styles.map(([p])=>p)];
+  const movingFiles=action.mode==='reassign'?[...affected.map(n=>n.path),...assets.map(a=>a.path),...styles.map(([p])=>p)]:[];
   const movingFolders=destination?[destination,...folders.filter(inside).map(translate)]:[];
   const stationaryFiles=[...active.filter(n=>!inside(n.path)).map(n=>n.path),...this.state.attachments.filter(a=>!inside(a.path)).map(a=>a.path),...Object.keys(this.state.styles??{}).filter(p=>!inside(p))].map(p=>p.toLowerCase());
   const stationaryFolders=remainingFolders.map(p=>p.toLowerCase());
@@ -290,14 +288,19 @@ export class Store {
    const content=deleted?n.content:rewrite(n.content,n.path,newPath);
    if(deleted||newPath!==n.path||content!==n.content)this.revise(next,n.id,{path:newPath,content,deleted},device);
   }
-  next.attachments=next.attachments.map(a=>inside(a.path)?{...a,path:translate(a.path)}:a);
-  next.styles=Object.fromEntries(Object.entries(next.styles??{}).map(([p,css])=>[inside(p)?translate(p):p,css]));
+  if(action.mode==='trash'){
+   const time=new Date().toISOString();next.trashedFiles=[...(next.trashedFiles??[]),...assets.map(a=>({id:randomUUID(),path:a.path,data:a.data,kind:'attachment' as const,time})),...styles.map(([p,css])=>({id:randomUUID(),path:p,data:Buffer.from(css).toString('base64'),kind:'style' as const,time}))];
+   next.attachments=next.attachments.filter(a=>!inside(a.path));next.styles=Object.fromEntries(Object.entries(next.styles??{}).filter(([p])=>!inside(p)));
+  }else{
+   next.attachments=next.attachments.map(a=>inside(a.path)?{...a,path:translate(a.path)}:a);
+   next.styles=Object.fromEntries(Object.entries(next.styles??{}).map(([p,css])=>[inside(p)?translate(p):p,css]));
+  }
   const required=new Set([...remainingFolders,...movingFolders]);
   for(const p of [...movingFiles.map(translate),...movingFolders]){const parts=p.split('/');for(let i=1;i<parts.length;i++)required.add(parts.slice(0,i).join('/'));}
   next.folders=[...required];
   if(/^Projects\/[^/]+$/.test(source)&&next.projectTasks)delete next.projectTasks[source.slice(9)];
   next.seq++;this.commit(next);this.removeLocalEmptyFolder(source);
-  return {moved:affected.length,destination:action.mode==='reassign'?destination:null,...(recovery?{recovery}:{})};
+  return {moved:affected.length,destination:action.mode==='reassign'?destination:null,...(action.mode==='trash'&&assets.length+styles.length?{trashedFiles:assets.length+styles.length}:{})};
  }
  syncAttachment(p:string,expected:string,data:Buffer|null,actualBytes?:Buffer){
   safePath.parse(p);if(!/^(missing|[0-9a-f]{64})$/.test(expected))throw new HttpError(400,'Expected attachment hash required');

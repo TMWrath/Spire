@@ -20,16 +20,19 @@ test('folder deletion can move contained notes to trash and remove the folder tr
  assert.equal(s.state.notes[first.id].deleted,true);assert.equal(s.state.notes[nested.id].deleted,true);
  assert.equal(fs.existsSync(`${root}/vault/Writing`),false);
 });
-test('deleting the Recovered Folders root preserves assets in a portable sibling recovery folder',()=>{
- const s=fresh(),original='Recovered Folders/Previous recovery/Nested/asset.json';
+test('folder deletion moves non-Markdown files into Spire Trash outside the Reliquary',()=>{
+ const s=fresh(),original='Writing/Nested/asset.json';s.createFolder('Writing/Nested');
  s.attachment(original,Buffer.from('{"preserved":true}'));
- const result=s.deleteFolder('Recovered Folders',{mode:'trash'},'d');
- assert.match(result.recovery??'',/^Recovered Folders-[0-9a-f-]{36}$/i);
- assert.ok(!result.recovery?.startsWith('Recovered Folders/'));
- const recovered=result.recovery+'/Previous recovery/Nested/asset.json';
- assert.equal(s.state.attachments.find(a=>a.path===recovered)?.path,recovered);
- assert.equal(fs.readFileSync(s.vault(recovered),'utf8'),'{"preserved":true}');
+ const result=s.deleteFolder('Writing',{mode:'trash'},'d');
+ assert.deepEqual(result,{moved:0,destination:null,trashedFiles:1});
+ assert.equal(s.state.attachments.some(a=>a.path===original),false);
+ const trashed=s.state.trashedFiles?.[0];assert.equal(trashed?.path,original);assert.equal(trashed?.kind,'attachment');
+ assert.equal(Buffer.from(trashed!.data,'base64').toString(),'{"preserved":true}');
  assert.equal(fs.existsSync(s.vault(original)),false);
+ assert.equal(fs.existsSync(s.vault('Recovered Folders')),false);
+ assert.equal(new Store(root).state.trashedFiles?.[0].path,original);
+ const id=trashed!.id;assert.deepEqual(s.restoreTrashedFile(id),{path:original});assert.equal(fs.readFileSync(s.vault(original),'utf8'),'{"preserved":true}');
+ s.deleteFolder('Writing',{mode:'trash'},'d');const purged=s.state.trashedFiles!.find(file=>file.path===original)!;assert.deepEqual(s.purgeTrashedFile(purged.id),{ok:true});assert.equal(s.state.trashedFiles?.some(file=>file.id===purged.id),false);
 });
 test('folder deletion can reassign notes while preserving relative subfolders and can create Unsorted',()=>{
  const s=fresh();s.createFolder('Writing');s.createFolder('Writing/Ideas');s.createFolder('Archive');

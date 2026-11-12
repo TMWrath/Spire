@@ -92,6 +92,8 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
  app.post('/api/mutate',(req,res)=>res.json(store.mutate(req.body,res.locals.device.id)));
  app.post('/api/restore/:id',(req,res)=>{const b=z.object({base:z.number().int(),rev:z.number().int(),op:z.string().uuid()}).parse(req.body);const n=store.state.notes[String(req.params.id)];if(!n)throw new HttpError(404,'Note not found');const revision=[...n.history,n].find(h=>h.rev===b.rev);if(!revision)throw new HttpError(404,'Revision not found');res.json(store.mutate({...revision,id:n.id,base:b.base,op:b.op,deleted:false},res.locals.device.id));});
  app.delete('/api/trash/:id',(req,res)=>{const base=z.coerce.number().int().nonnegative().parse(req.query.base);res.json(store.purge(String(req.params.id),base,res.locals.device.id));});
+ app.post('/api/trash-files/:id/restore',(req,res)=>res.json(store.restoreTrashedFile(String(req.params.id))));
+ app.delete('/api/trash-files/:id',(req,res)=>res.json(store.purgeTrashedFile(String(req.params.id))));
  app.post('/api/conflicts/:id/resolve',(req,res)=>{const body=z.discriminatedUnion('action',[
   z.object({action:z.literal('keep-server'),expectedServerRevision:z.number().int().nonnegative()}),
   z.object({action:z.literal('keep-device'),expectedServerRevision:z.number().int().nonnegative()}),

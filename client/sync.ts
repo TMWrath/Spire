@@ -2,7 +2,7 @@ import {mutationSchema,type Conflict,type Mutation,type Note,type SavedTemplate}
 import {rememberRecent} from './recent-files';
 
 export type Identity={owner:string;username:string;csrf:string;browser?:boolean;server?:{id:string;name:string};device?:{id:string;name:string}};
-export type Snapshot={visualGroups?:Record<string,import('../shared/visual-groups').VisualGroup[]>;quickActions?:import('../shared/quick-actions').QuickAction[];recentFiles?:string[];sources?:import('../shared/sources').Source[];templates?:SavedTemplate[];seq:number;notes:Note[];folders:string[];styles:Record<string,string>;conflicts:Conflict[];attachments:{path:string;size:number}[]};
+export type Snapshot={visualGroups?:Record<string,import('../shared/visual-groups').VisualGroup[]>;quickActions?:import('../shared/quick-actions').QuickAction[];recentFiles?:string[];sources?:import('../shared/sources').Source[];templates?:SavedTemplate[];seq:number;notes:Note[];folders:string[];styles:Record<string,string>;conflicts:Conflict[];attachments:{path:string;size:number}[];trashedFiles?:{id:string;path:string;kind:'attachment'|'style';time:string;size:number}[]};
 type Cache={identity?:Identity;snapshot:Snapshot;outbox:Mutation[]};
 const blank=():Cache=>({snapshot:{seq:0,notes:[],folders:[],styles:{},conflicts:[],attachments:[]},outbox:[]});
 const listeners=new Set<()=>void>();
