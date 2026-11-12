@@ -187,16 +187,19 @@
 
 .task-card-fields {
   display: flex;
-  flex: 0 1 330px;
-  min-width: 280px;
+  flex: 0 0 168px;
+  min-width: 168px;
+  max-width: 168px;
+  flex-direction: column;
   gap: 8px;
 }
 
 .task-card-field {
   display: grid;
-  flex: 1 1 0;
+  flex: 0 0 auto;
   min-width: 0;
-  padding: 4px 9px 5px;
+  min-height: 42px;
+  padding: 5px 10px 6px;
   overflow: hidden;
   border: 1px solid var(--border, #444);
   border-radius: 6px;
@@ -312,6 +315,8 @@
 
   .task-card-fields {
     flex: 1 0 100%;
+    width: 100%;
     min-width: 0;
+    max-width: none;
   }
 }
