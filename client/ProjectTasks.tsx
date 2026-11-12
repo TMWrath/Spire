@@ -7,8 +7,8 @@ import {TaskCard} from './TaskCard';
 import {TaskFileDialog} from './TaskFileDialog';
 import {TaskLinkDialog} from './TaskLinkDialog';
 import {ProjectTaskCalendar} from './ProjectTaskCalendar';
-export function ProjectTasks({project,filesMode=false,board:persistedBoard,onSave,onClose,folders,files,onCreateFile,onOpenFile,onUploadImage}:{onUploadImage:(file:File)=>Promise<string>;project:string;filesMode?:boolean;board:TaskBoard;onSave:(board:TaskBoard)=>Promise<void>;onClose:()=>void;folders:string[];files:{id:string;path:string}[];onCreateFile:(taskId:string,revision:number,path:string)=>Promise<void>;onOpenFile:(id:string)=>Promise<void>}){
- const [calendarOpen,setCalendarOpen]=useState(false);const [doneOpen,setDoneOpen]=useState(false);const [title,setTitle]=useState('');const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [groupOpen,setGroupOpen]=useState(false);
+export function ProjectTasks({project,filesMode=false,initialCalendar=false,board:persistedBoard,onSave,onClose,folders,files,onCreateFile,onOpenFile,onUploadImage}:{onUploadImage:(file:File)=>Promise<string>;project:string;filesMode?:boolean;initialCalendar?:boolean;board:TaskBoard;onSave:(board:TaskBoard)=>Promise<void>;onClose:()=>void;folders:string[];files:{id:string;path:string}[];onCreateFile:(taskId:string,revision:number,path:string)=>Promise<void>;onOpenFile:(id:string)=>Promise<void>}){
+ const [calendarOpen,setCalendarOpen]=useState(initialCalendar);const [doneOpen,setDoneOpen]=useState(false);const [title,setTitle]=useState('');const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [groupOpen,setGroupOpen]=useState(false);
  const [chooseTask,setChooseTask]=useState<{id:string;title:string}|null>(null);
  const [linkTask,setLinkTask]=useState<{id:string;title:string}|null>(null);
  const [fileTask,setFileTask]=useState<{id:string;title:string}|null>(null);
