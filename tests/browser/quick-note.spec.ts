@@ -10,7 +10,7 @@ for(const touch of [false,true]){
    await page.getByLabel('Password',{exact:true}).fill('disposable-quick-note-password');
    await page.getByRole('button',{name:'Create Reliquary',exact:true}).click();
 
-   const composer=page.getByRole('region',{name:'Quick note'});
+   const composer=page.getByRole('region',{name:'Quick note',exact:true});
    await expect(composer).toBeVisible();
    await expect(composer.getByRole('button',{name:'Add quick note'})).toBeDisabled();
    await composer.getByRole('textbox',{name:'Quick note text'}).fill('Remember the blueprints on the workbench.');

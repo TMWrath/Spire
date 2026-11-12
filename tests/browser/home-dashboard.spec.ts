@@ -21,24 +21,37 @@ test.describe('Home dashboard',()=>{
  });
 
  for(const viewport of [{width:390,height:844},{width:673,height:900},{width:1280,height:900}]){
-  test(`widgets form a contained mosaic and visibility persists at ${viewport.width}px`,async({page})=>{
+  test(`widgets use direct remove and add controls at ${viewport.width}px`,async({page})=>{
    await page.setViewportSize(viewport);
    await openHome(page,`home-widgets-${viewport.width}`);
    const dashboard=page.locator('.home-dashboard');
-   const box=await dashboard.boundingBox();
-   expect(box).not.toBeNull();
    expect(await dashboard.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBeTruthy();
-   await page.getByRole('button',{name:'Customize Home',exact:true}).click();
-   const manager=page.getByRole('dialog',{name:'Customize Home',exact:true});
-   await manager.getByLabel('Quick audio').uncheck();
-   await manager.getByRole('button',{name:'Done',exact:true}).click();
-   await expect(page.getByRole('region',{name:'Quick audio',exact:true})).toHaveCount(0);
+
+   const audio=page.getByRole('region',{name:'Quick audio widget',exact:true});
+   await expect(audio.getByRole('button',{name:'Remove Quick audio widget',exact:true})).toBeVisible();
+   await audio.getByRole('button',{name:'Remove Quick audio widget',exact:true}).click();
+   await expect(audio).toHaveCount(0);
    await page.reload();
-   await expect(page.getByRole('region',{name:'Quick audio',exact:true})).toHaveCount(0);
-   await page.getByRole('button',{name:'Customize Home',exact:true}).click();
-   await page.getByRole('dialog',{name:'Customize Home',exact:true}).getByLabel('Quick audio').check();
-   await page.getByRole('dialog',{name:'Customize Home',exact:true}).getByRole('button',{name:'Done',exact:true}).click();
-   await expect(page.getByRole('region',{name:'Quick audio',exact:true})).toBeVisible();
+   await expect(page.getByRole('region',{name:'Quick audio widget',exact:true})).toHaveCount(0);
+
+   await page.getByRole('button',{name:'Add widget',exact:true}).click();
+   const picker=page.getByRole('dialog',{name:'Add widget',exact:true});
+   await picker.getByRole('button',{name:'Quick audio',exact:true}).click();
+   await expect(page.getByRole('region',{name:'Quick audio widget',exact:true})).toBeVisible();
   });
  }
+
+ test('widgets can be dragged into a new order and retain that order',async({page})=>{
+  await page.setViewportSize({width:1280,height:900});
+  await openHome(page,'home-widget-order');
+  const recent=page.getByRole('region',{name:'Recent files widget',exact:true});
+  const audio=page.getByRole('region',{name:'Quick audio widget',exact:true});
+  await audio.dragTo(recent);
+  const order=await page.locator('.home-widget').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('aria-label')));
+  expect(order[0]).toBe('Quick audio widget');
+  await page.reload();
+  await expect(page.locator('.home-dashboard')).toBeVisible();
+  const persisted=await page.locator('.home-widget').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('aria-label')));
+  expect(persisted[0]).toBe('Quick audio widget');
+ });
 });
