@@ -195,11 +195,12 @@
 }
 
 .task-card-field {
-  display: grid;
+  display: flex;
   flex: 0 0 auto;
+  align-items: center;
   min-width: 0;
-  min-height: 42px;
-  padding: 5px 10px 6px;
+  min-height: 34px;
+  padding: 3px 8px;
   overflow: hidden;
   border: 1px solid var(--border, #444);
   border-radius: 6px;
@@ -207,6 +208,8 @@
 }
 
 .task-card-field > span {
+  flex: 0 0 auto;
+  margin-right: 8px;
   color: var(--muted, #aaa);
   font-size: 9px;
   font-weight: 600;
