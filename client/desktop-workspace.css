@@ -42,6 +42,32 @@
  .empty .quick-audio button{margin-top:auto}
 }
 
+/* Home is a configurable, responsive mosaic and does not reserve a blank desktop rail. */
+.home-workspace{grid-template-columns:minmax(0,1fr)!important}
+.home-workspace>.main{min-width:0}
+.home-dashboard{width:min(100%,1560px);max-width:none!important;box-sizing:border-box;text-align:left!important;overflow-x:hidden}
+.home-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:24px}
+.home-heading h1{margin:0 0 8px}
+.home-heading p{margin:0!important}
+.customize-home{min-height:44px;flex:0 0 auto}
+.home-mosaic{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-flow:dense;align-items:start;gap:clamp(14px,2vw,22px);min-width:0;width:100%}
+.home-mosaic>.recent-files,.home-mosaic>.quick-actions-home{grid-column:span 12;width:auto!important;max-width:none!important;margin:0!important}
+.home-mosaic>.quick-note,.home-mosaic>.quick-audio{grid-column:span 4;min-height:0;height:auto}
+.home-mosaic>.home-widget-note{grid-column:span 8}
+.home-widget-manager{display:grid;gap:12px;max-width:420px}
+.home-widget-manager label{display:flex;align-items:center;gap:12px;min-height:44px;padding:8px 10px;border:1px solid #353535;border-radius:10px}
+.home-widget-manager input{width:20px;height:20px}
+@media (max-width:979px){
+ .home-mosaic>.quick-note,.home-mosaic>.quick-audio,.home-mosaic>.home-widget-note{grid-column:span 6}
+}
+@media (max-width:600px){
+ .home-dashboard{padding:18px 14px!important}
+ .home-heading{margin-bottom:16px}
+ .customize-home{width:100%}
+ .home-mosaic{grid-template-columns:minmax(0,1fr);gap:14px}
+ .home-mosaic>*{grid-column:1!important;min-width:0}
+}
+
 /* Home cards scale their controls to the space they actually receive. */
 .main>.empty{--home-card-space:clamp(16px,2vw,26px)}
 .empty>.recent-files,.empty>.quick-actions-home,.empty .quick-note,.empty .quick-audio{
