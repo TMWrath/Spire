@@ -308,18 +308,46 @@
   }
 
   .task-card-actions {
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 6px;
     padding: 10px 12px;
+  }
+
+  .task-card-action-group {
+    box-sizing: border-box;
+    flex: 0 1 auto;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    gap: 6px;
+    height: 36px;
+    min-width: 0;
   }
 
   .task-card-action-group > button,
   .task-card-action-group > .task-image-picker {
-    flex: 1 1 90px;
+    box-sizing: border-box;
+    flex: 0 1 auto;
+    height: 36px;
+    min-width: 0;
+    min-height: 36px;
+    padding-inline: 8px;
   }
 
   .task-card-fields {
-    flex: 1 0 100%;
-    width: 100%;
-    min-width: 0;
-    max-width: none;
+    display: contents;
+  }
+
+  .task-card-field {
+    box-sizing: border-box;
+    flex: 1 1 0;
+    height: 36px;
+    min-height: 36px;
+    padding-inline: 6px;
+  }
+
+  .task-card-field > span {
+    margin-right: 4px;
+    font-size: 8px;
   }
 }
