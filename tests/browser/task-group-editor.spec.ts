@@ -1,0 +1,38 @@
+import {test,expect} from './fixtures';
+
+test('task group editor lists only unfinished tasks as distinct cards',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('/');
+ await page.getByLabel('Username',{exact:true}).fill('owner');
+ await page.getByLabel('Password',{exact:true}).fill('correct horse battery staple');
+ await page.getByRole('button',{name:'Create Reliquary',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
+ const unfinished={id:'11111111-1111-4111-8111-111111111111',title:'Create the responsive launch dashboard',done:false};
+ const finished={id:'22222222-2222-4222-8222-222222222222',title:'Approve the completed project brief',done:true};
+ await page.evaluate(async({unfinished,finished})=>{const me=await(await fetch('/api/me')).json();const headers={'Content-Type':'application/json','X-CSRF-Token':me.csrf};await fetch('/api/projects',{method:'POST',headers,body:JSON.stringify({name:'Grouping'})});await fetch('/api/project-tasks/Grouping',{method:'PUT',headers,body:JSON.stringify({revision:0,tasks:[unfinished,finished],groups:[{id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',name:'Launch',color:'#cf8799',members:['task:'+unfinished.id,'task:'+finished.id]}]})});},{unfinished,finished});
+ await page.reload();
+ await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
+ if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+ await page.getByRole('tab',{name:'Projects',exact:true}).click();
+ await page.getByRole('region',{name:'Project Grouping',exact:true}).getByRole('button',{name:'Tasks',exact:true}).click();
+ await page.getByRole('button',{name:'Group tasks',exact:true}).click();
+ const dialog=page.getByRole('dialog',{name:'Visual groups',exact:true});
+ await expect(dialog).toBeVisible();
+ const choices=dialog.locator('.visual-group-choice');
+ await expect(choices).toHaveCount(1);
+ await expect(choices).toContainText(unfinished.title);
+ await expect(dialog.getByText(finished.title,{exact:true})).toHaveCount(0);
+ await expect(dialog.getByText('Group 1 · 1 selected',{exact:true})).toBeVisible();
+ expect(await choices.evaluate(e=>{const s=getComputedStyle(e);return parseFloat(s.borderTopWidth)>0&&parseFloat(s.borderRadius)>=10&&parseFloat(s.paddingTop)>=12;})).toBe(true);
+ await dialog.getByRole('button',{name:'Save groups',exact:true}).click();
+ await expect(dialog).not.toBeVisible();
+ await page.reload();
+ await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
+ if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+ await page.getByRole('tab',{name:'Projects',exact:true}).click();
+ await page.getByRole('region',{name:'Project Grouping',exact:true}).getByRole('button',{name:'Tasks',exact:true}).click();
+ await page.getByRole('button',{name:'Group tasks',exact:true}).click();
+ const reopened=page.getByRole('dialog',{name:'Visual groups',exact:true});
+ await expect(reopened.locator('.visual-group-choice')).toHaveCount(1);
+ await expect(reopened.getByText('Group 1 · 1 selected',{exact:true})).toBeVisible();
+});
