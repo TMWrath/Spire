@@ -37,9 +37,12 @@ test('normal file tasks live inside Files and write authoritative Markdown',asyn
  await expect(collection.getByRole('button',{name:'Back to files',exact:true})).toBeVisible();
  await expect(collection.getByPlaceholder('What needs to be done?')).toBeVisible();
  await expect(collection.getByRole('status')).toContainText('complete');
- await expect(collection.getByLabel('New task deadline',{exact:true})).toBeVisible();
- await expect(collection.getByRole('button',{name:'Link file',exact:true})).toBeVisible();
+ await expect(collection.getByLabel('New task deadline',{exact:true})).toHaveCount(0);
+ await expect(collection.getByRole('button',{name:'Link file',exact:true})).toHaveCount(0);
  await expect(collection.getByRole('button',{name:'Group tasks',exact:true})).toBeVisible();
+ const createActions=collection.locator('.task-create-actions');
+ await expect(createActions.getByRole('button')).toHaveCount(2);
+ expect(await createActions.evaluate(e=>e.children[0].getBoundingClientRect().top===e.children[1].getBoundingClientRect().top)).toBe(true);
  await collection.getByLabel('New task',{exact:true}).fill('Draft scene');
  await collection.getByRole('button',{name:'Add task',exact:true}).click();
  const checkbox=collection.getByRole('checkbox',{name:'Complete Draft scene',exact:true});
@@ -62,8 +65,11 @@ test('normal file tasks live inside Files and write authoritative Markdown',asyn
  await expect(collection.getByRole('button',{name:'Unlink file for Draft scene',exact:true})).toBeVisible();
  await expect(collection.getByRole('button',{name:'Delete task Draft scene',exact:true})).toBeVisible();
  await checkbox.click();
- await expect(collection.getByRole('checkbox',{name:'Complete Draft scene',exact:true})).toBeChecked();
- await collection.getByRole('button',{name:'Open file for Draft scene',exact:true}).click();
+ const done=collection.getByRole('region',{name:'Done',exact:true});
+ await expect(collection.getByRole('checkbox',{name:'Complete Draft scene',exact:true})).toHaveCount(0);
+ await done.getByRole('button',{name:/Done/}).click();
+ await expect(done.getByRole('checkbox',{name:'Complete Draft scene',exact:true})).toBeChecked();
+ await done.getByRole('button',{name:'Open file for Draft scene',exact:true}).click();
  await page.getByRole('button',{name:'Source',exact:true}).click();
  await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue(/# Tasks\n\n- \[x\] Draft scene/);
 });

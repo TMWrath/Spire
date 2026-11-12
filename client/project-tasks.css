@@ -23,9 +23,8 @@
 
 .task-create {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto auto auto auto;
-  align-items: end;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
   margin-bottom: 24px;
   padding: 12px;
   border: 1px solid var(--border, #333);
@@ -33,14 +32,36 @@
   background: var(--panel, #191919);
 }
 
-.task-create > input {
+.task-create > textarea {
+  box-sizing: border-box;
   min-width: 0;
   width: 100%;
+  min-height: 112px;
+  max-height: 320px;
+  padding: 11px 12px;
+  resize: vertical;
+  border: 1px solid #454545;
+  border-radius: 9px;
+  background: #111;
+  color: inherit;
+  font: inherit;
+  line-height: 1.45;
 }
 
-.task-create .task-deadline {
+.task-create > textarea:focus {
+  outline: 2px solid #eee;
+  outline-offset: 1px;
+}
+
+.task-create-actions {
   display: grid;
-  gap: 5px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.task-create-actions button {
+  min-width: 0;
+  min-height: 44px;
 }
 
 .task-entries {
@@ -253,32 +274,12 @@
     margin-left: 0;
   }
 
-  .task-create {
-    grid-template-columns: minmax(0, 1fr) minmax(126px, .55fr);
-  }
-
-  .task-create > input {
-    grid-column: 1 / -1;
-  }
-
-  .task-create > button {
-    min-width: 0;
-  }
-
-  .task-create > button:last-child {
-    grid-column: 1 / -1;
+  .task-create > textarea {
+    min-height: 104px;
   }
 }
 
 @media (max-width: 430px) {
-  .task-create {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .task-create .task-deadline {
-    grid-column: 1 / -1;
-  }
-
   .task-card-heading {
     padding: 12px 12px 8px;
   }
