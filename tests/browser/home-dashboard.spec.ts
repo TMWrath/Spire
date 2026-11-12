@@ -40,8 +40,15 @@ test.describe('Home dashboard',()=>{
    await expect(recent).not.toHaveAttribute('draggable','true');
 
    const audio=page.getByRole('region',{name:'Quick audio widget',exact:true});
-   await expect(audio.getByRole('button',{name:'Remove Quick audio widget',exact:true})).toBeVisible();
-   await audio.getByRole('button',{name:'Remove Quick audio widget',exact:true}).click();
+   const removeAudio=audio.getByRole('button',{name:'Remove Quick audio widget',exact:true});
+   await expect(removeAudio).toBeVisible();
+   const removeStyle=await removeAudio.evaluate(element=>{const style=getComputedStyle(element);const button=element.getBoundingClientRect();const widget=element.closest('.home-widget')!.getBoundingClientRect();return {background:style.backgroundColor,border:style.borderTopWidth,radius:style.borderTopLeftRadius,right:widget.right-button.right,top:button.top-widget.top};});
+   expect(removeStyle.background).toBe('rgba(0, 0, 0, 0)');
+   expect(removeStyle.border).toBe('0px');
+   expect(removeStyle.radius).toBe('0px');
+   expect(removeStyle.right).toBeGreaterThanOrEqual(8);
+   expect(removeStyle.top).toBeGreaterThanOrEqual(8);
+   await removeAudio.click();
    await expect(audio).toHaveCount(0);
    await page.reload();
    await expect(page.getByRole('region',{name:'Quick audio widget',exact:true})).toHaveCount(0);
