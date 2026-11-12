@@ -164,8 +164,7 @@
 
 .task-card-meta {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
   padding: 0 14px 14px 46px;
 }
 
@@ -214,13 +213,21 @@
 }
 
 .task-card-actions button,
-.task-image-picker {
+.task-image-picker,
+.task-action-deadline {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 36px;
   padding: 6px 11px;
   font-size: 12px;
+}
+
+.task-action-deadline {
+  box-sizing: border-box;
+  width: auto;
+  min-width: 132px;
+  color-scheme: dark;
 }
 
 .task-image-picker {
@@ -294,6 +301,18 @@
 
   .task-card-action-group > button,
   .task-card-action-group > .task-image-picker {
-    flex: 1 1 110px;
+    flex: 1 1 90px;
+  }
+
+  .task-card-action-group > .task-action-deadline {
+    flex: 0 0 44px;
+    width: 44px;
+    min-width: 44px;
+    padding: 6px;
+    color: transparent;
+  }
+
+  .task-action-deadline::-webkit-calendar-picker-indicator {
+    margin: auto;
   }
 }
