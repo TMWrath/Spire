@@ -27,6 +27,14 @@ test.describe('Home dashboard',()=>{
    const dashboard=page.locator('.home-dashboard');
    expect(await dashboard.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBeTruthy();
 
+   const quickCreate=page.getByRole('region',{name:'Quick Create widget',exact:true}).locator('.quick-actions-home');
+   await expect(quickCreate).toBeVisible();
+   const quickCreateStyle=await quickCreate.evaluate(element=>{const style=getComputedStyle(element);return {background:style.backgroundColor,border:style.borderTopWidth,radius:style.borderTopLeftRadius,padding:style.paddingTop};});
+   expect(quickCreateStyle.background).toBe('rgb(24, 24, 24)');
+   expect(quickCreateStyle.border).toBe('1px');
+   expect(quickCreateStyle.radius).toBe('16px');
+   expect(parseFloat(quickCreateStyle.padding)).toBeGreaterThan(0);
+
    const recent=page.getByRole('region',{name:'Recent files',exact:true});
    await expect(recent.getByRole('button',{name:/Remove Recent files/})).toHaveCount(0);
    await expect(recent).not.toHaveAttribute('draggable','true');
