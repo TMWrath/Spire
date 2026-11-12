@@ -27,6 +27,10 @@ test.describe('Home dashboard',()=>{
    const dashboard=page.locator('.home-dashboard');
    expect(await dashboard.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBeTruthy();
 
+   const recent=page.getByRole('region',{name:'Recent files',exact:true});
+   await expect(recent.getByRole('button',{name:/Remove Recent files/})).toHaveCount(0);
+   await expect(recent).not.toHaveAttribute('draggable','true');
+
    const audio=page.getByRole('region',{name:'Quick audio widget',exact:true});
    await expect(audio.getByRole('button',{name:'Remove Quick audio widget',exact:true})).toBeVisible();
    await audio.getByRole('button',{name:'Remove Quick audio widget',exact:true}).click();
@@ -44,13 +48,14 @@ test.describe('Home dashboard',()=>{
  test('widgets can be dragged into a new order and retain that order',async({page})=>{
   await page.setViewportSize({width:1280,height:900});
   await openHome(page,'home-widget-order');
-  const recent=page.getByRole('region',{name:'Recent files widget',exact:true});
   const audio=page.getByRole('region',{name:'Quick audio widget',exact:true});
-  await audio.dragTo(recent);
+  const actions=page.getByRole('region',{name:'Quick Create widget',exact:true});
+  await audio.dragTo(actions);
   const order=await page.locator('.home-widget').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('aria-label')));
   expect(order[0]).toBe('Quick audio widget');
   await page.reload();
   await expect(page.locator('.home-dashboard')).toBeVisible();
+  await expect(page.getByRole('region',{name:'Recent files',exact:true})).toBeVisible();
   const persisted=await page.locator('.home-widget').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('aria-label')));
   expect(persisted[0]).toBe('Quick audio widget');
  });
