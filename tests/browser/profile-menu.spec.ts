@@ -32,5 +32,11 @@ for(const width of [390,673,1280])test(`profile owns session controls and Settin
  await expect(about.getByRole('button',{name:'Sign out',exact:true})).toHaveCount(0);
  await profile.click();
  await page.getByRole('button',{name:'Sign out',exact:true}).click();
- await expect(page.getByRole('button',{name:'Sign in',exact:true})).toBeVisible();
+ await expect(page.getByLabel('Username',{exact:true})).toBeVisible();
+ const signedOutProfile=page.getByRole('button',{name:'Profile',exact:true});
+ await expect(signedOutProfile).toBeVisible();
+ await signedOutProfile.click();
+ const signedOutMenu=page.getByRole('dialog',{name:'Profile'});
+ await expect(signedOutMenu).toBeVisible();
+ await expect(signedOutMenu.getByRole('button',{name:'Sign in',exact:true})).toBeVisible();
 });
