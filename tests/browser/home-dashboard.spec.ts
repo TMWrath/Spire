@@ -26,6 +26,10 @@ test.describe('Home dashboard',()=>{
    await openHome(page,`home-widgets-${viewport.width}`);
    const dashboard=page.locator('.home-dashboard');
    expect(await dashboard.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBeTruthy();
+   const deadlines=page.getByRole('region',{name:'Deadlines widget',exact:true});
+   await expect(deadlines).toBeVisible();
+   await expect(deadlines.getByRole('heading',{name:'Deadlines',exact:true})).toBeVisible();
+   expect(await deadlines.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBeTruthy();
 
    const quickCreate=page.getByRole('region',{name:'Quick Create widget',exact:true}).locator('.quick-actions-home');
    await expect(quickCreate).toBeVisible();
@@ -65,7 +69,11 @@ test.describe('Home dashboard',()=>{
   await openHome(page,'home-widget-order');
   const audio=page.getByRole('region',{name:'Quick audio widget',exact:true});
   const actions=page.getByRole('region',{name:'Quick Create widget',exact:true});
-  await audio.dragTo(actions);
+  const transfer=await page.evaluateHandle(()=>new DataTransfer());
+  await audio.dispatchEvent('dragstart',{dataTransfer:transfer});
+  await actions.dispatchEvent('dragover',{dataTransfer:transfer});
+  await actions.dispatchEvent('drop',{dataTransfer:transfer});
+  await audio.dispatchEvent('dragend',{dataTransfer:transfer});
   const order=await page.locator('.home-widget').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('aria-label')));
   expect(order[0]).toBe('Quick audio widget');
   await page.reload();

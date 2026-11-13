@@ -55,7 +55,7 @@
 .home-mosaic{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-flow:dense;align-items:start;gap:clamp(14px,2vw,22px);min-width:0;width:100%}
 .home-widget{position:relative;grid-column:span 4;min-width:0;cursor:grab;transition:opacity .15s ease,transform .15s ease}
 .home-widget:active{cursor:grabbing}
-.home-widget-recent,.home-widget-actions{grid-column:span 12}
+.home-widget-recent,.home-widget-actions,.home-widget-deadlines{grid-column:span 12}
 .home-widget-note{grid-column:span 8}
 .home-widget-dragging{opacity:.45;transform:scale(.985)}
 .home-widget-content{height:100%;min-width:0}
@@ -72,7 +72,7 @@
 .home-widget-choice{text-align:left;min-height:48px;padding:12px 16px}
 @media (max-width:979px){
  .home-widget,.home-widget-note,.home-widget-add{grid-column:span 6}
- .home-widget-recent,.home-widget-actions{grid-column:span 12}
+ .home-widget-recent,.home-widget-actions,.home-widget-deadlines{grid-column:span 12}
 }
 @media (max-width:600px){
  .home-dashboard{padding:18px 14px!important}
@@ -84,15 +84,30 @@
 
 /* Home cards scale their controls to the space they actually receive. */
 .main>.empty{--home-card-space:clamp(16px,2vw,26px)}
-.empty>.recent-files,.empty>.quick-actions-home,.home-widget-content>.quick-actions-home,.empty .quick-note,.empty .quick-audio{
+.empty>.recent-files,.empty>.quick-actions-home,.home-widget-content>.quick-actions-home,.empty .quick-note,.empty .quick-audio,.empty .deadline-widget{
  background:#181818;border:1px solid #363636;border-radius:16px;
  padding:var(--home-card-space);min-width:0;container-type:inline-size;
  box-shadow:0 3px 14px #00000018;
 }
 .empty .quick-note,.empty .quick-audio{width:100%;margin:0}
 .empty .recent-files>header{height:auto;padding:0;background:none;flex-wrap:wrap}
-.empty .recent-files h2,.empty .quick-actions-home h2,.empty .quick-note h2,.empty .quick-audio h2{font-size:clamp(15px,1.2vw,19px);line-height:1.35}
-.empty .recent-files p,.empty .quick-actions-home p,.empty .quick-note p,.empty .quick-audio p{line-height:1.5;font-size:14px;overflow-wrap:anywhere}
+.empty .recent-files h2,.empty .quick-actions-home h2,.empty .quick-note h2,.empty .quick-audio h2,.empty .deadline-widget h2{font-size:clamp(15px,1.2vw,19px);line-height:1.35}
+.empty .recent-files p,.empty .quick-actions-home p,.empty .quick-note p,.empty .quick-audio p,.empty .deadline-widget p{line-height:1.5;font-size:14px;overflow-wrap:anywhere}
+.deadline-widget{display:grid;gap:16px;width:100%;min-width:0;margin:0}
+.deadline-widget header{padding-right:36px}
+.deadline-widget h2,.deadline-widget p{margin:0}
+.deadline-widget header p{color:#aaa;margin-top:4px}
+.deadline-list{max-height:320px;min-width:0;overflow-y:auto;overscroll-behavior:contain;border:1px solid #333;border-radius:12px;background:#111}
+.deadline-row{display:grid;grid-template-columns:130px minmax(0,1fr) minmax(110px,24%);align-items:center;gap:14px;min-width:0;padding:12px 14px;border-bottom:1px solid #2d2d2d}
+.deadline-row:last-child{border-bottom:0}
+.deadline-row time{color:#d8b46a;font-variant-numeric:tabular-nums;white-space:nowrap}
+.deadline-row strong,.deadline-row span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.deadline-row span{color:#aaa;text-align:right}
+.deadline-empty{color:#aaa;margin:0!important;padding:18px 0}
+@media (max-width:600px){
+ .deadline-row{grid-template-columns:98px minmax(0,1fr) minmax(72px,24%);gap:9px;padding:11px 10px;font-size:13px}
+ .deadline-list{max-height:300px}
+}
 .empty .quick-action-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px}
 .empty .quick-action-button{width:100%;min-width:0;min-height:64px;height:auto;white-space:normal;text-align:left}
 .empty .quick-action-copy{min-width:0;overflow-wrap:anywhere}
