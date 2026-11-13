@@ -39,7 +39,19 @@ for(const width of [390,673,1280])test(`profile owns session controls and Settin
  await expect(about).toContainText('Whistle speech-to-text model');
  await expect(about.getByRole('button',{name:'Sign out',exact:true})).toHaveCount(0);
  await profile.click();
- await page.getByRole('button',{name:'Sign out',exact:true}).click();
+ const signOut=page.getByRole('button',{name:'Sign out',exact:true});
+ await expect(signOut).toBeVisible();
+ await expect.poll(async()=>signOut.evaluate(button=>{
+  const style=getComputedStyle(button);
+  const icon=button.querySelector('svg')?.getBoundingClientRect();
+  const text=Array.from(button.childNodes).find(node=>node.nodeType===Node.TEXT_NODE&&node.textContent?.trim());
+  if(!icon||!text)return false;
+  const range=document.createRange();
+  range.selectNodeContents(text);
+  const label=range.getBoundingClientRect();
+  return style.flexDirection==='row'&&style.flexWrap==='nowrap'&&style.whiteSpace==='nowrap'&&Math.abs((icon.top+icon.height/2)-(label.top+label.height/2))<=2;
+ })).toBe(true);
+ await signOut.click();
  await expect(page.getByLabel('Username',{exact:true})).toBeVisible();
  const signedOutProfile=page.getByRole('button',{name:'Profile',exact:true});
  await expect(signedOutProfile).toBeVisible();
