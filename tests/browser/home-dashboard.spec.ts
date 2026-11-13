@@ -28,7 +28,14 @@ test.describe('Home dashboard',()=>{
    expect(await dashboard.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBeTruthy();
    const deadlines=page.getByRole('region',{name:'Deadlines widget',exact:true});
    await expect(deadlines).toBeVisible();
-   await expect(deadlines.getByRole('heading',{name:'Deadlines',exact:true})).toBeVisible();
+   const deadlineHeading=deadlines.getByRole('heading',{name:'Deadlines',exact:true});
+   const deadlineDescription=deadlines.getByText('Upcoming tasks across every project.',{exact:true});
+   await expect(deadlineHeading).toBeVisible();
+   await expect(deadlineDescription).toBeVisible();
+   const headingBox=await deadlineHeading.boundingBox();
+   const descriptionBox=await deadlineDescription.boundingBox();
+   expect(headingBox).not.toBeNull();expect(descriptionBox).not.toBeNull();
+   expect(descriptionBox!.y).toBeGreaterThanOrEqual(headingBox!.y+headingBox!.height);
    expect(await deadlines.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBeTruthy();
 
    const quickCreate=page.getByRole('region',{name:'Quick Create widget',exact:true}).locator('.quick-actions-home');

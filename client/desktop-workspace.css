@@ -94,8 +94,8 @@
 .empty .recent-files h2,.empty .quick-actions-home h2,.empty .quick-note h2,.empty .quick-audio h2,.empty .deadline-widget h2{font-size:clamp(15px,1.2vw,19px);line-height:1.35}
 .empty .recent-files p,.empty .quick-actions-home p,.empty .quick-note p,.empty .quick-audio p,.empty .deadline-widget p{line-height:1.5;font-size:14px;overflow-wrap:anywhere}
 .deadline-widget{display:grid;gap:16px;width:100%;min-width:0;margin:0}
-.deadline-widget header{padding-right:36px}
-.deadline-widget h2,.deadline-widget p{margin:0}
+.deadline-widget header{display:flex;flex-direction:column;align-items:flex-start;padding-right:36px}
+.deadline-widget h2,.deadline-widget p{display:block;width:100%;margin:0}
 .deadline-widget header p{color:#aaa;margin-top:4px}
 .deadline-list{max-height:320px;min-width:0;overflow-y:auto;overscroll-behavior:contain;border:1px solid #333;border-radius:12px;background:#111}
 .deadline-row{display:grid;grid-template-columns:130px minmax(0,1fr) minmax(110px,24%);align-items:center;gap:14px;min-width:0;padding:12px 14px;border-bottom:1px solid #2d2d2d}
