@@ -8,7 +8,7 @@ const deferred=()=>{
  return {promise,resolve};
 };
 
-test('cached Android Local workspace is revealed before optional mount restoration completes',async()=>{
+test('cached local workspace is revealed before optional mount restoration completes',async()=>{
  const restoration=deferred();
  const events:string[]=[];
  await initializeWorkspace({

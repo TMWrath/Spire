@@ -11,7 +11,7 @@ export type WorkspaceStartup = {
 };
 
 /**
- * Opens the cached Android Local workspace before optional Server/device work.
+ * Opens a cached local workspace before optional Server/device work.
  * Hosted/server startup keeps its existing authoritative initialization gate.
  */
 export async function initializeWorkspace(steps: WorkspaceStartup): Promise<void> {

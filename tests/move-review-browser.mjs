@@ -5,7 +5,6 @@ import {build} from 'esbuild';
 import {chromium} from 'playwright-core';
 const component=fs.readFileSync('client/WorkspaceMounts.tsx','utf8').split('export function ServerSettings')[1];
 const fixture=`import React,{useState} from 'react';import{createRoot}from'react-dom/client';
-const androidAppAvailable=()=>false;
 window.actions=[];
 const mounted={supported:true,busy:false,remote:undefined,journals:[1,2].map(id=>({id:String(id),path:'99 - Archive/test file.md',message:'Reconnect and resolve pending edits/conflicts before moving files'})),resumeJournal:async(id)=>{window.actions.push('resume:'+id)},dismissJournal:async(id)=>{window.actions.push('review:'+id);mounted.journals=mounted.journals.filter(j=>j.id!==id);draw()}};
 function ServerSettings${component}
@@ -33,5 +32,5 @@ try{
   assert.deepEqual(await page.evaluate(()=>window.actions),['review:1','review:2']);
   await page.close();
  }
- console.log('PASS interrupted-move reviews: 320/412/768px; contained stacked content, reachable review buttons, independent journal acknowledgement; no automatic resume. Chromium fixture, not Android WebView.');
+ console.log('PASS interrupted-move reviews: 320/412/768px; contained stacked content, reachable review buttons, independent journal acknowledgement; no automatic resume. Chromium fixture.');
 }finally{await browser?.close();await new Promise(r=>server.close(r));}

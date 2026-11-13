@@ -2,7 +2,7 @@ export type DeviceStateRequest={op:'get'|'put'|'delete'|'import';key?:string;val
 export type DeviceStateBridge=(request:DeviceStateRequest)=>Promise<{present?:boolean;value?:unknown}>;
 declare global {var spireDeviceState:DeviceStateBridge|undefined;}
 export interface CacheStorage{get(store:string,key:IDBValidKey):Promise<any>;put(store:string,value:any,key:IDBValidKey):Promise<any>;delete(store:string,key:IDBValidKey):Promise<any>;getAllKeys(store:string):Promise<IDBValidKey[]>;}
-/** Device identity and Server caches are native-owned on Android. Local files,
+/** Device identity and Server caches may be owned by a future native client. Local files,
  * transfer journals and publication baselines stay in their folder's database.
  * Native tombstones prevent an old folder from resurrecting a signed-out profile.
  */

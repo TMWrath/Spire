@@ -14,7 +14,7 @@ test('mobile Back dismissal resets keyboard permission without editor blur',asyn
   for(let cycle=0;cycle<2;cycle++){
    await keyboard.click();await expect(field).toBeFocused();await expect(field).toHaveAttribute('inputmode','text');
    await resize(810);await expect(field).toHaveAttribute('inputmode','text');await resize(480);await expect(field).toBeFocused();await expect(field).toHaveAttribute('inputmode','text');await resize(500);await expect(field).toHaveAttribute('inputmode','text');
-   // Android Back expands the viewport but deliberately retains editable focus.
+   // Hiding a mobile keyboard expands the viewport but deliberately retains editable focus.
    await resize(844);await expect(field).toHaveAttribute('inputmode','none');await expect(field).toBeFocused();
    await field.click();await expect(field).toHaveAttribute('inputmode','none');
   }

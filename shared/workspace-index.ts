@@ -5,7 +5,7 @@ import {bytesToHex} from '@noble/hashes/utils.js';
 const hash=z.string().regex(/^[a-f0-9]{64}$/);
 export const workspaceIndexSchema=z.object({version:z.literal(1),revision:hash,structure:hash,metadata:hash,files:z.array(z.object({id:z.string().min(1).max(200),path:z.string().min(1).max(2000),contentHash:hash,recordHash:hash})).max(10000)}).refine(v=>new Set(v.files.map(f=>f.id)).size===v.files.length,'Duplicate file identities');
 
-// Versioned wire contract shared by hosted, desktop and Android runtimes.
+// Versioned wire contract for hosted and future client runtimes.
 export type IndexedFile={id:string;path:string;contentHash:string;recordHash:string};
 export type WorkspaceIndex={version:1;revision:string;structure:string;metadata:string;files:IndexedFile[]};
 type FileRecord={id:string;path:string;content:string};

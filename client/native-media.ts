@@ -11,7 +11,7 @@ export async function prepareNativeMedia(bridge:BackgroundMedia,attachments:Medi
 export async function waitNativeMedia(bridge:Pick<BackgroundMedia,'status'>,id:string,current:()=>boolean,progress:(update:MediaProgress)=>void){
  for(;;){if(!current())throw Error('Workspace changed; background transfer remains scoped to its original folder');
   const state=await bridge.status(id);if(!current())throw Error('Workspace changed');
-  progress({direction:state.direction,phase:state.phase??'Queued for Android background transfer',total:state.total,loaded:state.loaded});
+  progress({direction:state.direction,phase:state.phase??'Queued for background transfer',total:state.total,loaded:state.loaded});
   if(state.state==='ready'){if(!state.hash||!/^([a-f0-9]{64})$/.test(state.hash))throw Error('Invalid native transfer receipt');return state.hash;}
   if(state.state==='failed'||state.state==='cancelled')throw Error(state.error||'Background transfer failed; retry retained');
   await new Promise(resolve=>setTimeout(resolve,1000));

@@ -3,7 +3,7 @@ import {useEffect,useId,useRef} from 'react';
 type Layer={id:string;open:boolean;close:()=>void};
 const active=new Map<string,{close:()=>void;order:number}>();
 let sequence=0;
-const mobileBackTarget=()=>Boolean(window.SpireApp)||matchMedia('(max-width:760px),(pointer:coarse)').matches;
+const mobileBackTarget=()=>matchMedia('(max-width:760px),(pointer:coarse)').matches;
 /** Shared by app panels and child toolbars so the most recently opened layer wins. */
 export function useMobileBack(layers:Layer[],root=false,home=false){
  const owner=useId();const atHome=useRef(home);atHome.current=home;
