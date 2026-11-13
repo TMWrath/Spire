@@ -17,12 +17,14 @@
 
 .app{background:var(--surface-app);color:var(--text-primary)}
 .app > header{
+ position:relative;
+ z-index:70;
  min-height:64px;
  gap:var(--control-gap);
  padding-inline:16px;
  background:var(--surface-app);
  border-color:var(--line-subtle);
- overflow:hidden;
+ overflow:visible;
 }
 .app > header button{
  min-width:var(--control-size);

@@ -21,6 +21,11 @@ for(const width of [390,673,1280])test(`profile owns session controls and Settin
  await profile.click();
  const menu=page.getByRole('dialog',{name:'Profile'});
  await expect(menu).toBeVisible();
+ await expect.poll(async()=>menu.evaluate(element=>{
+  const box=element.getBoundingClientRect();
+  const hit=document.elementFromPoint(box.left+box.width/2,box.top+box.height/2);
+  return Boolean(hit&&(hit===element||element.contains(hit)));
+ })).toBe(true);
  await expect(menu).toContainText(username);
  await page.getByRole('button',{name:'Settings',exact:true}).click();
  await expect(page.getByRole('tab',{name:'Privacy',exact:true})).toHaveCount(0);
