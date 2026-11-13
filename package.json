@@ -2,6 +2,7 @@
   "name": "spire",
   "version": "0.1.0",
   "private": true,
+  "license": "Apache-2.0",
   "main": "desktop-dist/main.cjs",
   "description": "Spire local-folder and server desktop workspace",
   "author": "T.M. Wrath",

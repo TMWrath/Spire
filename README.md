@@ -148,3 +148,23 @@ Voice assets are prepared by the build workflow; see `scripts/prepare-voice-asse
 - `documents/`: technical and project documentation.
 
 The responsive web app is the simplest way to try Spire. Native-client source is included; native distribution and feature parity should be verified separately for each release. See [source layout](documents/source-layout.md) for implementation details.
+
+## Privacy and ownership
+
+Spire is focused on private, self-hosted workspaces. You choose where it runs and keep control of your files, without relying on a third-party cloud or paying for a service that stores your work on someone else's server.
+
+## Platforms
+
+Spire is currently web-based and Docker-optimized, with dedicated client support planned for:
+
+- Android
+- Windows
+- Linux
+
+## Project status
+
+Spire is currently in development, with more features planned for future releases.
+
+## License
+
+Spire is licensed under the [Apache License 2.0](LICENSE).
