@@ -86,9 +86,7 @@ The files remain understandable as files. The project tools add structure around
 
 ## Privacy and ownership
 
-Spire is designed around private workspaces and user-controlled storage. It is not a social network, and the product is not built around publishing your writing or training on it.
-
-Specific hosting, backup, encryption, and client details will be documented before a public release.
+Spire is focused on private, self-hosted workspaces. You choose where it runs and keep control of your files, without relying on a third-party cloud or paying for a service that stores your work on someone else's server.
 
 ## Platforms
 
