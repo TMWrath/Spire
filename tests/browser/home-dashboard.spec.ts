@@ -9,15 +9,24 @@ async function openHome(page:import('@playwright/test').Page,username:string){
 }
 
 test.describe('Home dashboard',()=>{
- test('desktop uses the full canvas instead of retaining an empty navigation sidebar',async({page})=>{
+ test('desktop keeps navigation and uses the full remaining canvas',async({page})=>{
   await page.setViewportSize({width:1280,height:900});
   await openHome(page,'home-desktop-canvas');
-  await expect(page.locator('.workspace')).toHaveClass(/home-workspace/);
-  await expect(page.locator('.workspace > .sidebar')).toBeHidden();
+  await expect(page.locator('.workspace')).not.toHaveClass(/home-workspace/);
+  await expect(page.locator('.workspace > .sidebar')).toBeVisible();
   const workspace=await page.locator('.workspace').boundingBox();
   const dashboard=await page.locator('.home-dashboard').boundingBox();
   expect(workspace).not.toBeNull();expect(dashboard).not.toBeNull();
-  expect(dashboard!.width).toBeGreaterThan(workspace!.width*.75);
+  expect(dashboard!.width).toBeGreaterThan(workspace!.width*.7);
+  expect(Math.abs(workspace!.x+workspace!.width-1280)).toBeLessThanOrEqual(1);
+  const main=await page.locator('.workspace > .main').boundingBox();
+  expect(main).not.toBeNull();
+  expect(Math.abs(main!.x+main!.width-1280)).toBeLessThanOrEqual(1);
+  const actions=await page.getByRole('region',{name:'Quick Create widget',exact:true}).boundingBox();
+  const deadlines=await page.getByRole('region',{name:'Deadlines widget',exact:true}).boundingBox();
+  expect(actions).not.toBeNull();expect(deadlines).not.toBeNull();
+  expect(Math.abs(actions!.width-deadlines!.width)).toBeLessThanOrEqual(2);
+  expect(actions!.x+actions!.width).toBeLessThanOrEqual(deadlines!.x+1);
  });
 
  for(const viewport of [{width:390,height:844},{width:673,height:900},{width:1280,height:900}]){
