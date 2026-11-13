@@ -92,19 +92,12 @@ Specific hosting, backup, encryption, and client details will be documented befo
 
 ## Platforms
 
-Spire is being developed as a platform-independent workspace, not as a Docker-only product.
+Spire is currently web-based and Docker-optimized, with dedicated client support planned for:
 
-The current application is web based and can be hosted on supported infrastructure. Dedicated clients for Android, Windows, and Linux are being considered for future releases. Those clients are not announced products yet, and platform availability may change as development continues.
+- Android
+- Windows
+- Linux
 
 ## Project status
 
-Spire is in active private development. There is no public download or general signup yet.
-
-This repository will be used for:
-
-- Product documentation
-- Screenshots and feature examples
-- Public issue tracking when appropriate
-- Release and client information when builds become available
-
-The private application source and deployment configuration are not contained in this repository.
+Spire is currently in development, with more features planned for future releases.
