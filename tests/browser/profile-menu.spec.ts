@@ -27,6 +27,9 @@ for(const width of [390,673,1280])test(`profile owns session controls and Settin
   return Boolean(hit&&(hit===element||element.contains(hit)));
  })).toBe(true);
  await expect(menu).toContainText(username);
+ await expect(menu).not.toContainText('Browser session');
+ await expect(menu).not.toContainText('This device:');
+ await expect.poll(async()=>menu.evaluate(element=>Math.round(element.getBoundingClientRect().width))).toBe(220);
  await page.getByRole('button',{name:'Settings',exact:true}).click();
  await expect(page.getByRole('tab',{name:'Privacy',exact:true})).toHaveCount(0);
  await expect(page.getByRole('tab',{name:'Credits',exact:true})).toHaveCount(0);
