@@ -1,1 +1,0 @@
-using System.Windows; namespace Spire.Windows; public partial class App : Application {}

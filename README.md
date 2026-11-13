@@ -110,16 +110,14 @@ Voice assets are prepared by the build workflow; see `scripts/prepare-voice-asse
 
 ## Source layout
 
-- `client/`: web interface and shared editor UI.
+- `client/`: web interface and editor UI.
 - `server/`: authentication, storage, revisions, and APIs.
-- `shared/`: portable formats and shared data rules.
-- `android/`: Android client source.
-- `windows/`: Windows client source.
+- `shared/`: shared formats and data rules.
 - `tests/`: automated tests and browser scenarios.
 - `examples/`: optional sample content.
-- `documents/`: technical and project documentation.
+- `documents/`: installation and technical documentation.
 
-The responsive web app is the simplest way to try Spire. Native-client source is included; native distribution and feature parity should be verified separately for each release. See [source layout](documents/source-layout.md) for implementation details.
+The responsive web app is the current Spire client. See [source layout](documents/source-layout.md) for implementation details.
 
 ## Privacy and ownership
 
