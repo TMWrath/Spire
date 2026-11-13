@@ -1,0 +1,36 @@
+import {expect,test,type Page} from '@playwright/test';
+
+async function signIn(page:Page,username:string){
+ await page.goto('/');
+ await page.getByLabel('Username',{exact:true}).fill(username);
+ await page.getByLabel('Password',{exact:true}).fill('disposable-profile-password');
+ await page.getByRole('button',{name:await page.getByRole('button',{name:'Create Reliquary',exact:true}).isVisible()?'Create Reliquary':'Sign in',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Profile',exact:true})).toBeVisible();
+}
+
+for(const width of [390,673,1280])test(`profile owns session controls and Settings has no Privacy tab at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:850});
+ const username='profile-owner';
+ await signIn(page,username);
+ const profile=page.getByRole('button',{name:'Profile',exact:true});
+ const header=page.locator('.app > header');
+ await expect.poll(async()=>{
+  const button=await profile.boundingBox(),bar=await header.boundingBox();
+  return button&&bar?Math.round(bar.x+bar.width-(button.x+button.width)):null;
+ }).toBeLessThanOrEqual(20);
+ await profile.click();
+ const menu=page.getByRole('dialog',{name:'Profile'});
+ await expect(menu).toBeVisible();
+ await expect(menu).toContainText(username);
+ await page.getByRole('button',{name:'Settings',exact:true}).click();
+ await expect(page.getByRole('tab',{name:'Privacy',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('tab',{name:'Credits',exact:true})).toHaveCount(0);
+ await page.getByRole('tab',{name:'About',exact:true}).click();
+ const about=page.getByRole('tabpanel',{name:'About',exact:true});
+ await expect(about).toContainText('Privacy & server data');
+ await expect(about).toContainText('Whistle speech-to-text model');
+ await expect(about.getByRole('button',{name:'Sign out',exact:true})).toHaveCount(0);
+ await profile.click();
+ await page.getByRole('button',{name:'Sign out',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Sign in',exact:true})).toBeVisible();
+});

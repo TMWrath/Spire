@@ -91,8 +91,9 @@ test('bundled Whistle performs real offline English inference',async({page})=>{
  await dialog.getByLabel('Audio file',{exact:true}).setInputFiles(fixture);await dialog.getByRole('button',{name:'Transcribe on this device'}).click();
  await expect(dialog.getByLabel('Raw transcript')).toHaveValue(/house|silent|door|morning|story/i,{timeout:120000});await expect(dialog).toContainText('Whistle');
 });
-test('Settings credits identify Whistle as the only speech model',async({page})=>{
- await setup(page);await page.getByRole('button',{name:'Settings',exact:true}).click();await page.getByRole('tab',{name:'Credits',exact:true}).click();const credits=page.getByRole('tabpanel',{name:'Credits',exact:true});
+test('About credits identify Whistle as the only speech model',async({page})=>{
+ await page.goto('/');await page.getByLabel('Username',{exact:true}).fill('voicewriter');await page.getByLabel('Password',{exact:true}).fill(randomUUID());await page.getByRole('button',{name:'Create Reliquary',exact:true}).click();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Settings',exact:true}).click();await page.getByRole('tab',{name:'About',exact:true}).click();const credits=page.getByRole('tabpanel',{name:'About',exact:true});
  await expect(credits).toContainText('Whistle speech-to-text model');await expect(credits).toContainText('Cactus Needle browser runtime');await expect(credits).not.toContainText(/Whisper|Transformers\.js|ONNX Runtime/);
  await expect(credits.getByRole('link',{name:'Whistle Apache License 2.0'})).toHaveAttribute('href','/voice/licenses/model-Apache-2.0.txt');await expect(credits.getByRole('link',{name:'Cactus Needle Apache License 2.0'})).toHaveAttribute('href','/voice/licenses/cactus-needle-Apache-2.0.txt');
 });
