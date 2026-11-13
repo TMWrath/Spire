@@ -13,6 +13,7 @@ async function login(page:any){
 }
 
 test('Home remains available and sidebar Add and Trash share the bottom action row',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
  await login(page);
  await page.getByRole('button',{name:'Home',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Your writing lives here.',exact:true})).toBeVisible();
@@ -27,6 +28,23 @@ test('Home remains available and sidebar Add and Trash share the bottom action r
  expect(addBox!.x).toBeGreaterThanOrEqual(sidebarBox!.x);
  expect(trashBox!.x+trashBox!.width).toBeLessThanOrEqual(sidebarBox!.x+sidebarBox!.width);
  expect(addBox!.y+addBox!.height).toBeLessThanOrEqual(sidebarBox!.y+sidebarBox!.height);
+});
+
+test('mobile Trash heading keeps its content above the first card without clipping or overlap',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await login(page);
+ await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+ await page.locator('.sidebar-actions').getByRole('button',{name:'Trash',exact:true}).click();
+ const trashPage=page.getByRole('region',{name:'Deleted files',exact:true});
+ const heading=trashPage.locator('.trash-page-heading');
+ const grid=trashPage.locator('.trash-page-grid');
+ await expect(trashPage).toBeVisible();
+ await expect(heading.getByRole('heading',{name:'Trash',exact:true})).toBeVisible();
+ const [headingBox,gridBox]=await Promise.all([heading.boundingBox(),grid.boundingBox()]);
+ expect(headingBox&&gridBox).toBeTruthy();
+ expect(headingBox!.height).toBeGreaterThan(100);
+ expect(gridBox!.y).toBeGreaterThanOrEqual(headingBox!.y+headingBox!.height);
+ expect(await heading.evaluate(element=>element.scrollHeight<=element.clientHeight+1)).toBe(true);
 });
 
 test('mobile sidebar has explicit close routes and opening a file reveals the editor',async({page})=>{
