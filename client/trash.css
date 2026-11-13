@@ -4,8 +4,21 @@
 .trash-page-heading p{margin:0;color:#aaa}
 .trash-page-heading button{display:flex;align-items:center;gap:7px;min-height:42px}
 .trash-eyebrow{color:#888;font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
-.trash-page-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:14px;max-width:1120px;margin:0 auto}
-.trash-empty{grid-column:1/-1;display:grid;place-items:center;align-content:center;min-height:320px;padding:30px;text-align:center;color:#888;border:1px dashed #3a3a3a;border-radius:12px}
+.trash-folder-list{display:grid;gap:12px;max-width:1120px;margin:0 auto}
+.trash-folder{overflow:hidden;border:1px solid #3a3a3a;border-radius:12px;background:#181818;box-shadow:0 1px 0 #000}
+.trash-folder>summary{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:12px;min-height:64px;padding:10px 12px;cursor:pointer;list-style:none;background:#1c1c1c}
+.trash-folder>summary::-webkit-details-marker{display:none}
+.trash-folder>summary::after{content:'›';grid-column:1;grid-row:1;color:#888;font-size:1.2rem;transform:translateX(27px);transition:transform .15s}
+.trash-folder[open]>summary::after{transform:translateX(27px) rotate(90deg)}
+.trash-folder-icon{display:grid;grid-column:1;grid-row:1;place-items:center;width:36px;height:36px;border-radius:8px;background:#292929;color:#d7d7d7}
+.trash-folder-icon svg{width:20px;height:20px}
+.trash-folder-copy{display:flex;grid-column:2;grid-row:1;flex-direction:column;gap:3px;min-width:0}
+.trash-folder-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff}
+.trash-folder-copy small{color:#929292}
+.trash-folder>summary>button{grid-column:3;grid-row:1;min-height:38px;padding:8px 12px;white-space:nowrap}
+.trash-folder>.trash-page-grid{padding:12px;border-top:1px solid #343434}
+.trash-page-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:12px}
+.trash-empty{display:grid;place-items:center;align-content:center;min-height:320px;padding:30px;text-align:center;color:#888;border:1px dashed #3a3a3a;border-radius:12px}
 .trash-empty svg{width:36px;height:36px;margin-bottom:10px}
 .trash-empty h2{margin:0 0 6px;color:#ddd}
 .trash-empty p{margin:0;max-width:360px}
@@ -27,6 +40,12 @@
  .trash-page{padding:16px 10px 24px}
  .trash-page-heading{align-items:flex-start;margin-bottom:14px;padding:2px 2px 14px}
  .trash-page-heading button{padding:8px;font-size:.78rem}
+ .trash-folder-list{gap:10px}
+ .trash-folder>summary{grid-template-columns:36px minmax(0,1fr) auto;gap:9px;min-height:60px;padding:9px}
+ .trash-folder>summary::after{transform:translateX(24px)}
+ .trash-folder[open]>summary::after{transform:translateX(24px) rotate(90deg)}
+ .trash-folder>summary>button{min-height:36px;padding:7px 9px;font-size:.76rem}
+ .trash-folder>.trash-page-grid{padding:9px}
  .trash-page-grid{grid-template-columns:1fr;gap:10px}
  .trash-file-card{padding:11px}
  .trash-file-actions{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr)}

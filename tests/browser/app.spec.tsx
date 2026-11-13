@@ -333,6 +333,16 @@ test('panels are exclusive and close outside; trash requires a second confirmed 
  await expect(page.getByRole('region',{name:'Reliquary mind map'})).toBeVisible();
  await expect.poll(async()=>{const r=await page.request.get('/api/snapshot');return (await r.json()).notes.some((n:{path:string})=>n.path==='General/Purge.md');}).toBe(false);
 });
+test('Trash groups deleted files by original folder and restores the whole group on mobile',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();await login(page);
+ page.on('dialog',dialog=>void dialog.accept());
+ await create(page,'Cigars/Dictionary.md','# dictionary');await page.getByRole('button',{name:'Delete file',exact:true}).click();await expect.poll(async()=>{const snapshot=await (await page.request.get('/api/snapshot')).json();return snapshot.notes.find((note:{path:string})=>note.path==='Cigars/Dictionary.md')?.deleted;}).toBe(true);
+ await create(page,'Cigars/yyyy-mm-dd.md','# journal');await page.getByRole('button',{name:'Delete file',exact:true}).click();await expect.poll(async()=>{const snapshot=await (await page.request.get('/api/snapshot')).json();return snapshot.notes.find((note:{path:string})=>note.path==='Cigars/yyyy-mm-dd.md')?.deleted;}).toBe(true);
+ if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();await page.getByRole('button',{name:'Trash',exact:true}).click();
+ const folder=page.locator('.trash-folder',{hasText:'Cigars'});await expect(folder).toBeVisible();await expect(folder.locator(':scope > summary')).toContainText('2 deleted items');await expect(page.locator('.trash-folder')).toHaveCount(1);await expect(folder.getByText('Dictionary.md',{exact:true})).toBeVisible();await expect(folder.getByText('yyyy-mm-dd.md',{exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await folder.getByRole('button',{name:'Restore all',exact:true}).click();await expect(page.getByText('Trash is empty',{exact:true})).toBeVisible();
+ const snapshot=await (await page.request.get('/api/snapshot')).json();expect(snapshot.notes.filter((note:{path:string;deleted:boolean})=>note.path.startsWith('Cigars/')&&!note.deleted).map((note:{path:string})=>note.path).sort()).toEqual(['Cigars/Dictionary.md','Cigars/yyyy-mm-dd.md']);await context.close();
+});
 test('permanently deleting the open trashed note clears it and removes it from Trash immediately',async({page})=>{
  await login(page);await create(page,'Open purge.md','# disposable');await savedOnServer(page);
  page.on('dialog',dialog=>void dialog.accept());
