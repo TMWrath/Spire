@@ -75,43 +75,15 @@ Screenshots use the fictional, redistributable [showcase collection](examples/sh
 - Home cards adapt to the available width.
 - Sidebar calendar on desktop, with a calendar entry point on mobile.
 
-## Run with Docker
+## Installation
 
-Requirements: Docker Engine and the Compose plugin.
+Choose the guide for your system:
 
-```sh
-docker compose up --build -d
-docker compose ps
-```
+- [Docker installation](documents/installation/docker.md)
+- [Windows installation](documents/installation/windows.md)
+- [Linux installation](documents/installation/linux.md)
 
-Open **http://localhost:4173**. The first visitor creates the owner account; choose a unique password of at least 12 characters.
-
-The default Compose configuration binds only to loopback and stores data in the `spire_data` named volume. It does not depend on a particular hostname, VPN, external Docker network, or host filesystem path.
-
-For access from other devices, put Spire behind a properly configured HTTPS reverse proxy and set the exact external browser origin:
-
-```sh
-SPIRE_ORIGIN=https://notes.example.com docker compose up --build -d
-```
-
-Configure the reverse proxy separately; changing the origin does not install HTTPS or expose the loopback listener. Do not publish the internal application port directly to the internet. Recording and other browser APIs can require HTTPS or localhost.
-
-Stop without deleting data:
-
-```sh
-docker compose down
-```
-
-Back up the named data volume before changing versions. **Do not use `docker compose down -v` unless you intend to permanently delete the stored data.**
-
-### Configuration
-
-- `SPIRE_ORIGIN`: exact browser origin; Docker default `http://localhost:4173`.
-- `SPIRE_DATA`: application data directory; Docker uses `/data`.
-- `HOST`: listening address; the container uses `0.0.0.0` behind a loopback-only published port.
-- `PORT`: application port, default `4173`.
-
-Spire does not currently provide end-to-end encryption or encryption at rest. Secure and back up the host and storage appropriately.
+The current release runs as a web application. Docker is the recommended installation method, including on Windows and Linux. Dedicated Windows and Linux clients are planned for future releases.
 
 ## Try the showcase files
 
