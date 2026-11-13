@@ -30,6 +30,18 @@ test('Home remains available and sidebar Add and Trash share the bottom action r
  expect(addBox!.y+addBox!.height).toBeLessThanOrEqual(sidebarBox!.y+sidebarBox!.height);
 });
 
+test('mobile sidebar toggle stays centered above the app-header divider',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await login(page);
+ const header=page.locator('.app>header');
+ const toggle=page.getByRole('button',{name:'Toggle folders',exact:true});
+ const [headerBox,toggleBox]=await Promise.all([header.boundingBox(),toggle.boundingBox()]);
+ expect(headerBox&&toggleBox).toBeTruthy();
+ expect(toggleBox!.y).toBeGreaterThanOrEqual(headerBox!.y+4);
+ expect(toggleBox!.y+toggleBox!.height).toBeLessThanOrEqual(headerBox!.y+headerBox!.height-12);
+ expect((toggleBox!.y+toggleBox!.height/2)).toBeLessThanOrEqual(headerBox!.y+headerBox!.height/2-2);
+});
+
 test('mobile Trash heading keeps its content above the first card without clipping or overlap',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  await login(page);
