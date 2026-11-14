@@ -10,7 +10,7 @@ Spire calls your collection of files and attachments a **Reliquary**. Documents 
 
 ## Screenshots
 
-Screenshots use the fictional, redistributable [showcase collection](examples/showcase/). No personal workspace or private server appears in these captures.
+Screenshots use fictional demonstration content. No personal workspace or private server appears in these captures.
 
 ### Desktop
 
@@ -85,10 +85,6 @@ Choose the guide for your system:
 
 The current release runs as a web application. Docker is the recommended installation method, including on Windows and Linux. Dedicated Windows and Linux clients are planned for future releases.
 
-## Try the showcase files
-
-The optional `examples/showcase/` collection contains writing samples, linked research, tables, tasks, a fictional project, tagged image examples, and a short generated audio sample. It is not automatically loaded into a new installation. See its [guide](examples/showcase/README.md) for the folder layout and safe import instructions.
-
 ## Development
 
 Requires Node.js **22.12 or newer**.
@@ -114,7 +110,6 @@ Voice assets are prepared by the build workflow; see `scripts/prepare-voice-asse
 - `server/`: authentication, storage, revisions, and APIs.
 - `shared/`: shared formats and data rules.
 - `tests/`: automated tests and browser scenarios.
-- `examples/`: optional sample content.
 - `documents/`: installation and technical documentation.
 
 The responsive web app is the current Spire client. See [source layout](documents/source-layout.md) for implementation details.
