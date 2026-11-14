@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 const browser=await chromium.launch({headless:true});
 const dir='/tmp/spire-sphere-evidence';await fs.mkdir(dir,{recursive:true});
-const base='http://127.0.0.1:4191/';
+const base=process.env.SPHERICAL_MAP_URL||'http://127.0.0.1:4191/';
 async function ready(page){const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(base);await page.waitForFunction(()=>document.querySelector('#surface').dataset.zoom);assert.equal(await page.locator('.node').count(),16);return errors;}
 async function state(page){return page.locator('#surface').evaluate(e=>({...e.dataset}));}
 const desktop=await browser.newContext({viewport:{width:1100,height:800},recordVideo:{dir,size:{width:1100,height:800}}});

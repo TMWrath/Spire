@@ -4,7 +4,7 @@ import {join,relative,dirname} from 'node:path';
 import {randomUUID} from 'node:crypto';
 
 const base='examples/showcase/vault';
-const out='/home/spire/tmp/spire-desktop-gallery';
+const out='/tmp/spire-desktop-gallery';
 function walk(root:string):string[]{return readdirSync(root,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(join(root,e.name)):[join(root,e.name)]);}
 
 test('capture comprehensive Spire desktop gallery',async({page})=>{

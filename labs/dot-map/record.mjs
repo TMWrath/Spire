@@ -5,7 +5,7 @@ import {files,edges} from './demo.mjs';
 import {layout,identity,project} from './core.mjs';
 const dir='/tmp/spire-dot-map-evidence';await mkdir(dir,{recursive:true});const browser=await chromium.launch({headless:true});
 try{
- const context=await browser.newContext({viewport:{width:412,height:915},isMobile:true,hasTouch:true,recordVideo:{dir,size:{width:412,height:915}}}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:4192/');await page.waitForTimeout(1200);
+ const context=await browser.newContext({viewport:{width:412,height:915},isMobile:true,hasTouch:true,recordVideo:{dir,size:{width:412,height:915}}}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(process.env.DOT_MAP_URL||'http://127.0.0.1:4192/');await page.waitForTimeout(1200);
  const b=await page.locator('#map').boundingBox(),x=b.x+b.width/2,y=b.y+b.height/2,cdp=await context.newCDPSession(page);
  const send=(type,points)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:points.map(([x,y],i)=>({x,y,id:i+1,radiusX:4,radiusY:4}))});
  await send('touchStart',[[x-75,y-30]]);for(let i=1;i<=50;i++){await send('touchMove',[[x-75+i*3,y-30+Math.sin(i/50*Math.PI)*60]]);await page.waitForTimeout(50);}await send('touchEnd',[]);await page.waitForTimeout(450);

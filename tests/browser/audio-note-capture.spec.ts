@@ -17,6 +17,6 @@ for(const width of [390,1500])test(`Audio Notes share the custom player and reta
  if(width<980)await expect(page.locator('.sidebar')).not.toBeVisible();
  await expect(player).toBeVisible();await page.evaluate(()=>document.fonts.ready);
  const bounds=await player.boundingBox();expect(bounds!.x).toBeGreaterThanOrEqual(0);expect(bounds!.x+bounds!.width).toBeLessThanOrEqual(width+1);
- mkdirSync('/home/spire/tmp/spire-audio-note-screenshots',{recursive:true});
- await page.screenshot({path:'/home/spire/tmp/spire-audio-note-screenshots/'+(width<980?'mobile':'desktop')+'-audio-note.png'});
+ mkdirSync('/tmp/spire-audio-note-screenshots',{recursive:true});
+ await page.screenshot({path:'/tmp/spire-audio-note-screenshots/'+(width<980?'mobile':'desktop')+'-audio-note.png'});
 });

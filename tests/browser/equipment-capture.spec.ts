@@ -15,11 +15,11 @@ test('capture equipment table on desktop and mobile',async({page})=>{
  const audio=await page.request.get('/api/attachment?path=Attachments/lantern-chime.mp3');expect(audio.headers()['content-type']).toContain('audio/mpeg');
  expect(await page.evaluate(async()=>{const c=new AudioContext();try{const b=await(await fetch('/api/attachment?path=Attachments/lantern-chime.mp3')).arrayBuffer();return (await c.decodeAudioData(b)).duration;}finally{await c.close();}})).toBeGreaterThan(2);
  await page.reload();await expect(page.locator('.sidebar')).toBeVisible();
- mkdirSync('/home/spire/tmp/spire-equipment-screenshots',{recursive:true});
+ mkdirSync('/tmp/spire-equipment-screenshots',{recursive:true});
  await page.getByText('Reference',{exact:true}).click();
  await page.getByRole('button',{name:'Equipment table',exact:true}).click();
  await expect(page.getByRole('textbox',{name:'Document editor',exact:true})).toContainText('A lighter pack');
  await expect(page.locator('.document-editor table')).toBeVisible();await page.evaluate(()=>document.fonts.ready);
- await page.screenshot({path:'/home/spire/tmp/spire-equipment-screenshots/desktop-equipment-table.png'});
- await page.setViewportSize({width:390,height:844});if(await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();await expect(page.locator('.sidebar')).not.toBeVisible();await expect(page.getByRole('textbox',{name:'Document editor',exact:true})).toBeVisible();await page.screenshot({path:'/home/spire/tmp/spire-equipment-screenshots/mobile-equipment-table.png'});
+ await page.screenshot({path:'/tmp/spire-equipment-screenshots/desktop-equipment-table.png'});
+ await page.setViewportSize({width:390,height:844});if(await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();await expect(page.locator('.sidebar')).not.toBeVisible();await expect(page.getByRole('textbox',{name:'Document editor',exact:true})).toBeVisible();await page.screenshot({path:'/tmp/spire-equipment-screenshots/mobile-equipment-table.png'});
 });
