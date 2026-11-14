@@ -8,7 +8,9 @@ COPY server ./server
 COPY shared ./shared
 COPY public ./public
 COPY scripts/prepare-voice-assets.mjs ./scripts/prepare-voice-assets.mjs
+COPY scripts/generate-third-party-notices.mjs ./scripts/generate-third-party-notices.mjs
 COPY documents/voice-assets.lock.json ./documents/voice-assets.lock.json
+COPY LICENSE NOTICE CREDITS.md THIRD_PARTY_NOTICES.md ./
 RUN npm run prepare:voice && npm run build
 
 FROM node:22-alpine
@@ -21,6 +23,7 @@ COPY --from=build /app/server ./server
 COPY --from=build /app/shared ./shared
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/public/voice ./voice
+COPY LICENSE NOTICE CREDITS.md THIRD_PARTY_NOTICES.md ./
 EXPOSE 4173
 VOLUME ["/data"]
 CMD ["npm","start"]

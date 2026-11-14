@@ -7,7 +7,7 @@
 
 ## Open-source attribution
 
-Spire's voice-authoring credits identify its two speech components separately: the **Whistle speech-to-text model** and the **Cactus Needle browser runtime**, both by Cactus Compute contributors and both licensed under the **Apache License 2.0**. The in-app and Settings credits link to each official project page and its bundled license text. Whistle is Spire's only speech-to-text model; the former Whisper fallback and its supporting runtime assets have been removed.
+Spire's voice-authoring credits identify the **Whistle speech-to-text model** and upstream **Needle 3 runtime** by Cactus Compute separately from the independent **cactus-needle npm wrapper** used by Spire. All three are distributed under the **Apache License 2.0**. The in-app and Settings credits link to their source pages and bundled license text. Whistle is Spire's only speech-to-text model; the former Whisper fallback and its supporting runtime assets have been removed.
 
 ## Product outcome
 

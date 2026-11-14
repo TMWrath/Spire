@@ -94,18 +94,18 @@ test('bundled Whistle performs real offline English inference',async({page})=>{
 test('About credits identify Whistle as the only speech model',async({page})=>{
  await page.goto('/');await page.getByLabel('Username',{exact:true}).fill('voicewriter');await page.getByLabel('Password',{exact:true}).fill(randomUUID());await page.getByRole('button',{name:'Create Reliquary',exact:true}).click();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Settings',exact:true}).click();await page.getByRole('tab',{name:'About',exact:true}).click();const credits=page.getByRole('tabpanel',{name:'About',exact:true});
- await expect(credits).toContainText('Whistle speech-to-text model');await expect(credits).toContainText('Cactus Needle browser runtime');await expect(credits).not.toContainText(/Whisper|Transformers\.js|ONNX Runtime/);
- await expect(credits.getByRole('link',{name:'Whistle Apache License 2.0'})).toHaveAttribute('href','/voice/licenses/model-Apache-2.0.txt');await expect(credits.getByRole('link',{name:'Cactus Needle Apache License 2.0'})).toHaveAttribute('href','/voice/licenses/cactus-needle-Apache-2.0.txt');
+ await expect(credits).toContainText('Whistle speech-to-text model');await expect(credits).toContainText('Needle 3 runtime');await expect(credits).toContainText('cactus-needle npm wrapper');await expect(credits).not.toContainText(/Whisper|Transformers\.js|ONNX Runtime/);
+ await expect(credits.getByRole('link',{name:'Whistle Apache License 2.0'})).toHaveAttribute('href','/voice/licenses/model-Apache-2.0.txt');await expect(credits.getByRole('link',{name:'cactus-needle Apache License 2.0'})).toHaveAttribute('href','/voice/licenses/cactus-needle-Apache-2.0.txt');
 });
 test('voice import preserves source on cancellation and exposes local processing and credits',async({page})=>{
  await setup(page);const dialog=await show(page);await expect(dialog).toContainText('Audio stays on this device');
  await dialog.getByText('Open-source credits',{exact:true}).click();
  await expect(dialog).toContainText('Whistle speech-to-text model');
- await expect(dialog).toContainText('Cactus Needle browser runtime');
+ await expect(dialog).toContainText('Needle 3 runtime');await expect(dialog).toContainText('cactus-needle npm wrapper');
  await expect(dialog.getByRole('link',{name:'Whistle speech-to-text model',exact:true})).toHaveAttribute('href','https://huggingface.co/Cactus-Compute/whistle');
- await expect(dialog.getByRole('link',{name:'Cactus Needle browser runtime',exact:true})).toHaveAttribute('href','https://github.com/cactus-compute/needle');
+ await expect(dialog.getByRole('link',{name:'Needle 3 runtime',exact:true})).toHaveAttribute('href','https://huggingface.co/Cactus-Compute/needle3');await expect(dialog.getByRole('link',{name:'cactus-needle npm wrapper',exact:true})).toHaveAttribute('href','https://github.com/afshinm/cactus-needle');
  await expect(dialog.getByRole('link',{name:'Whistle Apache License 2.0'})).toHaveAttribute('href','/voice/licenses/model-Apache-2.0.txt');
- await expect(dialog.getByRole('link',{name:'Cactus Needle Apache License 2.0'})).toHaveAttribute('href','/voice/licenses/cactus-needle-Apache-2.0.txt');
+ await expect(dialog.getByRole('link',{name:'cactus-needle Apache License 2.0'})).toHaveAttribute('href','/voice/licenses/cactus-needle-Apache-2.0.txt');
  await dialog.getByRole('button',{name:'Close',exact:true}).click();await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue('Keep my writing.');
 });
 test('real audio is transcribed locally and creates a separate portable file',async({page,context})=>{

@@ -12,11 +12,13 @@
   "scripts": {
     "dev": "tsx server/index.ts",
     "prepare:voice": "node scripts/prepare-voice-assets.mjs",
-    "build": "node scripts/prepare-voice-assets.mjs --verify-only && tsc --noEmit && vite build",
+    "build": "node scripts/prepare-voice-assets.mjs --verify-only && node scripts/generate-third-party-notices.mjs --check && tsc --noEmit && vite build",
     "start": "tsx server/index.ts",
     "test": "tsx --test tests/*.test.ts tests/*.test.tsx",
     "test:browser": "playwright test",
-    "backup": "tsx server/backup.ts"
+    "backup": "tsx server/backup.ts",
+    "licenses:generate": "node scripts/generate-third-party-notices.mjs",
+    "licenses:check": "node scripts/generate-third-party-notices.mjs --check"
   },
   "dependencies": {
     "@noble/hashes": "2.0.1",

@@ -2,12 +2,13 @@
 
 Spire is built with open-source software. This file identifies the third-party projects used directly by the application and its development toolchain.
 
-The links below lead to the projects' official source repositories or home pages. Each project remains subject to its own license. Spire's complete resolved npm dependency graph, including transitive packages and exact installed versions, is recorded in [`package-lock.json`](package-lock.json).
+The links below lead to the projects' official source repositories or home pages. Each project remains subject to its own license. Spire's complete resolved npm dependency graph, including transitive packages and exact installed versions, is recorded in [`package-lock.json`](package-lock.json). Required copyright, license, and upstream notice text for packages distributed with Spire is preserved in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
 ## Bundled speech components
 
 - [Whistle speech-to-text model](https://huggingface.co/Cactus-Compute/whistle) — Apache License 2.0. Spire bundles the model for local transcription.
-- [Cactus Needle](https://github.com/cactus-compute/needle) — Apache License 2.0. Runtime used to execute Whistle locally.
+- [Needle 3](https://huggingface.co/Cactus-Compute/needle3) — Apache License 2.0. Upstream runtime from Cactus Compute used to execute Whistle locally.
+- [cactus-needle](https://github.com/afshinm/cactus-needle) — Apache License 2.0. Independent npm wrapper used to package and call Needle 3 from Spire.
 
 Copies of the speech-component license texts are included with the prepared voice assets and served from Spire's About and voice-authoring interfaces.
 
@@ -62,4 +63,4 @@ The provided container build uses these third-party runtime components:
 
 ## License information
 
-Spire itself is licensed under the [Apache License 2.0](LICENSE). Third-party names and trademarks belong to their respective owners. This credits file does not replace or modify any third-party license terms.
+Spire itself is licensed under the [Apache License 2.0](LICENSE). Third-party names and trademarks belong to their respective owners. This credits file is a readable project index; [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) contains the corresponding distribution notices and license texts.
