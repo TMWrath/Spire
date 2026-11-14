@@ -130,6 +130,6 @@ Spire is currently web-based and Docker-optimized, with dedicated client support
 
 Spire is currently in development, with more features planned for future releases.
 
-## License
+## License and credits
 
-Spire is licensed under the [Apache License 2.0](LICENSE).
+Spire is licensed under the [Apache License 2.0](LICENSE). See [Credits and third-party software](CREDITS.md) for the open-source projects, bundled components, and development tools used by Spire.
