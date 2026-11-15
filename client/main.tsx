@@ -73,6 +73,7 @@ import {engine,api,Engine,type Identity} from './sync';
 import {WorkspaceMounts} from './WorkspaceMounts';
 import {ItemIcon,ItemName} from './TreeItemParts';
 import {VisualGroups,VisualSection,visualGroupColors} from './VisualGroups';
+import {persistOptimisticProjectPin} from './project-pin';
 import {WorkspaceDiagnostics} from './WorkspaceDiagnostics';
 import {setWorkspaceBusyCheck} from './local-recovery';
 import {attachmentUrl} from './attachment-urls';
@@ -346,7 +347,7 @@ function App(){
  const projectGroup=(name:string)=>projectGroups.find(group=>group.members.includes('project:'+name));
  const projectColor=(name:string,index:number)=>projectGroups.find(group=>group.members.includes('project:'+name))?.color??visualGroupColors[index%visualGroupColors.length];
  const orderedProjects=useMemo(()=>[...projects].sort((a,b)=>{const ag=projectGroup(a),bg=projectGroup(b),pin=Number(Boolean(bg?.pinned))-Number(Boolean(ag?.pinned));if(pin)return pin;return ag?.pinned&&bg?.pinned?projectGroups.indexOf(ag)-projectGroups.indexOf(bg):a.localeCompare(b);}),[projects,projectGroups]);
- const toggleProjectPin=async(name:string)=>{const existing=projectGroup(name);if(!existing)throw Error('Project settings are unavailable.');const groups=projectGroups.map(group=>group.id===existing.id?{...group,pinned:!group.pinned}:group);await api('/visual-groups',{method:'PUT',body:JSON.stringify({directory:'Projects',groups})},identity?.csrf);engine.cache.snapshot.visualGroups={...(engine.cache.snapshot.visualGroups??{}),Projects:groups};engine.emit();};
+ const toggleProjectPin=async(name:string)=>{const existing=projectGroup(name);if(!existing)throw Error('Project settings are unavailable.');const previous=projectGroups;const groups=projectGroups.map(group=>group.id===existing.id?{...group,pinned:!group.pinned}:group);const apply=(value:typeof groups)=>{engine.cache.snapshot.visualGroups={...(engine.cache.snapshot.visualGroups??{}),Projects:value};engine.emit();};await persistOptimisticProjectPin(previous,groups,apply,()=>api('/visual-groups',{method:'PUT',body:JSON.stringify({directory:'Projects',groups})},identity?.csrf));};
  useEffect(()=>{if(sidebarTab==='projects'&&!selectedProject&&projects.length){setSelectedProject(projects[0]);setSelectedFolder(`Projects/${projects[0]}`);}else if(sidebarTab==='projects'&&selectedProject)setSelectedFolder(`Projects/${selectedProject}`);},[sidebarTab,selectedProject,projects]);
  const navigation=useMemo(()=>{const prefix='Projects/';const visibleNotes=sidebarTab==='projects'?notes.filter(note=>note.path.startsWith(prefix)):notes.filter(note=>isOrdinaryPath(note.path));const visibleFolders=(engine.cache.snapshot.folders??[]).filter(folder=>sidebarTab==='projects'?folder===prefix.slice(0,-1)||folder.startsWith(prefix):isOrdinaryPath(folder));return projectFileNavigation(visibleNotes,visibleFolders,trash,query);},[notes,engine.cache.snapshot.folders,trash,query,sidebarTab,selectedProject]);
  const run=async(fn:()=>Promise<unknown>)=>{try{setError('');await fn();}catch(e){setError(e instanceof Error?e.message:String(e));}};
