@@ -30,6 +30,7 @@ for(const mobile of [false,true])test.describe(mobile?'mobile':'desktop',()=>{
   await page.getByRole('button',{name:'Source',exact:true}).click();
   await expect(source).toHaveValue(original+'A quiet evening.\n');
   await page.getByRole('button',{name:'Settings',exact:true}).click();
+  await page.getByRole('tab',{name:'Personalization',exact:true}).click();
   await page.getByRole('tab',{name:'Writing',exact:true}).click();
   await selectDropdown(page.getByLabel('Personal writing name',{exact:true}),'Diary');
   await page.reload();

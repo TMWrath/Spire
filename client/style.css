@@ -119,7 +119,6 @@
 .editing-tools-toggle{white-space:nowrap}
 .mobile-edit-bar{display:none}
 @media(max-width:760px){
- .app>header>[data-panel-toggle]{transform:translateY(-3px)}
  .mobile-edit-bar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;position:relative;overflow:visible;flex:0 0 auto;height:42px;margin:0;padding:0 max(8px,env(safe-area-inset-right)) 0 max(8px,env(safe-area-inset-left));border:0;border-top:1px solid #333;border-radius:0;background:#111}
  .mobile-edit-bar>button,.mobile-zoom-action,.mobile-dictation-action{min-width:0;height:40px;border:0;background:transparent;color:#eee;display:flex;align-items:center;justify-content:center;padding:0}
  .mobile-edit-bar>button{border-radius:0}
