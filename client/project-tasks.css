@@ -355,6 +355,11 @@
     min-height: 234px;
   }
 
+  .task-card-details {
+    width: calc(100% - 70px);
+    margin-right: 56px;
+  }
+
   .task-card-actions {
     flex-wrap: nowrap;
     align-items: stretch;
