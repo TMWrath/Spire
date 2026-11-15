@@ -1,6 +1,6 @@
 import React from 'react';
-import {ArrowUpToLine,Pin} from 'lucide-react';
+import {Pin} from 'lucide-react';
 
 export function ProjectPinIcon({pinned}:{pinned:boolean}){
- return pinned?<ArrowUpToLine aria-hidden="true"/>:<Pin aria-hidden="true"/>;
+ return <Pin className={pinned?'project-pin-icon-pinned':undefined} aria-hidden="true"/>;
 }

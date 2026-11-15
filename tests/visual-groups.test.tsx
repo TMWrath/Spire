@@ -4,11 +4,11 @@ import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {ProjectPinIcon} from '../client/ProjectPinIcon';
 
-test('a pinned project uses a top-position icon while an unpinned project uses a pin icon',()=>{
+test('a pinned project rotates the familiar pin counterclockwise while an unpinned pin stays upright',()=>{
  const unpinned=renderToStaticMarkup(<ProjectPinIcon pinned={false}/>);
  const pinned=renderToStaticMarkup(<ProjectPinIcon pinned/>);
  assert.match(unpinned,/lucide-pin/);
- assert.doesNotMatch(unpinned,/lucide-arrow-up-to-line/);
- assert.match(pinned,/lucide-arrow-up-to-line/);
- assert.doesNotMatch(pinned,/lucide-pin(?:\s|\")/);
+ assert.doesNotMatch(unpinned,/project-pin-icon-pinned/);
+ assert.match(pinned,/lucide-pin/);
+ assert.match(pinned,/project-pin-icon-pinned/);
 });
