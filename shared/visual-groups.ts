@@ -5,6 +5,7 @@ export const visualGroupSchema=z.object({
  name:z.string().trim().min(1).max(80),
  color:z.string().regex(/^#[0-9a-f]{6}$/i,'Use a six-digit hex color'),
  members:z.array(z.string().min(1).max(300)).max(1000),
+ pinned:z.boolean().optional(),
 }).strict();
 
 export const visualGroupsSchema=z.array(visualGroupSchema).max(100).superRefine((groups,ctx)=>{

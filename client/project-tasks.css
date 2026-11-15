@@ -32,11 +32,20 @@
   background: var(--panel, #191919);
 }
 
-.task-create > textarea {
+.task-create > label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted, #aaa);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.task-create > label > input,
+.task-create > label > textarea {
   box-sizing: border-box;
   min-width: 0;
   width: 100%;
-  min-height: 112px;
+  min-height: 44px;
   max-height: 320px;
   padding: 11px 12px;
   resize: vertical;
@@ -48,7 +57,9 @@
   line-height: 1.45;
 }
 
-.task-create > textarea:focus {
+.task-create > label > textarea { min-height: 112px; }
+.task-create > label > input:focus,
+.task-create > label > textarea:focus {
   outline: 2px solid #eee;
   outline-offset: 1px;
 }
@@ -161,6 +172,27 @@
   margin: 4px auto 14px;
   border-radius: 8px;
   object-fit: contain;
+}
+
+.task-card-details {
+  box-sizing: border-box;
+  display: block;
+  width: calc(100% - 28px);
+  min-height: 76px;
+  margin: 0 14px 14px;
+  padding: 10px 11px;
+  resize: vertical;
+  border: 1px solid var(--border, #333);
+  border-radius: 8px;
+  background: var(--bg, #111);
+  color: inherit;
+  font: inherit;
+  line-height: 1.45;
+}
+
+.task-card-details:focus-visible {
+  outline: 2px solid var(--group-color, #aaa);
+  outline-offset: 2px;
 }
 
 .task-card-field select.priority-low { color: #8ec5b3; }

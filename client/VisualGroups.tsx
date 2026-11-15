@@ -1,6 +1,6 @@
 import React,{useEffect,useState} from 'react';
 import {createPortal} from 'react-dom';
-import {ChevronDown,ChevronRight,Pencil,Plus,Trash2} from 'lucide-react';
+import {ChevronDown,ChevronRight,Pin,Pencil,Plus,Trash2} from 'lucide-react';
 import './visual-groups.css';
 
 export type VisualEntry={id:string;label:string;node:React.ReactNode};
@@ -9,11 +9,11 @@ export const visualGroupColors=['#cf8799','#cba36e','#79b2ab','#8c9dd1','#b092cc
 const validColor=(color?:string)=>Boolean(color&&/^#[0-9a-f]{6}$/i.test(color));
 const groupForeground=(color?:string)=>color?.toLowerCase()==='#000000'?'#ffffff':color;
 
-export function VisualSection({name,index,children,project=false,color,onEdit,progress,onTasks,onAdd,onDelete}:{name:string;index:number;children:React.ReactNode;project?:boolean;color?:string;onEdit?:()=>void;progress?:number;onTasks?:()=>void;onAdd?:()=>void;onDelete?:()=>void}){
+export function VisualSection({name,index,children,project=false,color,pinned=false,onPin,onEdit,progress,onTasks,onAdd,onDelete}:{name:string;index:number;children:React.ReactNode;project?:boolean;color?:string;pinned?:boolean;onPin?:()=>void;onEdit?:()=>void;progress?:number;onTasks?:()=>void;onAdd?:()=>void;onDelete?:()=>void}){
  const [collapsed,setCollapsed]=useState(false);
  const groupColor=validColor(color)?color!:visualGroupColors[index%visualGroupColors.length];
  return <section className="visual-section" aria-label={(project?'Project ':'Group ')+name} style={{'--group-color':groupColor,'--group-foreground':groupForeground(groupColor)} as React.CSSProperties}>
-  <div className="visual-section-title"><span>{name}</span><div className="visual-section-actions">{(!project||!collapsed)&&onTasks&&<button type="button" className="visual-section-edit" aria-label={`Tasks for ${name}`} onClick={onTasks}>{progress??0}%</button>}{(!project||!collapsed)&&onAdd&&<button type="button" className="visual-section-edit" aria-label={`Add items to ${name}`} onClick={onAdd}><Plus aria-hidden="true"/></button>}{(!project||!collapsed)&&onEdit&&<button type="button" className="visual-section-edit" aria-label={`Edit ${project?'project':'group'} ${name}`} onClick={onEdit}><Pencil aria-hidden="true"/></button>}{project&&!collapsed&&onDelete&&<button type="button" className="visual-section-edit" aria-label={`Delete project ${name}`} onClick={onDelete}><Trash2 aria-hidden="true"/></button>}{project&&<button type="button" className="visual-section-edit project-collapse" aria-label={`${collapsed?'Expand':'Collapse'} project ${name}`} aria-expanded={!collapsed} onClick={()=>setCollapsed(!collapsed)}>{collapsed?<ChevronRight aria-hidden="true"/>:<ChevronDown aria-hidden="true"/>}</button>}</div></div>
+  <div className="visual-section-title"><span>{name}</span><div className="visual-section-actions">{project&&onPin&&<button type="button" className="visual-section-edit project-pin" aria-label={`${pinned?'Unpin':'Pin'} project ${name}`} aria-pressed={pinned} onClick={onPin}><Pin aria-hidden="true" fill={pinned?'currentColor':'none'}/></button>}{(!project||!collapsed)&&onTasks&&<button type="button" className="visual-section-edit" aria-label={`Tasks for ${name}`} onClick={onTasks}>{progress??0}%</button>}{(!project||!collapsed)&&onAdd&&<button type="button" className="visual-section-edit" aria-label={`Add items to ${name}`} onClick={onAdd}><Plus aria-hidden="true"/></button>}{(!project||!collapsed)&&onEdit&&<button type="button" className="visual-section-edit" aria-label={`Edit ${project?'project':'group'} ${name}`} onClick={onEdit}><Pencil aria-hidden="true"/></button>}{project&&!collapsed&&onDelete&&<button type="button" className="visual-section-edit" aria-label={`Delete project ${name}`} onClick={onDelete}><Trash2 aria-hidden="true"/></button>}{project&&<button type="button" className="visual-section-edit project-collapse" aria-label={`${collapsed?'Expand':'Collapse'} project ${name}`} aria-expanded={!collapsed} onClick={()=>setCollapsed(!collapsed)}>{collapsed?<ChevronRight aria-hidden="true"/>:<ChevronDown aria-hidden="true"/>}</button>}</div></div>
   <div className="visual-section-items" hidden={project&&collapsed}>{children}</div>
  </section>;
 }
