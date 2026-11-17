@@ -29,6 +29,14 @@ test('project artwork metadata persists with bounded focal positions',()=>{
  assert.throws(()=>store.saveVisualGroups('Projects',[{...project,icon:'../icon.png'}]),/path|portable/i);
 });
 
+test('project cover renders between its label bar and section icon rail',()=>{
+ const source=fs.readFileSync('client/VisualGroups.tsx','utf8');
+ const label=source.indexOf('<div className="visual-section-title">');
+ const cover=source.indexOf('className="project-hero"');
+ const sections=source.indexOf('<div className="visual-section-items"');
+ assert.ok(label>=0&&cover>label&&sections>cover,'expected project label, then cover, then section controls');
+});
+
 test('visual groups reject invalid colors and duplicate membership',()=>{
  const root='.test-data/visual-groups-validation';fs.rmSync(root,{recursive:true,force:true});const store=new Store(root);
  assert.throws(()=>store.saveVisualGroups('',[{...groups[0],color:'red'}]),/color/i);
