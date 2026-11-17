@@ -19,6 +19,16 @@ test('visual groups persist per directory across restart and backup restore',()=
  assert.deepEqual(new Store(restored).state.visualGroups,store.state.visualGroups);
 });
 
+test('project artwork metadata persists with bounded focal positions',()=>{
+ const root='.test-data/project-artwork';fs.rmSync(root,{recursive:true,force:true});
+ const store=new Store(root);
+ const project={...groups[0],members:['project:Workshop'],icon:'Projects/Workshop/Project Assets/icon.webp',hero:'Projects/Workshop/Project Assets/cover.jpg',heroX:34,heroY:72};
+ store.saveVisualGroups('Projects',[project]);
+ assert.deepEqual(new Store(root).state.visualGroups?.Projects?.[0],project);
+ assert.throws(()=>store.saveVisualGroups('Projects',[{...project,heroX:101}]),/100|less than or equal/i);
+ assert.throws(()=>store.saveVisualGroups('Projects',[{...project,icon:'../icon.png'}]),/path|portable/i);
+});
+
 test('visual groups reject invalid colors and duplicate membership',()=>{
  const root='.test-data/visual-groups-validation';fs.rmSync(root,{recursive:true,force:true});const store=new Store(root);
  assert.throws(()=>store.saveVisualGroups('',[{...groups[0],color:'red'}]),/color/i);

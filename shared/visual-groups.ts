@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {safePath} from './model';
 
 export const visualGroupSchema=z.object({
  id:z.string().uuid(),
@@ -6,6 +7,10 @@ export const visualGroupSchema=z.object({
  color:z.string().regex(/^#[0-9a-f]{6}$/i,'Use a six-digit hex color'),
  members:z.array(z.string().min(1).max(300)).max(1000),
  pinned:z.boolean().optional(),
+ icon:safePath.optional(),
+ hero:safePath.optional(),
+ heroX:z.number().min(0).max(100).optional(),
+ heroY:z.number().min(0).max(100).optional(),
 }).strict();
 
 export const visualGroupsSchema=z.array(visualGroupSchema).max(100).superRefine((groups,ctx)=>{
