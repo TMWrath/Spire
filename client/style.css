@@ -20,10 +20,9 @@
 @media(max-width:760px){
  .sidebar-backdrop{display:block;position:absolute;inset:58px 0 30px;z-index:4;width:100%;min-height:0;padding:0;border:0;border-radius:0;background:#0008}
  .sidebar{width:min(420px,92vw);z-index:5}
- .sidebar-mobile-head{display:flex;align-items:stretch;gap:6px;flex:0 0 auto;min-height:60px;padding:0 4px 8px;border-bottom:1px solid #333;min-width:0}
+ .sidebar-mobile-head{display:flex;align-items:stretch;flex:0 0 auto;min-height:60px;padding:0 4px 8px;border-bottom:1px solid #333;min-width:0}
  .sidebar-mobile-head .sidebar-tabs{flex:1;min-width:0;margin:0;overflow-x:auto}
  .sidebar-mobile-head .sidebar-tabs button{flex:1 0 58px}
- .sidebar-mobile-head>button{flex:0 0 44px;align-self:stretch;min-width:44px;min-height:44px;padding:8px}
  .sidebar-tabs-desktop{display:none}
  .sidebar-mobile-head svg{width:20px;height:20px}
 }

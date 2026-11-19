@@ -37,17 +37,14 @@ test('mobile sidebar replaces the Workspace label with the tab bar',async({page}
  const sidebar=page.locator('.sidebar');
  const head=sidebar.locator('.sidebar-mobile-head');
  const tabs=head.getByRole('tablist');
- const close=head.getByRole('button',{name:'Close folders',exact:true});
  await expect(head.getByText('Workspace',{exact:true})).toHaveCount(0);
  await expect(tabs).toBeVisible();
  await expect(tabs.getByRole('tab')).toHaveCount(6);
- await expect(close).toBeVisible();
- const [headBox,tabsBox,closeBox]=await Promise.all([head.boundingBox(),tabs.boundingBox(),close.boundingBox()]);
- expect(headBox&&tabsBox&&closeBox).toBeTruthy();
+ await expect(head.getByRole('button',{name:'Close folders',exact:true})).toHaveCount(0);
+ const [headBox,tabsBox]=await Promise.all([head.boundingBox(),tabs.boundingBox()]);
+ expect(headBox&&tabsBox).toBeTruthy();
  expect(tabsBox!.x).toBeGreaterThanOrEqual(headBox!.x);
- expect(tabsBox!.x+tabsBox!.width).toBeLessThanOrEqual(closeBox!.x);
- expect(closeBox!.x+closeBox!.width).toBeLessThanOrEqual(headBox!.x+headBox!.width);
- expect(Math.abs(tabsBox!.y-closeBox!.y)).toBeLessThanOrEqual(2);
+ expect(tabsBox!.x+tabsBox!.width).toBeLessThanOrEqual(headBox!.x+headBox!.width);
 });
 
 test('mobile sidebar toggle stays centered above the app-header divider',async({page})=>{
@@ -86,7 +83,7 @@ test('mobile sidebar has explicit close routes and opening a file reveals the ed
  await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
  const sidebar=page.locator('.sidebar');
  await expect(sidebar).toBeVisible();
- await page.locator('.sidebar-mobile-head').getByRole('button',{name:'Close folders',exact:true}).click();
+ await page.locator('.sidebar-backdrop').click({position:{x:380,y:200}});
  await expect(sidebar).toBeHidden();
  await expect(page.getByRole('heading',{name:'Your writing lives here.',exact:true})).toBeVisible();
 
