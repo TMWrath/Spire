@@ -30,6 +30,26 @@ test('Home remains available and sidebar Add and Trash share the bottom action r
  expect(addBox!.y+addBox!.height).toBeLessThanOrEqual(sidebarBox!.y+sidebarBox!.height);
 });
 
+test('mobile sidebar replaces the Workspace label with the tab bar',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ await login(page);
+ if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+ const sidebar=page.locator('.sidebar');
+ const head=sidebar.locator('.sidebar-mobile-head');
+ const tabs=head.getByRole('tablist');
+ const close=head.getByRole('button',{name:'Close folders',exact:true});
+ await expect(head.getByText('Workspace',{exact:true})).toHaveCount(0);
+ await expect(tabs).toBeVisible();
+ await expect(tabs.getByRole('tab')).toHaveCount(6);
+ await expect(close).toBeVisible();
+ const [headBox,tabsBox,closeBox]=await Promise.all([head.boundingBox(),tabs.boundingBox(),close.boundingBox()]);
+ expect(headBox&&tabsBox&&closeBox).toBeTruthy();
+ expect(tabsBox!.x).toBeGreaterThanOrEqual(headBox!.x);
+ expect(tabsBox!.x+tabsBox!.width).toBeLessThanOrEqual(closeBox!.x);
+ expect(closeBox!.x+closeBox!.width).toBeLessThanOrEqual(headBox!.x+headBox!.width);
+ expect(Math.abs(tabsBox!.y-closeBox!.y)).toBeLessThanOrEqual(2);
+});
+
 test('mobile sidebar toggle stays centered above the app-header divider',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  await login(page);

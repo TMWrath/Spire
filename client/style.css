@@ -15,13 +15,16 @@
 @media(max-width:760px){header{padding:0 8px;gap:3px;height:58px}.brand{font-size:18px}.brand small{font-size:8px;margin-left:3px}.desktop{display:none!important}.sidebar{position:absolute;left:0;top:58px;bottom:30px;z-index:5;width:min(760px,99vw)}.context{top:58px;width:min(290px,85vw)}.note-toolbar{padding:10px 8px}.note-toolbar input{font-size:13px}.editor-tabs{padding:8px 12px}.canvas textarea{padding:24px 20px;font-size:14px}.preview{padding:20px}.settings{padding:22px}.empty{padding:20px}.empty h1{font-size:28px}.network{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}footer{padding:10px 16px}.auth{margin-top:5vh}.notice{padding:10px}button{min-height:40px}}
 @media(max-width:760px){.editor-tabs{padding:8px}.insert-form{padding:10px}.insert-form label{flex:1 1 100%}}
 
-.sidebar-mobile-head,.sidebar-backdrop{display:none}
+.sidebar-mobile-head,.sidebar-backdrop{display:none}.sidebar-tabs-desktop{display:block}
 .sidebar[hidden]{display:none!important}
 @media(max-width:760px){
  .sidebar-backdrop{display:block;position:absolute;inset:58px 0 30px;z-index:4;width:100%;min-height:0;padding:0;border:0;border-radius:0;background:#0008}
  .sidebar{width:min(420px,92vw);z-index:5}
- .sidebar-mobile-head{display:flex;align-items:center;justify-content:space-between;flex:0 0 auto;min-height:48px;padding:0 4px 8px;border-bottom:1px solid #333}
- .sidebar-mobile-head>button{min-width:44px;min-height:44px;padding:8px}
+ .sidebar-mobile-head{display:flex;align-items:stretch;gap:6px;flex:0 0 auto;min-height:60px;padding:0 4px 8px;border-bottom:1px solid #333;min-width:0}
+ .sidebar-mobile-head .sidebar-tabs{flex:1;min-width:0;margin:0;overflow-x:auto}
+ .sidebar-mobile-head .sidebar-tabs button{flex:1 0 58px}
+ .sidebar-mobile-head>button{flex:0 0 44px;align-self:stretch;min-width:44px;min-height:44px;padding:8px}
+ .sidebar-tabs-desktop{display:none}
  .sidebar-mobile-head svg{width:20px;height:20px}
 }
 
