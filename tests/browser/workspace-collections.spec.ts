@@ -22,27 +22,76 @@ async function createProject(page:any,name:string){
  return page.getByRole('region',{name:`Project ${name}`,exact:true});
 }
 
-test('normal Files navigation uses the shared compact section rail',async({page})=>{
+test('normal Files navigation exposes Lists, Tasks, and Audio Notes in the shared compact rail',async({page})=>{
  await page.setViewportSize({width:390,height:900});
  await login(page);
  await page.getByRole('tab',{name:'Files',exact:true}).click();
  const fileSections=page.getByRole('toolbar',{name:'Files sections',exact:true});
  await expect(fileSections).toBeVisible();
  const sectionButtons=fileSections.getByRole('button');
- await expect(sectionButtons).toHaveCount(3);
+ await expect(sectionButtons).toHaveCount(4);
  await expect(sectionButtons.nth(0)).toHaveAccessibleName('Files');
  await expect(sectionButtons.nth(0)).toHaveAttribute('aria-pressed','true');
  await expect(sectionButtons.nth(1)).toHaveAccessibleName('Lists');
- await expect(sectionButtons.nth(1)).toBeDisabled();
+ await expect(sectionButtons.nth(1)).toBeEnabled();
  await expect(sectionButtons.nth(2)).toHaveAccessibleName('Tasks');
- const sectionBoxes=await Promise.all([0,1,2].map(index=>sectionButtons.nth(index).boundingBox()));
+ await expect(sectionButtons.nth(3)).toHaveAccessibleName('Audio Notes');
+ const sectionBoxes=await Promise.all([0,1,2,3].map(index=>sectionButtons.nth(index).boundingBox()));
  expect(sectionBoxes[1]!.x).toBeGreaterThan(sectionBoxes[0]!.x);
  expect(sectionBoxes[2]!.x).toBeGreaterThan(sectionBoxes[1]!.x);
+ expect(sectionBoxes[3]!.x).toBeGreaterThan(sectionBoxes[2]!.x);
  expect(Math.abs(sectionBoxes[0]!.y-sectionBoxes[1]!.y)).toBeLessThan(2);
  expect(Math.abs(sectionBoxes[1]!.y-sectionBoxes[2]!.y)).toBeLessThan(2);
  await expect(fileSections).toHaveCSS('overflow-x','auto');
+ await sectionButtons.nth(1).click();
+ await expect(page.getByRole('region',{name:'Lists in Files',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Back to files',exact:true}).click();
+ await sectionButtons.nth(3).click();
+ const audio=page.getByRole('region',{name:'Audio Notes in Files',exact:true});
+ await expect(audio).toBeVisible();
+ await expect(audio.getByLabel('Audio Note title',{exact:true})).toBeVisible();
+ await expect(audio.getByRole('button',{name:'Save Audio Note',exact:true})).toBeVisible();
+ await audio.getByRole('button',{name:'Back to files',exact:true}).click();
  await sectionButtons.nth(2).click();
  await expect(page.getByRole('region',{name:'File tasks',exact:true})).toBeVisible();
+});
+
+test('project rails provide scoped Lists and Audio Notes views without an Add-menu audio shortcut',async({page})=>{
+ await login(page);
+ const project=await createProject(page,'Collections');
+ const rail=project.getByRole('toolbar',{name:'Collections sections',exact:true});
+ const buttons=rail.getByRole('button');
+ await expect(buttons).toHaveCount(6);
+ await expect(buttons.nth(0)).toHaveAccessibleName('Overview');
+ await expect(buttons.nth(1)).toHaveAccessibleName('Tasks');
+ await expect(buttons.nth(2)).toHaveAccessibleName('Calendar');
+ await expect(buttons.nth(3)).toHaveAccessibleName('Lists');
+ await expect(buttons.nth(4)).toHaveAccessibleName('Audio Notes');
+ await expect(buttons.nth(5)).toHaveAccessibleName('Gallery for Collections');
+ await project.getByRole('button',{name:'Add items to Collections',exact:true}).click();
+ await expect(page.getByRole('dialog',{name:'Add items to Collections'}).getByRole('button',{name:'Audio Note',exact:true})).toHaveCount(0);
+ await page.getByRole('dialog',{name:'Add items to Collections'}).getByRole('button',{name:'Cancel',exact:true}).click();
+ await buttons.nth(3).click();
+ await expect(page.getByRole('region',{name:'Lists in Collections',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Back to Collections',exact:true}).click();
+ await buttons.nth(4).click();
+ const audio=page.getByRole('region',{name:'Audio Notes in Collections',exact:true});
+ await expect(audio).toBeVisible();
+ await expect(audio.getByText('No Audio Notes in this project yet.',{exact:true})).toBeVisible();
+});
+
+test('Lists creates an explicit portable Markdown presentation and opens the same source file',async({page})=>{
+ await login(page);
+ await page.getByRole('tab',{name:'Files',exact:true}).click();
+ await page.getByRole('toolbar',{name:'Files sections',exact:true}).getByRole('button',{name:'Lists',exact:true}).click();
+ const lists=page.getByRole('region',{name:'Lists in Files',exact:true});
+ await lists.getByLabel('List name',{exact:true}).fill('Packing');
+ await lists.getByRole('button',{name:'Create List',exact:true}).click();
+ const item=lists.getByRole('article').filter({hasText:'Packing'});
+ await expect(item).toBeVisible();
+ await item.getByRole('button',{name:'Open file',exact:true}).click();
+ await page.getByRole('button',{name:'Source',exact:true}).click();
+ await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue(/<!-- spire:presentation list -->[\s\S]*# Packing[\s\S]*- \[ \] First item/);
 });
 
 test('normal file tasks live inside Files and write authoritative Markdown',async({page})=>{
