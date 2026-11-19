@@ -22,6 +22,29 @@ async function createProject(page:any,name:string){
  return page.getByRole('region',{name:`Project ${name}`,exact:true});
 }
 
+test('normal Files navigation uses the shared compact section rail',async({page})=>{
+ await page.setViewportSize({width:390,height:900});
+ await login(page);
+ await page.getByRole('tab',{name:'Files',exact:true}).click();
+ const fileSections=page.getByRole('toolbar',{name:'Files sections',exact:true});
+ await expect(fileSections).toBeVisible();
+ const sectionButtons=fileSections.getByRole('button');
+ await expect(sectionButtons).toHaveCount(3);
+ await expect(sectionButtons.nth(0)).toHaveAccessibleName('Files');
+ await expect(sectionButtons.nth(0)).toHaveAttribute('aria-pressed','true');
+ await expect(sectionButtons.nth(1)).toHaveAccessibleName('Lists');
+ await expect(sectionButtons.nth(1)).toBeDisabled();
+ await expect(sectionButtons.nth(2)).toHaveAccessibleName('Tasks');
+ const sectionBoxes=await Promise.all([0,1,2].map(index=>sectionButtons.nth(index).boundingBox()));
+ expect(sectionBoxes[1]!.x).toBeGreaterThan(sectionBoxes[0]!.x);
+ expect(sectionBoxes[2]!.x).toBeGreaterThan(sectionBoxes[1]!.x);
+ expect(Math.abs(sectionBoxes[0]!.y-sectionBoxes[1]!.y)).toBeLessThan(2);
+ expect(Math.abs(sectionBoxes[1]!.y-sectionBoxes[2]!.y)).toBeLessThan(2);
+ await expect(fileSections).toHaveCSS('overflow-x','auto');
+ await sectionButtons.nth(2).click();
+ await expect(page.getByRole('region',{name:'File tasks',exact:true})).toBeVisible();
+});
+
 test('normal file tasks live inside Files and write authoritative Markdown',async({page})=>{
  await page.setViewportSize({width:390,height:900});
  await login(page);
