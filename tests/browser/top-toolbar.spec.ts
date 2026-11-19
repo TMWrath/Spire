@@ -18,7 +18,6 @@ for(const viewport of [{width:1280,height:900},{width:390,height:844}]){
   const create=page.getByRole('dialog',{name:'Create from file',exact:true});
   await expect(create.getByRole('button',{name:/^New folder/})).toBeVisible();
   await create.getByRole('button',{name:/^New file/}).click();
-  await create.getByRole('button',{name:/^New blank file/}).click();
   await expect(page.getByLabel('File name',{exact:true})).toBeVisible();
   await page.getByRole('dialog',{name:'Create file',exact:true}).getByRole('button',{name:'Cancel',exact:true}).click();
   await header.getByRole('button',{name:'Calendar',exact:true}).click();

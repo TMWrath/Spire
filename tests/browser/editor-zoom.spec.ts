@@ -12,7 +12,6 @@ async function openLetterDocument(page:any){
  await page.getByRole('button',{name:'Create',exact:true}).click();
  const dialog=page.getByRole('dialog',{name:'Create from file'});
  await dialog.getByRole('button',{name:/New file/}).click();
- await dialog.getByRole('button',{name:/New blank file/}).click();
  await page.getByLabel('File name',{exact:true}).fill('Editor zoom');
  await selectDropdown(page.getByLabel('Save in folder'),'__new__');
  await page.getByLabel('New folder path').fill('Writing');

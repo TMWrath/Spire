@@ -11,14 +11,16 @@ test.afterAll(()=>rmSync(temp,{recursive:true,force:true}));
 async function setup(page:Page){
  await page.goto('/');await page.getByLabel('Username',{exact:true}).fill('voicewriter');await page.getByLabel('Password',{exact:true}).fill(randomUUID());
  await page.getByRole('button',{name:'Create Reliquary',exact:true}).click();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
- await page.getByRole('button',{name:'Create',exact:true}).click();await page.getByRole('dialog',{name:'Create from file'}).getByRole('button',{name:/New file/}).click();await page.getByRole('dialog',{name:'Create from file'}).getByRole('button',{name:/New blank file/}).click();await page.getByLabel('File name',{exact:true}).fill('Original');
+ await page.getByRole('button',{name:'Create',exact:true}).click();await page.getByRole('dialog',{name:'Create from file'}).getByRole('button',{name:/New file/}).click();await page.getByLabel('File name',{exact:true}).fill('Original');
  await selectDropdown(page.getByLabel('Save in folder'),'__new__');await page.getByLabel('New folder path').fill('Writing');await page.getByRole('button',{name:'Create file',exact:true}).click();
  await page.getByRole('button',{name:'Source',exact:true}).click();await page.getByLabel('Markdown source',{exact:true}).fill('Keep my writing.');
 }
 async function show(page:Page){
- if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();
- await page.getByRole('button',{name:'Create',exact:true}).click();const create=page.getByRole('dialog',{name:'Create from file',exact:true});
- await create.getByRole('button',{name:/^New file/}).click();await create.getByRole('button',{name:'From audio',exact:false}).click();return page.getByRole('dialog',{name:'Transcribe audio to file',exact:true});
+ const generate=page.getByRole('region',{name:'Generate file content'});
+ if(!await generate.isVisible())await page.getByRole('button',{name:'Generate',exact:true}).click();
+ page.once('dialog',dialog=>dialog.accept());
+ await generate.getByRole('button',{name:'From audio',exact:false}).click();
+ return page.getByRole('dialog',{name:'Transcribe audio to file',exact:true});
 }
 async function fakeSpeech(page:Page,text='Spire heading one A new chapter. Spire new paragraph The house was silent.',failure=false){
  await page.addInitScript(({text,failure})=>{window.Worker=class{onmessage:((event:{data:unknown})=>void)|null=null;onerror:null=null;terminated=false;constructor(_url:URL|string,_options?:WorkerOptions){}postMessage(request:unknown){(window as any).__voiceRequest=request;setTimeout(()=>{if(!this.terminated)this.onmessage?.({data:failure?{error:'Test speech engine unavailable'}:{result:{text,language:'es',engine:'whistle'}}});},30);}terminate(){this.terminated=true;}} as unknown as typeof Worker;},{text,failure});
@@ -108,14 +110,14 @@ test('voice import preserves source on cancellation and exposes local processing
  await expect(dialog.getByRole('link',{name:'cactus-needle Apache License 2.0'})).toHaveAttribute('href','/voice/licenses/cactus-needle-Apache-2.0.txt');
  await dialog.getByRole('button',{name:'Close',exact:true}).click();await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue('Keep my writing.');
 });
-test('real audio is transcribed locally and creates a separate portable file',async({page,context})=>{
+test('real audio is transcribed locally and replaces the current draft',async({page,context})=>{
  test.setTimeout(300000);await setup(page);const external:string[]=[],uploads:string[]=[];
  context.on('request',request=>{if(!request.url().startsWith('http://127.0.0.1:4179')&&!request.url().startsWith('blob:'))external.push(request.url());if(request.method()==='POST'&&request.url().includes('/attachments'))uploads.push(request.url());});
  const dialog=await show(page);await transcribe(page,dialog);await expect(dialog.getByLabel('Raw transcript',{exact:true})).toHaveValue(/house was silent/i);expect(uploads).toEqual([]);
  const raw=await dialog.getByLabel('Raw transcript',{exact:true}).inputValue();await dialog.getByLabel('Transcript file path',{exact:true}).fill('Writing/Voice transcript.md');
  await dialog.getByRole('button',{name:'Create transcript file',exact:true}).click();await expect(dialog).toHaveCount(0);
  await page.getByRole('button',{name:'Source',exact:true}).click();await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue(/Full transcript/);await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue(/<audio controls src="\.\.\/Attachments\//);
- const snapshot=await (await page.request.get('/api/snapshot')).json();expect(snapshot.notes.find((n:any)=>n.path==='Writing/Original.md').content).toBe('Keep my writing.');expect(snapshot.notes.find((n:any)=>n.path.includes('Voice source ')).content).toContain(raw);expect(snapshot.attachments).toHaveLength(1);expect(external).toEqual([]);expect(uploads).toHaveLength(1);
+ const snapshot=await (await page.request.get('/api/snapshot')).json();expect(snapshot.notes.find((n:any)=>n.path==='Writing/Original.md').content).toContain('Full transcript');expect(snapshot.notes.find((n:any)=>n.path==='Writing/Original.md').content).toContain(raw);expect(snapshot.attachments).toHaveLength(1);expect(external).toEqual([]);expect(uploads).toHaveLength(1);
 });
 test('imported audio survives close and recovery without upload or source changes',async({page})=>{
  await setup(page);const uploads:string[]=[];page.on('request',r=>{if(r.method()==='POST'&&r.url().includes('/attachments'))uploads.push(r.url());});
@@ -124,7 +126,7 @@ test('imported audio survives close and recovery without upload or source change
 });
 test('review edits never replace the preserved raw transcript',async({page})=>{
  await fakeSpeech(page,'Um, here is my complete original story.');await setup(page);const dialog=await show(page);await transcribe(page,dialog);await dialog.getByLabel('Transcript mode').selectOption('clean');await expect(dialog.getByLabel('Review Markdown')).toHaveValue(/Original transcript/);await dialog.getByLabel('Review Markdown').fill('# Edited reading copy\n\nOnly a reading copy.');await dialog.getByRole('button',{name:'Create transcript file',exact:true}).click();await page.getByRole('dialog',{name:'Unsaved changes',exact:true}).getByRole('button',{name:'Save',exact:true}).click();await expect(dialog).toHaveCount(0);
- const snapshot=await (await page.request.get('/api/snapshot')).json();expect(snapshot.notes.find((n:any)=>n.path.includes('Voice source ')).content).toContain('Um, here is my complete original story.');expect(snapshot.notes.find((n:any)=>n.path==='Writing/Transcript.md').content).toContain('Edited reading copy');
+ const snapshot=await (await page.request.get('/api/snapshot')).json();expect(snapshot.notes.find((n:any)=>n.path==='Writing/Original.md').content).toContain('Edited reading copy');
 });
 test('Media no longer duplicates Create audio conversion or live dictation',async({page})=>{
  await setup(page);await page.getByRole('button',{name:'Media',exact:true}).click();await expect(page.getByRole('button',{name:'Dictate into file',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Transcribe audio to file',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Record audio',exact:true})).toBeVisible();

@@ -17,7 +17,6 @@ async function journey(page:Page,username:string){
  const create=page.getByRole('dialog',{name:'Create from file'});
  await expect(create.getByRole('button',{name:/Audio Note/})).toBeVisible();
  await create.getByRole('button',{name:/New file/}).click();
- await create.getByRole('button',{name:/New blank file/}).click();
  await page.getByLabel('File name',{exact:true}).fill('Meeting audio');
  await selectDropdown(page.getByLabel('Save in folder'),'__new__');
  await page.getByLabel('New folder path').fill('Audio Notes');

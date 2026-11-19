@@ -2,7 +2,7 @@ import {test,expect,type Page} from './fixtures';
 
 async function createFile(page:Page,name:string,folder:string,content:string){
  if(!await page.locator('.sidebar').isVisible()){await page.locator('.sidebar').evaluate(element=>element.removeAttribute('hidden'));await expect(page.locator('.sidebar')).toBeVisible();}
- await page.getByRole('button',{name:'Create',exact:true}).click();await page.getByRole('dialog',{name:'Create from file'}).getByRole('button',{name:/New file/}).click();await page.getByRole('dialog',{name:'Create from file'}).getByRole('button',{name:/New blank file/}).click();
+ await page.getByRole('button',{name:'Create',exact:true}).click();await page.getByRole('dialog',{name:'Create from file'}).getByRole('button',{name:/New file/}).click();
  await page.getByLabel('File name',{exact:true}).fill(name);const select=page.getByLabel('Save in folder');await select.click();
  const folderOption=page.getByRole('option',{name:folder,exact:true});if(await folderOption.count())await folderOption.click();else{await page.getByRole('option',{name:'Create new folder…',exact:true}).click();await page.getByLabel('New folder path').fill(folder);}
  await page.getByRole('button',{name:'Create file',exact:true}).click();if(await page.locator('.sidebar').isVisible())await page.locator('.sidebar').evaluate(element=>element.setAttribute('hidden',''));await page.getByRole('button',{name:'Source',exact:true}).click();await page.getByLabel('Markdown source').fill(content);await page.getByRole('button',{name:'Save file',exact:true}).click();await expect(page.locator('.network')).toHaveText('Saved on server');

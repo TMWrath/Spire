@@ -28,7 +28,6 @@ async function create(page: Page, name: string, content: string) {
   await page.getByRole("button", { name: "Create", exact: true }).click();
   const createDialog = page.getByRole("dialog", { name: "Create from file" });
   await createDialog.getByRole("button", { name: /New file/ }).click();
-  await createDialog.getByRole("button", { name: /New blank file/ }).click();
   await page.getByLabel("File name", { exact: true }).fill(name);
   await page.getByLabel("Save in folder").click();
   if (

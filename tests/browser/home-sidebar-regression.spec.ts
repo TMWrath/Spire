@@ -91,7 +91,6 @@ test('mobile sidebar has explicit close routes and opening a file reveals the ed
  await page.getByRole('button',{name:'Create',exact:true}).click();
  const dialog=page.getByRole('dialog',{name:'Create from file'});
  await dialog.getByRole('button',{name:/New file/}).click();
- await dialog.getByRole('button',{name:/New blank file/}).click();
  await page.getByLabel('File name',{exact:true}).fill('Mobile editor');
  await selectDropdown(page.getByLabel('Save in folder'),'__new__');
  await page.getByLabel('New folder path').fill('Writing');
