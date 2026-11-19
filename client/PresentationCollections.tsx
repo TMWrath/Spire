@@ -5,7 +5,6 @@ import {audioNoteData} from '../shared/audio-notes';
 import {filePresentation,setFilePresentation} from '../shared/file-presentations';
 import {documentLists,replaceDocumentStructure} from './document-structures';
 import {ListDialog} from './ListDialog';
-import {QuickAudioCapture,type QuickAudioResult} from './QuickAudioCapture';
 import {StandaloneAudioTrack} from './StandaloneAudioTrack';
 import {attachmentUrl} from './attachment-urls';
 import './presentation-collections.css';
@@ -28,12 +27,10 @@ export function ListsCollection({scope,notes,folders,onBack,onOpen,onCreate,onSa
  </section>;
 }
 
-export function AudioNotesCollection({scope,notes,onBack,onOpen,onSave,onRename,onDelete}:{scope:Scope;notes:Note[];onBack:()=>void;onOpen:(note:Note)=>void;onSave:(title:string,value:QuickAudioResult)=>Promise<void>;onRename:(note:Note)=>void;onDelete:(note:Note)=>Promise<void>}){
+export function AudioNotesCollection({scope,notes,onBack,onOpen,onCreate,onRename,onDelete}:{scope:Scope;notes:Note[];onBack:()=>void;onOpen:(note:Note)=>void;onCreate:()=>void;onRename:(note:Note)=>void;onDelete:(note:Note)=>Promise<void>}){
  const audio=useMemo(()=>notes.filter(note=>!note.deleted&&audioNoteData(note.content)),[notes]);
- const[title,setTitle]=useState(''),[pending,setPending]=useState<QuickAudioResult|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
- const save=async()=>{if(!pending||!title.trim())return;setBusy(true);setError('');try{await onSave(title.trim(),pending);setTitle('');setPending(null);}catch(e){setError(e instanceof Error?e.message:String(e));}finally{setBusy(false);}};
  return <section className="workspace-collection presentation-collection" role="region" aria-label={`Audio Notes in ${label(scope)}`}><header className="collection-header"><button type="button" aria-label={`Back to ${backLabel(scope)}`} onClick={onBack}><ArrowLeft/></button><h2>{label(scope)} Audio Notes</h2></header>
-  <div className="audio-note-create"><label>Title<input aria-label="Audio Note title" value={title} onChange={e=>setTitle(e.target.value)} placeholder="Meeting reflection"/></label><QuickAudioCapture onError={setError} onComplete={async value=>{setPending(value);}}/><button type="button" className="primary" disabled={busy||!pending||!title.trim()} onClick={()=>void save()}><Mic/>Save Audio Note</button>{pending&&<span role="status">Recording ready to save.</span>}</div>{error&&<p role="alert">{error}</p>}
+  <div className="audio-note-create"><button type="button" className="primary" onClick={onCreate}><Mic/>New Audio Note</button></div>
   <div className="presentation-file-list">{audio.map(note=>{const data=audioNoteData(note.content)!;return <article key={note.id}><Mic aria-hidden="true"/><div><strong>{note.path.split('/').at(-1)?.replace(/\.md$/i,'')}</strong><small>{note.path} · {new Date(note.time).toLocaleString()}</small></div><StandaloneAudioTrack name={note.path.split('/').at(-1)??'Audio Note'} url={attachmentUrl(data.audioPath)} initialDisplay="simple"/><button onClick={()=>onOpen(note)}>Open</button><button aria-label={`Rename ${note.path}`} onClick={()=>onRename(note)}><Pencil/></button><button aria-label={`Delete ${note.path}`} onClick={()=>void onDelete(note)}><Trash2/></button></article>;})}</div>{!audio.length&&<p className="muted">No Audio Notes in this {scope.kind==='files'?'Files scope':'project'} yet.</p>}
  </section>;
 }
