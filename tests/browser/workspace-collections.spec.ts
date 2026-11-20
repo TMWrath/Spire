@@ -22,43 +22,33 @@ async function createProject(page:any,name:string){
  return page.getByRole('region',{name:`Project ${name}`,exact:true});
 }
 
-test('normal Files navigation exposes quick Add File, Lists, Tasks, and Audio Notes in the shared compact rail',async({page})=>{
+test('Files has independent Add and view rows',async({page})=>{
  await page.setViewportSize({width:390,height:900});
  await login(page);
  await page.getByRole('tab',{name:'Files',exact:true}).click();
- const fileSections=page.getByRole('toolbar',{name:'Files sections',exact:true});
- await expect(fileSections).toBeVisible();
- const sectionButtons=fileSections.getByRole('button');
- await expect(sectionButtons).toHaveCount(5);
- await expect(sectionButtons.nth(0)).toHaveAccessibleName('Files');
- await expect(sectionButtons.nth(0)).toHaveAttribute('aria-pressed','true');
- await expect(sectionButtons.nth(1)).toHaveAccessibleName('Add File');
- await expect(sectionButtons.nth(2)).toHaveAccessibleName('Lists');
- await expect(sectionButtons.nth(2)).toBeEnabled();
- await expect(sectionButtons.nth(3)).toHaveAccessibleName('Tasks');
- await expect(sectionButtons.nth(4)).toHaveAccessibleName('Audio Notes');
- const sectionBoxes=await Promise.all([0,1,2,3,4].map(index=>sectionButtons.nth(index).boundingBox()));
- expect(sectionBoxes[1]!.x).toBeGreaterThan(sectionBoxes[0]!.x);
- expect(sectionBoxes[2]!.x).toBeGreaterThan(sectionBoxes[1]!.x);
- expect(sectionBoxes[3]!.x).toBeGreaterThan(sectionBoxes[2]!.x);
- expect(sectionBoxes[4]!.x).toBeGreaterThan(sectionBoxes[3]!.x);
- expect(Math.abs(sectionBoxes[0]!.y-sectionBoxes[1]!.y)).toBeLessThan(2);
- expect(Math.abs(sectionBoxes[1]!.y-sectionBoxes[2]!.y)).toBeLessThan(2);
- await expect(fileSections).toHaveCSS('overflow-x','auto');
- await sectionButtons.nth(1).click();
- const createFile=page.getByRole('dialog',{name:'Create file',exact:true});
- await expect(createFile).toBeVisible();
- await createFile.getByRole('button',{name:'Cancel',exact:true}).click();
- await sectionButtons.nth(2).click();
- await expect(page.getByRole('region',{name:'Lists in Files',exact:true})).toBeVisible();
+ const add=page.getByRole('group',{name:'Files creation actions'});
+ const views=page.getByRole('toolbar',{name:'Files sections'});
+ await expect(add.getByRole('button')).toHaveText(['Add File','Add Folder','Add List','Add Task']);
+ await expect(views.getByRole('button')).toHaveText(['Files','Lists','Tasks','Audio Notes']);
+ expect((await add.boundingBox())!.y).toBeLessThan((await views.boundingBox())!.y);
+ for(const [moving,still] of [[add,views],[views,add]]){
+  await moving.evaluate(el=>{el.style.maxWidth='130px';el.scrollLeft=70;});
+  expect(await moving.evaluate(el=>el.scrollLeft)).toBeGreaterThan(0);
+  expect(await still.evaluate(el=>el.scrollLeft)).toBe(0);
+  await moving.evaluate(el=>{el.scrollLeft=0;el.style.removeProperty('max-width');});
+ }
+ await add.getByRole('button',{name:'Add File',exact:true}).click();
+ await page.getByRole('dialog',{name:'Create file',exact:true}).getByRole('button',{name:'Cancel',exact:true}).click();
+ await add.getByRole('button',{name:'Add Folder',exact:true}).click();
+ await page.getByRole('dialog',{name:'Create folder',exact:true}).getByRole('button',{name:'Cancel',exact:true}).click();
+ await add.getByRole('button',{name:'Add List',exact:true}).click();
+ await expect(page.getByLabel('List name',{exact:true})).toBeFocused();
  await page.getByRole('button',{name:'Back to files',exact:true}).click();
- await sectionButtons.nth(4).click();
- const audio=page.getByRole('region',{name:'Audio Notes in Files',exact:true});
- await expect(audio).toBeVisible();
- await expect(audio.getByRole('button',{name:'New Audio Note',exact:true})).toBeVisible();
- await audio.getByRole('button',{name:'Back to files',exact:true}).click();
- await sectionButtons.nth(3).click();
- await expect(page.getByRole('region',{name:'File tasks',exact:true})).toBeVisible();
+ await views.getByRole('button',{name:'Audio Notes',exact:true}).click();
+ await expect(page.getByRole('region',{name:'Audio Notes in Files',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Back to files',exact:true}).click();
+ await add.getByRole('button',{name:'Add Task',exact:true}).click();
+ await expect(page.getByRole('region',{name:'File tasks',exact:true}).getByLabel('Task title',{exact:true})).toBeFocused();
 });
 
 test('project rails provide scoped Add File, Lists, and Audio Notes views without an Add-menu audio shortcut',async({page})=>{
