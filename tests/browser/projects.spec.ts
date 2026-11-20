@@ -282,13 +282,14 @@ for(const width of [390,673])test(`Project action rails scroll independently at 
  await expect(projectCreate.getByRole('button',{name:/New file/})).toHaveCount(0);
  await projectCreate.getByRole('button',{name:/New project/}).click();
  await projects.getByLabel('Project name').fill('Atlas');
- await projects.getByLabel('Project color').fill('#247acf');
+ await projects.getByLabel('Project color').fill('#000000');
  await projects.getByRole('button',{name:'Create',exact:true}).click();
  const atlas=page.getByRole('region',{name:'Project Atlas',exact:true});
  const add=atlas.getByRole('group',{name:'Atlas creation actions'});
  const views=atlas.getByRole('toolbar',{name:'Atlas sections'});
  await expect(add.getByRole('button')).toHaveText(['Add File','Add Folder','Add Group','Add Audio Note']);
  await expect(atlas.getByRole('button',{name:'Add items to Atlas',exact:true})).toHaveCount(0);
+ for(const rail of [add,views])for(const button of await rail.getByRole('button').all())await expect(button).toHaveCSS('border-top-color','rgb(181, 181, 181)',{timeout:2500});
  expect((await add.boundingBox())!.y).toBeLessThan((await views.boundingBox())!.y);
  for(const [moving,still] of [[add,views],[views,add]]){
   await moving.evaluate(el=>{el.style.maxWidth='130px';el.scrollLeft=70;});
