@@ -28,7 +28,7 @@ test('Files has independent Add and view rows',async({page})=>{
  await page.getByRole('tab',{name:'Files',exact:true}).click();
  const add=page.getByRole('group',{name:'Files creation actions'});
  const views=page.getByRole('toolbar',{name:'Files sections'});
- await expect(add.getByRole('button')).toHaveText(['Add File','Add Folder','Add List','Add Task']);
+ await expect(add.getByRole('button')).toHaveText(['Add File','Add Folder','Add Group','Add List','Add Task']);
  await expect(views.getByRole('button')).toHaveText(['Files','Lists','Tasks','Audio Notes']);
  expect((await add.boundingBox())!.y).toBeLessThan((await views.boundingBox())!.y);
  for(const [moving,still] of [[add,views],[views,add]]){
@@ -41,6 +41,17 @@ test('Files has independent Add and view rows',async({page})=>{
  await page.getByRole('dialog',{name:'Create file',exact:true}).getByRole('button',{name:'Cancel',exact:true}).click();
  await add.getByRole('button',{name:'Add Folder',exact:true}).click();
  await page.getByRole('dialog',{name:'Create folder',exact:true}).getByRole('button',{name:'Cancel',exact:true}).click();
+ await add.getByRole('button',{name:'Add Folder',exact:true}).click();
+ const folder=page.getByRole('dialog',{name:'Create folder',exact:true});
+ await folder.getByLabel('New folder path').fill('Reference');
+ await folder.getByRole('button',{name:'Create folder',exact:true}).click();
+ await expect(page.getByText('Reference',{exact:true})).toBeVisible();
+ await add.getByRole('button',{name:'Add Group',exact:true}).click();
+ const group=page.getByRole('dialog',{name:'Create visual group',exact:true});
+ await group.getByLabel('Group name 1').fill('Sources');
+ await group.getByRole('checkbox',{name:'Reference',exact:true}).check();
+ await group.getByRole('button',{name:'Create group',exact:true}).click();
+ await expect(page.getByRole('region',{name:'Group Sources',exact:true}).getByText('Reference',{exact:true})).toBeVisible();
  await add.getByRole('button',{name:'Add List',exact:true}).click();
  await expect(page.getByLabel('List name',{exact:true})).toBeFocused();
  await page.getByRole('button',{name:'Back to files',exact:true}).click();
@@ -189,4 +200,21 @@ test('each project has its own nested gallery and purpose tags persist without c
  await atlasAgain.locator('button.project-tasks-link').filter({hasText:'Gallery'}).click();
  await expect(gallery.getByRole('article').getByText('Proof of work',{exact:true})).toBeVisible();
  await expect(gallery.locator('.gallery-card')).toHaveCount(1);
+});
+
+test('Project Add Group opens creation in that project',async({page})=>{
+ await page.setViewportSize({width:673,height:900});
+ await login(page);
+ const project=await createProject(page,'Grouped');
+ await project.getByRole('group',{name:'Grouped creation actions'}).getByRole('button',{name:'Add Folder',exact:true}).click();
+ const folder=page.getByRole('dialog',{name:'Create folder',exact:true});
+ await folder.getByLabel('New folder path').fill('Drafts');
+ await folder.getByRole('button',{name:'Create folder',exact:true}).click();
+ await expect(project.getByText('Drafts',{exact:true})).toBeVisible();
+ await project.getByRole('button',{name:'Add Group',exact:true}).click();
+ const group=page.getByRole('dialog',{name:'Create visual group',exact:true});
+ await group.getByLabel('Group name 1').fill('Writing');
+ await group.getByRole('checkbox',{name:'Drafts',exact:true}).check();
+ await group.getByRole('button',{name:'Create group',exact:true}).click();
+ await expect(project.getByRole('region',{name:'Group Writing',exact:true}).getByText('Drafts',{exact:true})).toBeVisible();
 });

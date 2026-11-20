@@ -21,9 +21,9 @@ export function VisualSection({name,index,children,project=false,color,icon,hero
  </section>;
 }
 
-export function VisualGroups({directory,entries,groups,enabled=true,openRequested=false,onRequestHandled,onSave,itemsLabel='files and folders',showEmptyGroups=false,selectionEntries=entries}:{selectionEntries?:VisualEntry[];showEmptyGroups?:boolean;itemsLabel?:string;scope:string;directory:string;entries:VisualEntry[];groups:Group[];enabled?:boolean;openRequested?:boolean;onRequestHandled?:()=>void;onSave:(groups:Group[])=>Promise<void>}){
+export function VisualGroups({directory,entries,groups,enabled=true,openRequested=false,createRequested=false,onRequestHandled,onSave,itemsLabel='files and folders',showEmptyGroups=false,selectionEntries=entries}:{selectionEntries?:VisualEntry[];showEmptyGroups?:boolean;itemsLabel?:string;scope:string;directory:string;entries:VisualEntry[];groups:Group[];enabled?:boolean;openRequested?:boolean;createRequested?:boolean;onRequestHandled?:()=>void;onSave:(groups:Group[])=>Promise<void>}){
  const [draft,setDraft]=useState<Group[]|null>(null);const [error,setError]=useState('');const [editing,setEditing]=useState<string|null>(null);
- useEffect(()=>{if(enabled&&openRequested){setDraft(structuredClone(groups));setEditing(null);setError('');onRequestHandled?.();}},[enabled,openRequested,groups,onRequestHandled]);
+ useEffect(()=>{if(enabled&&(openRequested||createRequested)){const next=structuredClone(groups);const group=createRequested?{id:crypto.randomUUID(),name:'',color:visualGroupColors[next.length%visualGroupColors.length],members:[]}:null;if(group)next.push(group);setDraft(next);setEditing(group?.id??null);setError('');onRequestHandled?.();}},[enabled,openRequested,createRequested,groups,onRequestHandled]);
  if(!enabled)return <>{entries.map(e=><React.Fragment key={e.id}>{e.node}</React.Fragment>)}</>;
  const assigned=new Set<string>();const sections=new Map<string,Group>();
  for(const g of groups)for(const id of g.members)if(!assigned.has(id)){assigned.add(id);sections.set(id,g);}
