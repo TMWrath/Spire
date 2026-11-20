@@ -182,17 +182,12 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  const labelBox=await atlas.locator('.visual-section-title>span').boundingBox();
  const titleBox=await atlas.locator('.visual-section-title').boundingBox();
  expect(labelBox!.x-titleBox!.x).toBeLessThan(15);
- for(const name of ['Tasks for Atlas','Add items to Atlas','Edit project Atlas']){
+ for(const name of ['Tasks for Atlas','Edit project Atlas']){
   await expect(actions.getByRole('button',{name,exact:true})).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
   await expect(actions.getByRole('button',{name,exact:true})).toHaveCSS('color','rgb(36, 122, 207)');
  }
  await expect(atlas.getByRole('button',{name:'Tasks',exact:true})).toBeVisible();
- await atlas.getByRole('button',{name:'Add items to Atlas',exact:true}).click();
- const add=page.getByRole('dialog',{name:'Add items to Atlas'});
- await expect(add.getByRole('button',{name:'Add file',exact:true})).toBeVisible();
- await expect(add.getByRole('button',{name:'Add folder',exact:true})).toBeVisible();
- await add.getByRole('button',{name:'Tasks',exact:true}).click();
- await expect(page.getByRole('dialog',{name:'Add items to Atlas'})).toHaveCount(0);
+ await atlas.getByRole('button',{name:'Tasks',exact:true}).click();
  const tasks=page.getByRole('region',{name:'Tasks for Atlas',exact:true});
  await expect(tasks).toBeVisible();
  await tasks.getByLabel('New task',{exact:true}).fill('Build it');
@@ -272,4 +267,33 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await page.getByRole('button',{name:'Back to project',exact:true}).click();
  await revised.getByRole('button',{name:'Tasks',exact:true}).click();
  await expect(page.getByLabel('Deadline for Test it',{exact:true})).toHaveValue('');
+});
+
+for(const width of [390,673])test(`Project action rails scroll independently at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:844});
+ await login(page);
+ if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+ await page.getByRole('tab',{name:'Projects',exact:true}).click();
+ const projects=page.getByRole('region',{name:'Projects',exact:true});
+ await expect(projects).toBeVisible();
+ await page.getByRole('button',{name:'Create',exact:true}).click();
+ const projectCreate=page.getByRole('dialog',{name:'Create from file'});
+ await expect(projectCreate.getByRole('button',{name:/New project/})).toBeVisible();
+ await expect(projectCreate.getByRole('button',{name:/New file/})).toHaveCount(0);
+ await projectCreate.getByRole('button',{name:/New project/}).click();
+ await projects.getByLabel('Project name').fill('Atlas');
+ await projects.getByLabel('Project color').fill('#247acf');
+ await projects.getByRole('button',{name:'Create',exact:true}).click();
+ const atlas=page.getByRole('region',{name:'Project Atlas',exact:true});
+ const add=atlas.getByRole('group',{name:'Atlas creation actions'});
+ const views=atlas.getByRole('toolbar',{name:'Atlas sections'});
+ await expect(add.getByRole('button')).toHaveText(['Add File','Add Folder','Add Group','Add Audio Note']);
+ await expect(atlas.getByRole('button',{name:'Add items to Atlas',exact:true})).toHaveCount(0);
+ expect((await add.boundingBox())!.y).toBeLessThan((await views.boundingBox())!.y);
+ for(const [moving,still] of [[add,views],[views,add]]){
+  await moving.evaluate(el=>{el.style.maxWidth='130px';el.scrollLeft=70;});
+  expect(await moving.evaluate(el=>el.scrollLeft)).toBeGreaterThan(0);
+  expect(await still.evaluate(el=>el.scrollLeft)).toBe(0);
+  await moving.evaluate(el=>{el.scrollLeft=0;el.style.removeProperty('max-width');});
+ }
 });
