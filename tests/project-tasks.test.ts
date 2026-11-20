@@ -5,6 +5,28 @@ import {randomUUID} from 'node:crypto';
 import {Store} from '../server/store.ts';
 import {createBackup,restoreBackup} from '../server/backup.ts';
 import {emptyTaskBoard,taskProgress} from '../shared/project-tasks.ts';
+test('tasks receive stable globally unique short numbers and preserve normalized reusable tags',()=>{
+ const root='.test-data/task-identity-tags';fs.rmSync(root,{force:true,recursive:true});
+ try{
+  const store=new Store(root);store.createFolder('Projects/Atlas');store.createFolder('Projects/Beacon');
+  const atlas=store.saveProjectTasks('Atlas',{...emptyTaskBoard(),tasks:[{id:randomUUID(),title:'Build mobile view',done:false,tags:[' Mobile ','bug','mobile']}]});
+  assert.equal(atlas.tasks[0].shortId,1);assert.deepEqual(atlas.tasks[0].tags,['mobile','bug']);
+  const edited=store.saveProjectTasks('Atlas',{...atlas,tasks:atlas.tasks.map(t=>({...t,title:'Build responsive view'}))});
+  assert.equal(edited.tasks[0].shortId,1);
+  const beacon=store.saveProjectTasks('Beacon',{...emptyTaskBoard(),tasks:[{id:randomUUID(),title:'Test API',done:false,tags:['backend']}]});
+  assert.equal(beacon.tasks[0].shortId,2);
+  const withoutBeaconTask=store.saveProjectTasks('Beacon',{...beacon,tasks:[]});
+  const replacement=store.saveProjectTasks('Beacon',{...withoutBeaconTask,tasks:[{id:randomUUID(),title:'Replacement task',done:false}]});
+  assert.equal(replacement.tasks[0].shortId,3,'deleted task numbers must never be reused');
+  assert.throws(()=>store.saveProjectTasks('Atlas',{...edited,tasks:edited.tasks.map(t=>({...t,shortId:99}))}),/number|identity|changed/i);
+ }finally{fs.rmSync(root,{force:true,recursive:true});}
+});
+
+test('task schema rejects invalid short numbers and malformed tags',async()=>{
+ const {taskBoardSchema}=await import('../shared/project-tasks.ts');const base={id:randomUUID(),title:'Ship',done:false};
+ for(const shortId of [0,-1,1.5])assert.equal(taskBoardSchema.safeParse({...emptyTaskBoard(),tasks:[{...base,shortId}]}).success,false);
+ for(const tags of [[''],['two words?'],Array.from({length:21},(_,i)=>'tag'+i)])assert.equal(taskBoardSchema.safeParse({...emptyTaskBoard(),tasks:[{...base,tags}]}).success,false);
+});
 test('dedicated project tasks persist, reject stale writes, rename, and survive backups without files',()=>{
  const root='.test-data/project-tasks',restored=root+'-restored',backup=root+'-backup.json';for(const p of [root,restored,backup])fs.rmSync(p,{force:true,recursive:true});
  const store=new Store(root);store.createFolder('Projects/Atlas');

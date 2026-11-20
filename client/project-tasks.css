@@ -461,3 +461,73 @@
   .task-calendar-entry { padding:4px;font-size:9px; }
   .task-calendar-weekdays { font-size:9px; }
 }
+
+.task-filter {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 18px;
+  color: var(--muted, #aaa);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.task-filter input,
+.task-tags input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 9px 11px;
+  border: 1px solid var(--border, #444);
+  border-radius: 8px;
+  background: var(--bg, #111);
+  color: inherit;
+  font: inherit;
+}
+
+.task-short-id {
+  flex: none;
+  margin-top: 5px;
+  color: var(--muted, #aaa);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .03em;
+}
+
+.task-tags {
+  display: grid;
+  gap: 8px;
+  margin: 0 14px 14px;
+}
+
+.task-tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.task-tag-chips > span {
+  max-width: 100%;
+  padding: 4px 8px;
+  overflow: hidden;
+  border: 1px solid var(--border, #444);
+  border-radius: 999px;
+  color: var(--muted, #bbb);
+  font-size: 11px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+}
+
+.task-tags > label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted, #aaa);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+@media (max-width:700px) {
+  .task-tags {
+    margin-right: 56px;
+  }
+}
