@@ -243,7 +243,7 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await page.getByLabel('Edit project color').fill('#cf8799');
  await page.getByRole('dialog',{name:'Edit project Atlas'}).getByRole('button',{name:'Save',exact:true}).click();
  await expect(page.getByRole('region',{name:'Project Atlas Revised',exact:true})).toHaveCSS('border-left-color','rgb(207, 135, 153)');
- await page.getByRole('tab',{name:'Files',exact:true}).click();
+ await page.getByRole('tab',{name:'General',exact:true}).click();
  await expect(page.getByRole('region',{name:'Projects',exact:true})).toHaveCount(0);
  await expect(page.locator('nav').getByText('Atlas',{exact:true})).toHaveCount(0);
  await page.evaluate(async()=>{

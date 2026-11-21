@@ -17,7 +17,7 @@ for(const width of [390,673,1280])test(`Trash replaces the footer button at ${wi
  if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
  const sidebar=page.locator('.sidebar'), tabs=sidebar.getByRole('tablist');
  expect((await tabs.getByRole('tab').allTextContents()).slice(-2)).toEqual(['Sources','Trash']);
- for(const name of ['Files','Journal','Projects','Tags','Templates','Sources']){
+ for(const name of ['General','Journal','Projects','Tags','Templates','Sources']){
   await tabs.getByRole('tab',{name,exact:true}).click();
   await expect(sidebar.getByRole('button',{name:'Trash',exact:true})).toHaveCount(0);
  }
@@ -27,7 +27,7 @@ for(const width of [390,673,1280])test(`Trash replaces the footer button at ${wi
  await expect(sidebar.getByRole('tabpanel',{name:'Trash',exact:true})).toBeVisible();
  await expect(main).toHaveText(before.replace(/\s+/g,' ').trim(),{useInnerText:true});
  await expect(tabs.getByRole('tab',{name:'Trash',exact:true})).toHaveAttribute('aria-selected','true');
- await tabs.getByRole('tab',{name:'Files',exact:true}).click();
+ await tabs.getByRole('tab',{name:'General',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Trash',exact:true})).toHaveCount(0);
 });
 
@@ -35,7 +35,7 @@ for(const width of [390,673,1280])test(`Files sections stay in the sidebar at ${
  await page.setViewportSize({width,height:844}); await login(page);
  const sidebar=page.locator('.sidebar');
  if(!await sidebar.isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
- await sidebar.getByRole('tab',{name:'Files',exact:true}).click();
+ await sidebar.getByRole('tab',{name:'General',exact:true}).click();
  const actions=sidebar.getByRole('group',{name:'Files creation actions'});
  const search=sidebar.getByRole('textbox',{name:'Search files'});
  await search.fill('no matching file');

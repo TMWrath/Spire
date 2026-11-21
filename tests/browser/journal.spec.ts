@@ -37,7 +37,7 @@ for(const mobile of [false,true])test.describe(mobile?'mobile':'desktop',()=>{
   if(mobile)await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
   await expect(page.getByRole('tab',{name:'Diary',exact:true})).toBeVisible();
   await expect(page.getByRole('tab',{name:'Journal',exact:true})).toHaveCount(0);
-  await page.getByRole('tab',{name:'Files',exact:true}).click();
+  await page.getByRole('tab',{name:'General',exact:true}).click();
   await expect(page.locator('#sidebar-files')).not.toContainText('Journal');
   await page.getByRole('tab',{name:'Projects',exact:true}).click();
   await expect(page.locator('#sidebar-projects')).not.toContainText('Journal');

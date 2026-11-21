@@ -10,8 +10,8 @@ for(const width of [390,673,1280])test(`Audio Notes lists use the full-width sha
  const asset='Attachments/tone.mp3';expect((await page.request.post('/api/attachments?path='+encodeURIComponent(asset),{headers:{...headers,'Content-Type':'application/octet-stream'},data:readFileSync('tests/fixtures/media/tone.mp3')})).ok()).toBeTruthy();
  const id=randomUUID(),path='Audio Notes/Player consistency.md';expect((await page.request.post('/api/mutate',{headers,data:{op:randomUUID(),id,base:0,path,content:audioNoteContent(path,asset,'Original words'),deleted:false}})).ok()).toBeTruthy();
  await page.reload();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
- if(!await page.getByRole('tab',{name:'Files',exact:true}).isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
- await page.getByRole('tab',{name:'Files',exact:true}).click();
+ if(!await page.getByRole('tab',{name:'General',exact:true}).isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+ await page.getByRole('tab',{name:'General',exact:true}).click();
  await page.getByRole('button',{name:'Audio Notes',exact:true}).click();
  const list=page.getByRole('region',{name:'Audio Notes in Files',exact:true});
  const player=list.getByRole('group',{name:'Audio player for Player consistency'});

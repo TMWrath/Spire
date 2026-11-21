@@ -27,7 +27,7 @@ async function createProject(page:any,name:string){
 test('Files has independent Add and view rows',async({page})=>{
  await page.setViewportSize({width:390,height:900});
  await login(page);
- await page.getByRole('tab',{name:'Files',exact:true}).click();
+ await page.getByRole('tab',{name:'General',exact:true}).click();
  const add=page.getByRole('group',{name:'Files creation actions'});
  const views=page.getByRole('toolbar',{name:'Files sections'});
  await expect(add.getByRole('button')).toHaveText(['Add File','Add Folder','Add Group','Add List','Add Task']);
@@ -100,7 +100,7 @@ test('project rails provide scoped Add File, Lists, and Audio Notes views withou
 
 test('Lists creates an explicit portable Markdown presentation and opens the same source file',async({page})=>{
  await login(page);
- await page.getByRole('tab',{name:'Files',exact:true}).click();
+ await page.getByRole('tab',{name:'General',exact:true}).click();
  await page.getByRole('toolbar',{name:'Files sections',exact:true}).getByRole('button',{name:'Lists',exact:true}).click();
  const lists=page.getByRole('region',{name:'Lists in Files',exact:true});
  await lists.getByLabel('List name',{exact:true}).fill('Packing');
@@ -116,7 +116,7 @@ test('normal file tasks live inside Files and write authoritative Markdown',asyn
  await page.setViewportSize({width:390,height:900});
  await login(page);
  await expect(page.getByRole('tab',{name:'Tasks',exact:true})).toHaveCount(0);
- await page.getByRole('tab',{name:'Files',exact:true}).click();
+ await page.getByRole('tab',{name:'General',exact:true}).click();
  await page.getByRole('toolbar',{name:'Files sections',exact:true}).getByRole('button',{name:'Tasks',exact:true}).click();
  const collection=page.getByRole('region',{name:'File tasks',exact:true});
  await expect(collection).toBeVisible();

@@ -4,7 +4,7 @@ for(const touch of [false,true])test.describe(touch?'touch full sidebar scroll':
  test('all directory tabs share the outer sidebar scroll surface',async({page})=>{
   await page.goto('/');await page.getByLabel('Username',{exact:true}).fill('scroll-user');await page.getByLabel('Password',{exact:true}).fill('disposable-scroll-password');await page.getByRole('button',{name:'Create Reliquary',exact:true}).click();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
   const sidebar=page.locator('.sidebar');const scroller=sidebar.locator('.sidebar-scroll');if(!await sidebar.isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
-  for(const tab of ['Files','Tags','Templates','Sources']){
+  for(const tab of ['General','Tags','Templates','Sources']){
    await scroller.evaluate(el=>el.scrollTop=0);await sidebar.getByRole('tab',{name:tab,exact:true}).click();
    const panel=sidebar.locator('#sidebar-'+tab.toLowerCase());
    // Disposable geometry fixture stresses the real rendered panel and its stylesheet.

@@ -25,5 +25,5 @@ for(const mobile of [false,true])test(`visual sections ${mobile?'mobile':'deskto
  for(const name of ['Section Alpha','Section Beta']){await page.getByRole('button',{name:'Create',exact:true}).click();await page.getByRole('dialog',{name:'Create from file'}).getByRole('button',{name:/New project/}).click();await page.getByLabel('Project name',{exact:true}).fill(name);await page.getByRole('region',{name:'Projects',exact:true}).getByRole('button',{name:'Create',exact:true}).click();await expect(page.getByRole('region',{name:'Project '+name,exact:true})).toBeVisible();}
  await expect(page.getByRole('region',{name:'Project Section Alpha',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Group items in directory',exact:true})).toHaveCount(0);
  const a=await page.getByRole('region',{name:'Project Section Alpha',exact:true}).boundingBox(),b=await page.getByRole('region',{name:'Project Section Beta',exact:true}).boundingBox();expect(b!.y).toBeGreaterThan(a!.y);expect(Math.abs(a!.x-b!.x)).toBeLessThan(2);
- await page.getByRole('tab',{name:'Files',exact:true}).click();await expect(page.locator('[data-folder^="Projects/"]')).toHaveCount(0);
+ await page.getByRole('tab',{name:'General',exact:true}).click();await expect(page.locator('[data-folder^="Projects/"]')).toHaveCount(0);
 });
