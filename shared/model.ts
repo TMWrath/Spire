@@ -10,7 +10,7 @@ export function setStarred(content: string, starred: boolean): string {
  if (starred) doc.set('starred', true); else doc.delete('starred');
  return `---\n${doc.toString()}---${match[2]}${content.slice(match[0].length)}`;
 }
-export function setProperty(content: string, key: 'description'|'hero'|'tags', value: string|string[]): string {
+export function setProperty(content: string, key: 'description'|'hero'|'heroPosition'|'tags', value: string|string[]): string {
  const match = /^---\r?\n([\s\S]*?)\r?\n---(\r?\n|$)/.exec(content);
  const doc = parseDocument(match?.[1] ?? '');
  if (doc.errors.length || (doc.contents && !isMap(doc.contents))) throw new Error('Fix invalid YAML frontmatter before editing note details.');
