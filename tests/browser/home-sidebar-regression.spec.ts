@@ -21,9 +21,11 @@ for(const width of [390,673,1280])test(`Trash replaces the footer button at ${wi
   await tabs.getByRole('tab',{name,exact:true}).click();
   await expect(sidebar.getByRole('button',{name:'Trash',exact:true})).toHaveCount(0);
  }
+ const main=page.locator('main.main');
+ const before=await main.innerText();
  await tabs.getByRole('tab',{name:'Trash',exact:true}).click();
- await expect(page.getByRole('heading',{name:'Trash',exact:true})).toBeVisible();
- if(!await sidebar.isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+ await expect(sidebar.getByRole('tabpanel',{name:'Trash',exact:true})).toBeVisible();
+ await expect(main).toHaveText(before.replace(/\s+/g,' ').trim(),{useInnerText:true});
  await expect(tabs.getByRole('tab',{name:'Trash',exact:true})).toHaveAttribute('aria-selected','true');
  await tabs.getByRole('tab',{name:'Files',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Trash',exact:true})).toHaveCount(0);
@@ -70,16 +72,12 @@ test('mobile Trash heading keeps its content above the first card without clippi
  await page.reload();
  await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
  await page.getByRole('tab',{name:'Trash',exact:true}).click();
- const trashPage=page.getByRole('region',{name:'Deleted files',exact:true});
- const heading=trashPage.locator('.trash-page-heading');
- const grid=trashPage.locator('.trash-page-grid');
- await expect(trashPage).toBeVisible();
- await expect(heading.getByRole('heading',{name:'Trash',exact:true})).toBeVisible();
- const [headingBox,gridBox]=await Promise.all([heading.boundingBox(),grid.boundingBox()]);
- expect(headingBox&&gridBox).toBeTruthy();
- expect(headingBox!.height).toBeGreaterThan(100);
- expect(gridBox!.y).toBeGreaterThanOrEqual(headingBox!.y+headingBox!.height);
- expect(await heading.evaluate(element=>element.scrollHeight<=element.clientHeight+1)).toBe(true);
+ const panel=page.locator('.sidebar').getByRole('tabpanel',{name:'Trash',exact:true});
+ const card=panel.locator('.trash-file-card');
+ await expect(card).toBeVisible();
+ expect(await panel.evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);
+ await card.getByRole('button',{name:'Restore',exact:true}).click();
+ await expect(card).toHaveCount(0);
 });
 
 for(const width of [390,673,844,979]) test(`drawer closes and opening a file reveals the editor at ${width}px`,async({page})=>{

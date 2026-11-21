@@ -1,5 +1,5 @@
 import React,{useState} from 'react';
-import {ArrowLeft,FileText,Folder,Trash2} from 'lucide-react';
+import {FileText,Folder,Trash2} from 'lucide-react';
 import type {Note} from '../shared/model';
 import {groupTrashEntries,trashFilePresentation,type TrashedFileSummary,type TrashGroupEntry} from './trash-presentation';
 
@@ -9,14 +9,13 @@ type TrashEntry=TrashGroupEntry<Note,TrashedFile>;
 type Props={
  notes:Note[];
  files:TrashedFile[];
- onBack:()=>void;
  onRestoreNote:(note:Note)=>Promise<void>;
  onPurgeNote:(note:Note)=>Promise<void>;
  onRestoreFile:(file:TrashedFile)=>Promise<void>;
  onPurgeFile:(file:TrashedFile)=>Promise<void>;
 };
 
-export function TrashPage({notes,files,onBack,onRestoreNote,onPurgeNote,onRestoreFile,onPurgeFile}:Props){
+export function TrashPage({notes,files,onRestoreNote,onPurgeNote,onRestoreFile,onPurgeFile}:Props){
  const groups=groupTrashEntries(notes,files),count=notes.length+files.length;
  const [busy,setBusy]=useState<string|null>(null);
  const restoreGroup=async(folder:string,items:TrashEntry[])=>{
@@ -24,8 +23,8 @@ export function TrashPage({notes,files,onBack,onRestoreNote,onPurgeNote,onRestor
   try{for(const item of items){if(item.note)await onRestoreNote(item.note);else if(item.file)await onRestoreFile(item.file);}}
   finally{setBusy(null);}
  };
- return <section id="sidebar-trash" className="trash-page" aria-label="Deleted files">
-  <header className="trash-page-heading"><div><span className="trash-eyebrow">Workspace</span><h1>Trash</h1><p>{count} deleted {count===1?'item':'items'} in {groups.length} {groups.length===1?'folder':'folders'}</p></div><button type="button" onClick={onBack}><ArrowLeft aria-hidden="true"/>Back to files</button></header>
+ return <section id="sidebar-trash" className="trash-page trash-sidebar" role="tabpanel" aria-label="Trash">
+  <h2>Trash</h2><p className="muted">{count} deleted {count===1?'item':'items'} in {groups.length} {groups.length===1?'folder':'folders'}</p>
   <div className="trash-folder-list">
    {groups.map(group=><details className="trash-folder" key={group.folder} open={groups.length===1}>
     <summary><span className="trash-folder-icon"><Folder aria-hidden="true"/></span><span className="trash-folder-copy"><strong>{group.folder}</strong><small>{group.items.length} deleted {group.items.length===1?'item':'items'}</small></span><button type="button" disabled={busy!==null} onClick={event=>{event.preventDefault();event.stopPropagation();void restoreGroup(group.folder,group.items);}}>{busy===group.folder?'Restoring…':'Restore all'}</button></summary>

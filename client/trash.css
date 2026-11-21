@@ -50,3 +50,11 @@
  .trash-file-card{padding:11px}
  .trash-file-actions{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr)}
 }
+
+.sidebar .trash-sidebar{padding:0;background:none;overflow:visible}
+.trash-sidebar>.muted{margin:0 0 12px}
+.trash-sidebar .trash-page-grid{grid-template-columns:minmax(0,1fr)}
+.trash-sidebar .trash-folder>summary{gap:6px;padding:8px;grid-template-columns:34px minmax(0,1fr) auto}
+.trash-sidebar .trash-folder>summary>button{padding:6px;font-size:.75rem}
+.trash-sidebar .trash-empty{min-height:110px;padding:12px}
+.trash-sidebar .trash-file-actions button{font-size:.75rem;padding:4px;flex-wrap:wrap}
