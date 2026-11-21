@@ -107,6 +107,7 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  await lists.getByRole('button',{name:'Create List',exact:true}).click();
  const item=lists.getByRole('article').filter({hasText:'Packing'});
  await expect(item).toBeVisible();
+ await expect(item.getByRole('button',{name:'Edit list',exact:true})).toHaveCount(0);
  await item.getByRole('button',{name:'Open list Packing',exact:true}).click();
  const view=page.getByRole('region',{name:'Packing list',exact:true});
  await expect(view).toBeVisible();
@@ -122,6 +123,7 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  await expect(page.getByRole('group',{name:'List options'})).toHaveCount(0);
  await customize.click();
  const options=page.getByRole('tabpanel',{name:'Customize'});
+ await expect(options.locator('.list-dialog-header')).toHaveCount(0);
  const update=options.getByRole('button',{name:'Update list'});
  await expect(options.getByLabel('List item 1')).toHaveValue('First item');
  await options.getByRole('button',{name:'Numbered',exact:true}).click();

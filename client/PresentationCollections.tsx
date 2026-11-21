@@ -3,7 +3,6 @@ import {ArrowLeft,FileText,List as ListIcon,Mic,Pencil,Trash2} from 'lucide-reac
 import type {Note} from '../shared/model';
 import {audioNoteData} from '../shared/audio-notes';
 import {filePresentation,setFilePresentation} from '../shared/file-presentations';
-import {PresentedListEditor} from './PresentedListEditor';
 import {StandaloneAudioTrack} from './StandaloneAudioTrack';
 import {attachmentUrl} from './attachment-urls';
 import './presentation-collections.css';
@@ -12,16 +11,15 @@ type Scope={kind:'files'}|{kind:'project';project:string};
 const label=(scope:Scope)=>scope.kind==='files'?'Files':scope.project;
 const backLabel=(scope:Scope)=>scope.kind==='files'?'files':scope.project;
 
-export function ListsCollection({focusCreate=false,scope,notes,folders,onBack,onOpen,onCreate,onSave}:{focusCreate?:boolean;scope:Scope;notes:Note[];folders:string[];onBack:()=>void;onOpen:(note:Note)=>void;onCreate:(path:string,content:string)=>Promise<void>;onSave:(note:Note,content:string)=>Promise<void>}){
+export function ListsCollection({focusCreate=false,scope,notes,folders,onBack,onOpen,onCreate}:{focusCreate?:boolean;scope:Scope;notes:Note[];folders:string[];onBack:()=>void;onOpen:(note:Note)=>void;onCreate:(path:string,content:string)=>Promise<void>}){
  const lists=useMemo(()=>notes.filter(note=>!note.deleted&&filePresentation(note.content)==='list'),[notes]);
  const allowedFolders=folders.filter(folder=>scope.kind==='files'?!folder.startsWith('Projects/'):folder===`Projects/${scope.project}`||folder.startsWith(`Projects/${scope.project}/`));
  const defaultFolder=scope.kind==='files'?(allowedFolders[0]??'Lists'):`Projects/${scope.project}`;
- const[name,setName]=useState(''),[folder,setFolder]=useState(defaultFolder),[busy,setBusy]=useState(false),[editing,setEditing]=useState<Note|null>(null),[error,setError]=useState('');
+ const[name,setName]=useState(''),[folder,setFolder]=useState(defaultFolder),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const create=async(event:React.FormEvent)=>{event.preventDefault();const title=name.trim();if(!title)return;setBusy(true);setError('');try{await onCreate(`${folder}/${title}.md`,setFilePresentation(`# ${title}\n\n- [ ] First item\n`,'list'));setName('');}catch(e){setError(e instanceof Error?e.message:String(e));}finally{setBusy(false);}};
  return <section className="workspace-collection presentation-collection" role="region" aria-label={`Lists in ${label(scope)}`}>{scope.kind!=='files'&&<header className="collection-header"><button type="button" aria-label={`Back to ${backLabel(scope)}`} onClick={onBack}><ArrowLeft/></button><h2>{label(scope)} Lists</h2></header>}
   <form className="presentation-create" onSubmit={create}><label>List name<input autoFocus={focusCreate} aria-label="List name" required value={name} onChange={e=>setName(e.target.value)} placeholder="Shopping list"/></label><label>Destination<select aria-label="List destination" value={folder} onChange={e=>setFolder(e.target.value)}>{[...new Set([defaultFolder,...allowedFolders])].map(value=><option key={value}>{value}</option>)}</select></label><button className="primary" disabled={busy||!name.trim()}><ListIcon/>Create List</button></form>
-  {error&&<p role="alert">{error}</p>}<div className="presentation-file-list">{lists.map(note=><article key={note.id}><ListIcon aria-hidden="true"/><div><strong>{note.path.split('/').at(-1)?.replace(/\.md$/i,'')}</strong><small>{note.path}</small></div><button onClick={()=>setEditing(note)}><Pencil/>Edit list</button><button aria-label={`Open list ${note.path.split('/').at(-1)?.replace(/\.md$/i,'')}`} onClick={()=>onOpen(note)}><ListIcon/>Open list</button></article>)}</div>{!lists.length&&<p className="muted">No designated Lists in this {scope.kind==='files'?'Files scope':'project'} yet.</p>}
-  {editing&&<PresentedListEditor key={editing.id} note={editing} onCancel={()=>setEditing(null)} onSave={content=>onSave(editing,content)}/> }
+  {error&&<p role="alert">{error}</p>}<div className="presentation-file-list">{lists.map(note=><article key={note.id}><ListIcon aria-hidden="true"/><div><strong>{note.path.split('/').at(-1)?.replace(/\.md$/i,'')}</strong><small>{note.path}</small></div><button aria-label={`Open list ${note.path.split('/').at(-1)?.replace(/\.md$/i,'')}`} onClick={()=>onOpen(note)}><ListIcon/>Open list</button></article>)}</div>{!lists.length&&<p className="muted">No designated Lists in this {scope.kind==='files'?'Files scope':'project'} yet.</p>}
  </section>;
 }
 
