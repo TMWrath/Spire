@@ -3,4 +3,9 @@
 .presentation-collection{grid-template-columns:minmax(0,1fr);min-width:0;box-sizing:border-box}.audio-note-player-list{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-width:0}.audio-note-player-list>article,.audio-note-player-list .standalone-audio-player{min-width:0;max-width:100%}
 @container (max-width:340px){.audio-note-player-list .media-audio-row{grid-template-columns:40px minmax(0,1fr);row-gap:8px}.audio-note-player-list .media-audio-seek,.audio-note-player-list .media-audio-controls{grid-column:1/-1;min-width:0}.audio-note-player-list .media-audio-controls{justify-content:center;flex-wrap:wrap}}
 
-.presentation-file-list article:has(> .presentation-list-open){padding:0}.presentation-file-list .presentation-list-open{display:flex;align-items:center;gap:12px;text-align:start;width:100%;min-width:0;padding:12px;border:0;border-radius:inherit;background:transparent}.presentation-list-open>span{display:grid;min-width:0}.presentation-file-list .presentation-list-open:hover{background:var(--hover,var(--line))}.presentation-list-open:focus-visible{outline-offset:-3px}
+.presentation-list-cards{grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr));align-items:stretch}
+.presentation-file-list.presentation-list-cards > article{padding:0;overflow:hidden;border:1px solid var(--line,#444);border-radius:14px;background:var(--panel,#181818)}
+.presentation-list-cards article > button.presentation-list-open{display:flex;flex:1;align-items:center;justify-content:flex-start;gap:12px;text-align:left;min-width:0;min-height:76px;padding:14px;border:0;border-radius:inherit;background:transparent}
+.presentation-list-open > span{display:grid;flex:1;min-width:0;text-align:left}
+.presentation-list-cards article > button.presentation-list-open:hover{background:var(--hover,var(--line))}
+.presentation-list-open:focus-visible{outline-offset:-3px}

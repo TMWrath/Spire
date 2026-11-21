@@ -109,7 +109,11 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  await expect(item).toBeVisible();
  await expect(item.getByRole('button',{name:'Edit list',exact:true})).toHaveCount(0);
  await expect(item.getByRole('button')).toHaveCount(1);
- await item.getByRole('button',{name:'Packing',exact:true}).click();
+ const card=item.getByRole('button',{name:'Packing',exact:true});
+ await expect(card.locator('strong')).toHaveCSS('text-align','left');
+ await expect(card).toHaveCSS('justify-content','flex-start');
+ await expect(item).toHaveCSS('border-top-width','1px');
+ await card.click();
  const view=page.getByRole('region',{name:'Packing list',exact:true});
  await expect(view).toBeVisible();
  await expect(page.getByLabel('Markdown source',{exact:true})).toHaveCount(0);
