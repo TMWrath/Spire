@@ -31,6 +31,23 @@ for(const width of [390,673,1280])test(`Trash replaces the footer button at ${wi
  await expect(page.getByRole('heading',{name:'Trash',exact:true})).toHaveCount(0);
 });
 
+for(const width of [390,673,1280])test(`Files sections stay in the sidebar at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:844}); await login(page);
+ const sidebar=page.locator('.sidebar');
+ if(!await sidebar.isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+ await sidebar.getByRole('tab',{name:'Files',exact:true}).click();
+ const sections=sidebar.getByRole('group',{name:'Files sections'});
+ const main=page.locator('main.main');
+ const before=await main.innerText();
+ for(const name of ['Tasks','Lists','Audio Notes','Files']){
+  const button=sections.getByRole('button',{name,exact:true});
+  await button.click();
+  await expect(button).toHaveAttribute('aria-pressed','true');
+  await expect(sidebar).toBeVisible();
+  await expect(main).toHaveText(before.replace(/\s+/g,' ').trim(),{useInnerText:true});
+ }
+});
+
 test('mobile sidebar replaces the Workspace label with the tab bar',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  await login(page);
