@@ -108,7 +108,8 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  const item=lists.getByRole('article').filter({hasText:'Packing'});
  await expect(item).toBeVisible();
  await expect(item.getByRole('button',{name:'Edit list',exact:true})).toHaveCount(0);
- await item.getByRole('button',{name:'Open list Packing',exact:true}).click();
+ await expect(item.getByRole('button')).toHaveCount(1);
+ await item.getByRole('button',{name:'Packing',exact:true}).click();
  const view=page.getByRole('region',{name:'Packing list',exact:true});
  await expect(view).toBeVisible();
  await expect(page.getByLabel('Markdown source',{exact:true})).toHaveCount(0);
