@@ -344,15 +344,6 @@
 @media (max-width: 700px) {
   .task-card-heading {
     padding: 12px 58px 8px 12px;
-    min-height: 146px;
-  }
-
-  .project-task-card:has(.task-card-action-group > :nth-child(3)) .task-card-heading {
-    min-height: 190px;
-  }
-
-  .project-task-card:has(.task-card-action-group > :nth-child(4)) .task-card-heading {
-    min-height: 234px;
   }
 
   .task-card-details {
@@ -530,4 +521,11 @@
   .task-tags {
     margin-right: 56px;
   }
+}
+
+.task-card-collapse { flex: none; display: inline-grid; place-items: center; min-width: 32px; min-height: 32px; padding: 4px; }
+.task-card-collapse svg { width: 16px; height: 16px; }
+@media (max-width: 700px) {
+  .project-task-card .task-tags { margin-right: 56px; }
+  .project-task-card .task-card-actions { padding-right: 56px; }
 }
