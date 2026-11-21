@@ -1,5 +1,6 @@
 import React,{useState} from 'react';
 import {createPortal} from 'react-dom';
+import {ThemedSelect} from './ThemedSelect';
 import type {Note} from '../shared/model';
 import {documentLists} from './document-structures';
 import {attachmentUrl} from './attachment-urls';
@@ -22,7 +23,7 @@ export function ListView({note,onSave,uploadImage,contextTarget}:{note:Note;cont
  const options=(kind:string,images:boolean,rates:boolean)=>{const line=`<!-- spire:list-options ${kind} ${Number(images)} ${Number(rates)} -->`;void save(stored?content.replace(settingsLine,line):content.trimEnd()+'\n\n'+line+'\n');};
  return <section className="interactive-list" aria-label={`${title} list`}>
   <header><p className="muted">List</p><h1>{title}</h1></header>
-  {!note.deleted&&contextTarget&&createPortal(<fieldset disabled={disabled}><legend>List options</legend><label>List style <select value={mode} onChange={e=>options(e.target.value,heroes,ratings)}><option value="plain">Plain list</option><option value="checklist">Checklist</option></select></label><label><input type="checkbox" checked={heroes} onChange={e=>options(mode,e.target.checked,ratings)}/> Item hero images</label><label><input type="checkbox" checked={ratings} onChange={e=>options(mode,heroes,e.target.checked)}/> Item ratings</label></fieldset>,contextTarget)}
+  {!note.deleted&&contextTarget&&createPortal(<fieldset className="list-context-options" aria-label="List options" disabled={disabled}><label><span>List style</span><ThemedSelect aria-label="List style" disabled={disabled} value={mode} onChange={e=>options(e.target.value,heroes,ratings)}><option value="plain">Plain list</option><option value="checklist">Checklist</option></ThemedSelect></label><label><span>Item hero images</span><input type="checkbox" role="switch" aria-label="Item hero images" checked={heroes} onChange={e=>options(mode,e.target.checked,ratings)}/></label><label><span>Item ratings</span><input type="checkbox" role="switch" aria-label="Item ratings" checked={ratings} onChange={e=>options(mode,heroes,e.target.checked)}/></label></fieldset>,contextTarget)}
   {!note.deleted&&<form onSubmit={e=>{e.preventDefault();const value=item.trim();if(!value||disabled)return;const marker=mode==='checklist'?'- [ ]':last?.style==='numbered'?'1.':last?.style==='lettered'?'a.':last?.style==='bullets'?'*':'-';const at=last?.end??(stored?.index??content.length);const before=content.slice(0,at),after=content.slice(at);void save((last?before:before.trimEnd())+(last?'\n':'\n\n')+marker+' '+value+(after.startsWith('\n')?after:'\n'+(after?'\n'+after:'')),true);}}><input aria-label="New list item" placeholder="Add an item…" value={item} onChange={e=>setItem(e.target.value)} disabled={disabled}/><button className="primary" disabled={disabled||!item.trim()}>Add item</button></form>}
   {error&&<p role="alert">{error}</p>}
   {lists.map((list,i)=>{const lines=content.slice(list.start,list.end).split('\n'),skip=lines.length-list.items.length;let at=list.start+lines.slice(0,skip).reduce((n,s)=>n+s.length+1,0);return <section key={i}>{list.title&&list.title!==title&&<h2>{list.title}</h2>}<ul>{lines.slice(skip).map((raw,j)=>{

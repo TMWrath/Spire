@@ -116,10 +116,15 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  await view.getByRole('button',{name:'Add item'}).click();
  await expect(view.getByRole('checkbox',{name:'Second item'})).toBeVisible();
  await expect(view.getByRole('checkbox',{name:'First item'})).toBeChecked();
- if(!await page.getByRole('group',{name:'List options'}).isVisible())await page.getByRole('button',{name:'Toggle context'}).click();
- const options=page.getByRole('group',{name:'List options'});
+ if(!await page.getByRole('tab',{name:'Customize',exact:true}).isVisible())await page.getByRole('button',{name:'Toggle context'}).click();
+ const customize=page.getByRole('tab',{name:'Customize',exact:true});
+ await expect(page.getByRole('tablist',{name:'File context'}).getByRole('tab').nth(1)).toHaveText('Customize');
+ await expect(page.getByRole('group',{name:'List options'})).toHaveCount(0);
+ await customize.click();
+ const options=page.getByRole('tabpanel',{name:'Customize'}).getByRole('group',{name:'List options'});
  await expect(view.getByLabel('List options',{exact:true})).toHaveCount(0);
- await options.getByLabel('List style').selectOption('plain');
+ await options.getByRole('button',{name:'List style'}).click();
+ await page.getByRole('option',{name:'Plain list',exact:true}).click();
  await expect(view.getByRole('checkbox',{name:'First item'})).toHaveCount(0);
  await options.getByLabel('Item ratings').check();
  const rating=view.getByLabel('Rating for First item');
@@ -133,7 +138,8 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  await expect(image).toHaveCount(0);
  await options.getByLabel('Item ratings').uncheck();
  await expect(rating).toHaveCount(0);
- await options.getByLabel('List style').selectOption('checklist');
+ await options.getByRole('button',{name:'List style'}).click();
+ await page.getByRole('option',{name:'Checklist',exact:true}).click();
  await expect(view.getByRole('checkbox',{name:'First item'})).toBeChecked();
  await options.getByLabel('Item ratings').check();
  await expect(rating).toHaveValue('4.5');
