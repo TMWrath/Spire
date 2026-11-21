@@ -98,18 +98,24 @@ test('project rails provide scoped Add File, Lists, and Audio Notes views withou
  await expect(audio.getByText('No Audio Notes in this project yet.',{exact:true})).toBeVisible();
 });
 
-test('Lists creates an explicit portable Markdown presentation and opens the same source file',async({page})=>{
+test('Lists creates an explicit portable Markdown presentation and opens its interactive view',async({page})=>{
  await login(page);
  await page.getByRole('tab',{name:'General',exact:true}).click();
- await page.getByRole('toolbar',{name:'Files sections',exact:true}).getByRole('button',{name:'Lists',exact:true}).click();
+ await page.getByRole('group',{name:'Files sections',exact:true}).getByRole('button',{name:'Lists',exact:true}).click();
  const lists=page.getByRole('region',{name:'Lists in Files',exact:true});
  await lists.getByLabel('List name',{exact:true}).fill('Packing');
  await lists.getByRole('button',{name:'Create List',exact:true}).click();
  const item=lists.getByRole('article').filter({hasText:'Packing'});
  await expect(item).toBeVisible();
- await item.getByRole('button',{name:'Open file',exact:true}).click();
- await page.getByRole('button',{name:'Source',exact:true}).click();
- await expect(page.getByLabel('Markdown source',{exact:true})).toHaveValue(/<!-- spire:presentation list -->[\s\S]*# Packing[\s\S]*- \[ \] First item/);
+ await item.getByRole('button',{name:'Open list Packing',exact:true}).click();
+ const view=page.getByRole('region',{name:'Packing list',exact:true});
+ await expect(view).toBeVisible();
+ await expect(page.getByLabel('Markdown source',{exact:true})).toHaveCount(0);
+ await view.getByRole('checkbox',{name:'First item'}).check();
+ await view.getByLabel('New list item').fill('Second item');
+ await view.getByRole('button',{name:'Add item'}).click();
+ await expect(view.getByRole('checkbox',{name:'Second item'})).toBeVisible();
+ await expect(view.getByRole('checkbox',{name:'First item'})).toBeChecked();
 });
 
 test('normal file tasks live inside Files and write authoritative Markdown',async({page})=>{
