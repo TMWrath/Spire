@@ -532,3 +532,12 @@
   .project-task-card .task-tags { margin-right: 56px; }
   .project-task-card .task-card-actions { padding-right: 56px; }
 }
+
+.project-tasks-page { container-type: inline-size; }
+@container (min-width: 760px) {
+  .project-task-grid:not([hidden]),
+  .project-task-grid > .visual-section > .visual-section-items:not([hidden]) {
+    display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; align-items: start;
+  }
+  .project-task-grid > .visual-section { grid-column: 1 / -1; }
+}

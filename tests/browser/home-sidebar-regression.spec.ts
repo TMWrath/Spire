@@ -76,14 +76,18 @@ test('mobile Trash heading keeps its content above the first card without clippi
  expect(await heading.evaluate(element=>element.scrollHeight<=element.clientHeight+1)).toBe(true);
 });
 
-test('mobile sidebar has explicit close routes and opening a file reveals the editor',async({page})=>{
- await page.setViewportSize({width:390,height:844});
+for(const width of [390,673,844,979]) test(`drawer closes and opening a file reveals the editor at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:width===390?844:width===979?800:390});
  await login(page);
  await expect(page.getByRole('heading',{name:'Your writing lives here.',exact:true})).toBeVisible();
- await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
  const sidebar=page.locator('.sidebar');
+ await expect(sidebar).toBeHidden();
+ const canvas=page.locator('.main');
+ const before=(await canvas.boundingBox())!;
+ await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
  await expect(sidebar).toBeVisible();
- await page.locator('.sidebar-backdrop').click({position:{x:380,y:200}});
+ expect((await canvas.boundingBox())!.width).toBeCloseTo(before.width,0);
+ await page.locator('.sidebar-backdrop').click({position:{x:width-10,y:200}});
  await expect(sidebar).toBeHidden();
  await expect(page.getByRole('heading',{name:'Your writing lives here.',exact:true})).toBeVisible();
 

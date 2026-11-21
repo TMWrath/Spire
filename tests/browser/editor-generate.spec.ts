@@ -3,7 +3,7 @@ import {test,expect} from './fixtures';
 
 function pdf(){const stream='BT /F1 12 Tf 50 750 Td (Generated PDF text.) Tj ET',objects=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`];let out='%PDF-1.4\n',offsets=[0];objects.forEach((object,index)=>{offsets.push(Buffer.byteLength(out));out+=`${index+1} 0 obj\n${object}\nendobj\n`;});const start=Buffer.byteLength(out);out+='xref\n0 6\n0000000000 65535 f \n'+offsets.slice(1).map(offset=>String(offset).padStart(10,'0')+' 00000 n \n').join('')+`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${start}\n%%EOF`;return Buffer.from(out);}
 
-test('Add File creates a blank file while Generate replaces the open draft only after warning',async({page})=>{
+test('Generate offers only import actions and preserves the open draft',async({page})=>{
  await page.goto('/');
  await page.getByLabel('Username',{exact:true}).fill('generate-editor');
  await page.getByLabel('Password',{exact:true}).fill('disposable-generate-password');
@@ -21,21 +21,22 @@ test('Add File creates a blank file while Generate replaces the open draft only 
 
  const editor=page.getByRole('textbox',{name:'Document editor',exact:true});
  await editor.fill('Keep this unsaved writing');
- await page.getByRole('button',{name:'Generate',exact:true}).click();
- const generate=page.getByRole('region',{name:'Generate file content'});
- await expect(generate.getByRole('button',{name:/New blank file/})).toBeVisible();
- await expect(generate.getByRole('button',{name:/From PDF/})).toBeVisible();
- await expect(generate.getByRole('button',{name:/From Word/})).toBeVisible();
- await expect(generate.getByRole('button',{name:/From OpenDocument/})).toBeVisible();
- await expect(generate.getByRole('button',{name:/From audio/})).toBeVisible();
- await expect(generate).toContainText('overwrite any edits already made to this file');
-
- page.once('dialog',dialog=>dialog.dismiss());
- await generate.getByRole('button',{name:/New blank file/}).click();
+ for(const [width,height] of [[390,844],[673,375],[844,390],[1024,768],[1280,800]]){
+  await page.setViewportSize({width,height});
+  if(await page.locator('.sidebar-backdrop').isVisible())await page.getByRole('button',{name:'Toggle folders'}).click();
+  const rail=page.locator('.editor-tabs');
+  const generate=page.getByRole('region',{name:'Generate file content'});
+  const before=(await rail.boundingBox())!;
+  await rail.getByRole('button',{name:'Generate',exact:true}).click();
+  const after=(await rail.boundingBox())!, panel=(await generate.boundingBox())!;
+  expect(after.y).toBeCloseTo(before.y,0);
+  expect(panel.y).toBeGreaterThanOrEqual(after.y+after.height-1);
+  expect(await page.locator('.main').evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+  await expect(generate.locator('.create-file-options > button')).toHaveCount(4);
+  for(const mode of ['Source','Split','Editor'])await rail.getByRole('button',{name:mode,exact:true}).click();
+  await rail.getByRole('button',{name:'Generate',exact:true}).click();
+ }
  await expect(editor).toHaveText('Keep this unsaved writing');
- page.once('dialog',dialog=>dialog.accept());
- await generate.getByRole('button',{name:/New blank file/}).click();
- await expect(editor).toHaveText('');
 });
 
 test('Generate converts a selected PDF into the current draft after confirmation',async({page})=>{

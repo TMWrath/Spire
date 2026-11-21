@@ -5,3 +5,13 @@
  .main .note-toolbar>input:first-child{flex:0 0 100%;width:100%;max-width:100%;box-sizing:border-box;min-width:0;margin:0 0 4px;padding:8px 0}
  .main .note-toolbar>button{flex:0 0 auto;min-width:40px;min-height:40px;padding:8px}
 }
+
+.main .note-toolbar { flex: 0 0 auto; min-width: 0; }
+.note-toolbar-actions { display:flex; gap:inherit; align-items:center; min-width:0; overflow-x:auto; }
+.note-toolbar-actions > button, .editor-tabs > button { flex:none; white-space:nowrap; }
+.editor-tabs { min-width:0; flex-wrap:nowrap; }
+.generate-file-content { flex:none; min-width:0; }
+@media(max-width:979px) {
+  .main .note-toolbar-actions { width:100%; }
+  .main .note-toolbar-actions > button, .main .editor-tabs > button { min-width:40px; min-height:40px; }
+}
