@@ -82,12 +82,13 @@
 
 /* Home cards scale their controls to the space they actually receive. */
 .main>.empty{--home-card-space:clamp(16px,2vw,26px)}
-.empty>.recent-files,.empty>.quick-actions-home,.home-widget-content>.quick-actions-home,.empty .quick-note,.empty .quick-audio,.empty .deadline-widget{
+.empty .recent-files,.empty .quick-actions-home,.empty .quick-note,.empty .quick-audio,.empty .deadline-widget{
  background:#181818;border:1px solid #363636;border-radius:16px;
  padding:var(--home-card-space);min-width:0;container-type:inline-size;
  box-shadow:0 3px 14px #00000018;
 }
 .empty .quick-note,.empty .quick-audio{width:100%;margin:0}
+@media(max-width:979px){.app>header [data-panel-toggle]{position:relative;top:-3px}}
 .empty .recent-files>header{height:auto;padding:0;background:none;flex-wrap:wrap}
 .empty .recent-files h2,.empty .quick-actions-home h2,.empty .quick-note h2,.empty .quick-audio h2,.empty .deadline-widget h2{font-size:clamp(15px,1.2vw,19px);line-height:1.35}
 .empty .recent-files p,.empty .quick-actions-home p,.empty .quick-note p,.empty .quick-audio p,.empty .deadline-widget p{line-height:1.5;font-size:14px;overflow-wrap:anywhere}

@@ -62,6 +62,13 @@ test('mobile sidebar toggle stays centered above the app-header divider',async({
 test('mobile Trash heading keeps its content above the first card without clipping or overlap',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  await login(page);
+ const {csrf}=await (await page.request.get('/api/me')).json();
+ const headers={Origin:new URL(page.url()).origin,'X-CSRF-Token':csrf};
+ const folder='Trash layout fixture';
+ expect((await page.request.post('/api/folders',{headers,data:{path:folder}})).ok()).toBe(true);
+ expect((await page.request.post(`/api/attachments?path=${encodeURIComponent(folder+'/sample.txt')}`,{headers:{...headers,'Content-Type':'application/octet-stream'},data:Buffer.from('fixture')})).ok()).toBe(true);
+ expect((await page.request.delete('/api/folders',{headers,data:{path:folder,mode:'trash'}})).ok()).toBe(true);
+ await page.reload();
  await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
  await page.locator('.sidebar-actions').getByRole('button',{name:'Trash',exact:true}).click();
  const trashPage=page.getByRole('region',{name:'Deleted files',exact:true});
