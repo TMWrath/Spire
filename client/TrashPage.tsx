@@ -24,7 +24,7 @@ export function TrashPage({notes,files,onBack,onRestoreNote,onPurgeNote,onRestor
   try{for(const item of items){if(item.note)await onRestoreNote(item.note);else if(item.file)await onRestoreFile(item.file);}}
   finally{setBusy(null);}
  };
- return <section className="trash-page" aria-label="Deleted files">
+ return <section id="sidebar-trash" className="trash-page" aria-label="Deleted files">
   <header className="trash-page-heading"><div><span className="trash-eyebrow">Workspace</span><h1>Trash</h1><p>{count} deleted {count===1?'item':'items'} in {groups.length} {groups.length===1?'folder':'folders'}</p></div><button type="button" onClick={onBack}><ArrowLeft aria-hidden="true"/>Back to files</button></header>
   <div className="trash-folder-list">
    {groups.map(group=><details className="trash-folder" key={group.folder} open={groups.length===1}>

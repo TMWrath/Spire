@@ -12,22 +12,21 @@ async function login(page:any){
  await expect(page.getByRole('button',{name:'Home',exact:true})).toBeVisible();
 }
 
-test('Home remains available and sidebar Add and Trash share the bottom action row',async({page})=>{
- await page.setViewportSize({width:390,height:844});
- await login(page);
- await page.getByRole('button',{name:'Home',exact:true}).click();
- await expect(page.getByRole('heading',{name:'Your writing lives here.',exact:true})).toBeVisible();
+for(const width of [390,673,1280])test(`Trash replaces the footer button at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:844}); await login(page);
  if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
- const add=page.getByRole('button',{name:'Create',exact:true});
- const trash=page.locator('.sidebar-actions').getByRole('button',{name:'Trash',exact:true});
- await expect(add).toBeVisible();
- await expect(trash).toBeVisible();
- const [sidebarBox,addBox,trashBox]=await Promise.all([page.locator('.sidebar').boundingBox(),add.boundingBox(),trash.boundingBox()]);
- expect(sidebarBox&&addBox&&trashBox).toBeTruthy();
- expect(Math.abs(addBox!.y-trashBox!.y)).toBeLessThanOrEqual(2);
- expect(addBox!.x).toBeGreaterThanOrEqual(sidebarBox!.x);
- expect(trashBox!.x+trashBox!.width).toBeLessThanOrEqual(sidebarBox!.x+sidebarBox!.width);
- expect(addBox!.y+addBox!.height).toBeLessThanOrEqual(sidebarBox!.y+sidebarBox!.height);
+ const sidebar=page.locator('.sidebar'), tabs=sidebar.getByRole('tablist');
+ expect((await tabs.getByRole('tab').allTextContents()).slice(-2)).toEqual(['Sources','Trash']);
+ for(const name of ['Files','Journal','Projects','Tags','Templates','Sources']){
+  await tabs.getByRole('tab',{name,exact:true}).click();
+  await expect(sidebar.getByRole('button',{name:'Trash',exact:true})).toHaveCount(0);
+ }
+ await tabs.getByRole('tab',{name:'Trash',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Trash',exact:true})).toBeVisible();
+ if(!await sidebar.isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+ await expect(tabs.getByRole('tab',{name:'Trash',exact:true})).toHaveAttribute('aria-selected','true');
+ await tabs.getByRole('tab',{name:'Files',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Trash',exact:true})).toHaveCount(0);
 });
 
 test('mobile sidebar replaces the Workspace label with the tab bar',async({page})=>{
@@ -39,7 +38,7 @@ test('mobile sidebar replaces the Workspace label with the tab bar',async({page}
  const tabs=head.getByRole('tablist');
  await expect(head.getByText('Workspace',{exact:true})).toHaveCount(0);
  await expect(tabs).toBeVisible();
- await expect(tabs.getByRole('tab')).toHaveCount(6);
+ await expect(tabs.getByRole('tab')).toHaveCount(7);
  await expect(head.getByRole('button',{name:'Close folders',exact:true})).toHaveCount(0);
  const [headBox,tabsBox]=await Promise.all([head.boundingBox(),tabs.boundingBox()]);
  expect(headBox&&tabsBox).toBeTruthy();
@@ -70,7 +69,7 @@ test('mobile Trash heading keeps its content above the first card without clippi
  expect((await page.request.delete('/api/folders',{headers,data:{path:folder,mode:'trash'}})).ok()).toBe(true);
  await page.reload();
  await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
- await page.locator('.sidebar-actions').getByRole('button',{name:'Trash',exact:true}).click();
+ await page.getByRole('tab',{name:'Trash',exact:true}).click();
  const trashPage=page.getByRole('region',{name:'Deleted files',exact:true});
  const heading=trashPage.locator('.trash-page-heading');
  const grid=trashPage.locator('.trash-page-grid');
