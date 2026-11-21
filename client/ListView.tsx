@@ -1,13 +1,12 @@
 import React,{useState} from 'react';
 import {createPortal} from 'react-dom';
-import {ThemedSelect} from './ThemedSelect';
+import {PresentedListEditor,settingsLine} from './PresentedListEditor';
 import type {Note} from '../shared/model';
 import {documentLists} from './document-structures';
 import {attachmentUrl} from './attachment-urls';
 import './list-view.css';
 
 const checkbox=/^(\s*[-*+]\s+\[)([ xX])(\]\s+)/;
-const settingsLine=/^<!-- spire:list-options (plain|checklist) ([01]) ([01])(?: (bullets|numbers|letters|dashes))? -->\r?$/m;
 const ratingTag=/ <!-- spire:list-rating (none|[1-5](?:\.5)?|0\.5) -->$/;
 const heroTag=/ <!-- spire:list-hero (Attachments\/[\w./-]+) -->$/;
 const tags=/((?: <!-- spire:list-(?:hero|rating) [^<>]+ -->)+)$/;
@@ -15,16 +14,15 @@ const tags=/((?: <!-- spire:list-(?:hero|rating) [^<>]+ -->)+)$/;
 export function ListView({note,onSave,uploadImage,contextTarget}:{note:Note;contextTarget:HTMLDivElement|null;onSave:(content:string)=>Promise<void>;uploadImage:(file:File)=>Promise<string>}){
  const [item,setItem]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const {content}=note, stored=settingsLine.exec(content);
- const mode=stored?.[1]??'checklist', heroes=stored?.[2]==='1', ratings=stored?.[3]==='1';
+ const mode=stored?.[1]??(documentLists(content)[0]?.style==='checkboxes'||!documentLists(content).length?'checklist':'plain'), heroes=stored?.[2]==='1', ratings=stored?.[3]==='1';
  const lists=documentLists(content),last=lists.at(-1);
  const markers=stored?.[4]??(last?.style==='numbered'?'numbers':last?.style==='lettered'?'letters':'bullets');
  const title=note.path.split('/').at(-1)?.replace(/\.md$/i,'');
  const disabled=busy||!!note.deleted;
  const save=async(next:string|(()=>Promise<string>),added=false)=>{setBusy(true);setError('');try{await onSave(typeof next==='string'?next:await next());if(added)setItem('');}catch(e){setError(e instanceof Error?e.message:String(e));}finally{setBusy(false);}};
- const options=(kind:string,images:boolean,rates:boolean,marker=markers)=>{const line=`<!-- spire:list-options ${kind} ${Number(images)} ${Number(rates)} ${marker} -->`;void save(stored?content.replace(settingsLine,line):content.trimEnd()+'\n\n'+line+'\n');};
  return <section className="interactive-list" aria-label={`${title} list`}>
   <header><p className="muted">List</p><h1>{title}</h1></header>
-  {!note.deleted&&contextTarget&&createPortal(<fieldset className="list-context-options" aria-label="List options" disabled={disabled}><label><span>List style</span><ThemedSelect aria-label="List style" disabled={disabled} value={mode} onChange={e=>options(e.target.value,heroes,ratings)}><option value="plain">Plain list</option><option value="checklist">Checklist</option></ThemedSelect></label>{mode==='plain'&&<label><span>List markers</span><ThemedSelect aria-label="List markers" disabled={disabled} value={markers} onChange={e=>options(mode,heroes,ratings,e.target.value)}><option value="bullets">Bullets</option><option value="numbers">Numbers</option><option value="letters">Letters</option><option value="dashes">Dashes</option></ThemedSelect></label>}<label><span>Item hero images</span><input type="checkbox" role="switch" aria-label="Item hero images" checked={heroes} onChange={e=>options(mode,e.target.checked,ratings)}/></label><label><span>Item ratings</span><input type="checkbox" role="switch" aria-label="Item ratings" checked={ratings} onChange={e=>options(mode,heroes,e.target.checked)}/></label></fieldset>,contextTarget)}
+  {!note.deleted&&contextTarget&&createPortal(<PresentedListEditor key={note.id} note={note} inline onSave={onSave}/>,contextTarget)}
   {!note.deleted&&<form onSubmit={e=>{e.preventDefault();const value=item.trim();if(!value||disabled)return;const marker=mode==='checklist'?'- [ ]':last?.style==='numbered'?'1.':last?.style==='lettered'?'a.':last?.style==='bullets'?'*':'-';const at=last?.end??(stored?.index??content.length);const before=content.slice(0,at),after=content.slice(at);void save((last?before:before.trimEnd())+(last?'\n':'\n\n')+marker+' '+value+(after.startsWith('\n')?after:'\n'+(after?'\n'+after:'')),true);}}><input aria-label="New list item" placeholder="Add an item…" value={item} onChange={e=>setItem(e.target.value)} disabled={disabled}/><button className="primary" disabled={disabled||!item.trim()}>Add item</button></form>}
   {error&&<p role="alert">{error}</p>}
   {lists.map((list,i)=>{const lines=content.slice(list.start,list.end).split('\n'),skip=lines.length-list.items.length;let at=list.start+lines.slice(0,skip).reduce((n,s)=>n+s.length+1,0);const Items=mode==='plain'&&(markers==='numbers'||markers==='letters')?'ol':'ul';return <section key={i}>{list.title&&list.title!==title&&<h2>{list.title}</h2>}<Items className={mode==='plain'?`list-markers-${markers}`:undefined}>{lines.slice(skip).map((raw,j)=>{

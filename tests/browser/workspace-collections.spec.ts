@@ -121,35 +121,22 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  await expect(page.getByRole('tablist',{name:'File context'}).getByRole('tab').nth(1)).toHaveText('Customize');
  await expect(page.getByRole('group',{name:'List options'})).toHaveCount(0);
  await customize.click();
- const options=page.getByRole('tabpanel',{name:'Customize'}).getByRole('group',{name:'List options'});
- await expect(view.getByLabel('List options',{exact:true})).toHaveCount(0);
- await options.getByRole('button',{name:'List style'}).click();
- await page.getByRole('option',{name:'Plain list',exact:true}).click();
- await expect(view.getByRole('checkbox',{name:'First item'})).toHaveCount(0);
- for(const [label,style] of [['Numbers','decimal'],['Letters','lower-alpha'],['Dashes','"–  "'],['Bullets','disc']]){
-  await options.getByRole('button',{name:'List markers'}).click();
-  await page.getByRole('option',{name:label,exact:true}).click();
-  await expect(view.locator('ol,ul').first()).toHaveCSS('list-style-type',style);
- }
- await options.getByLabel('Item ratings').check();
+ const options=page.getByRole('tabpanel',{name:'Customize'});
+ const update=options.getByRole('button',{name:'Update list'});
+ await expect(options.getByLabel('List item 1')).toHaveValue('First item');
+ await options.getByRole('button',{name:'Numbered',exact:true}).click();
+ await options.getByRole('switch',{name:'Item ratings'}).check();
+ await update.click();
+ await expect(view.locator('ol').first()).toHaveCSS('list-style-type','decimal');
  const rating=view.getByLabel('Rating for First item');
  await rating.selectOption('4.5');
- await options.getByLabel('Item hero images').check();
- await view.getByLabel('Hero image for First item').setInputFiles({name:'cover.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aewAAAABJRU5ErkJggg==','base64')});
- const image=view.locator('.list-item-hero');
- await expect(image).toBeVisible();
- await expect.poll(()=>image.evaluate((img:HTMLImageElement)=>img.naturalWidth)).toBe(1);
- await options.getByLabel('Item hero images').uncheck();
- await expect(image).toHaveCount(0);
- await options.getByLabel('Item ratings').uncheck();
- await expect(rating).toHaveCount(0);
- await options.getByRole('button',{name:'List style'}).click();
- await page.getByRole('option',{name:'Checklist',exact:true}).click();
+ await options.getByRole('button',{name:'Cancel',exact:true}).click();
+ await options.getByRole('button',{name:'Checkboxes',exact:true}).click();
+ await options.getByLabel('List item 2').fill('Edited second item');
+ await update.click();
  await expect(view.getByRole('checkbox',{name:'First item'})).toBeChecked();
- await options.getByLabel('Item ratings').check();
+ await expect(view.getByRole('checkbox',{name:'Edited second item'})).toBeVisible();
  await expect(rating).toHaveValue('4.5');
- await options.getByLabel('Item hero images').check();
- await expect(image).toBeVisible();
 });
 
 test('normal file tasks live inside Files and write authoritative Markdown',async({page})=>{
