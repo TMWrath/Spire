@@ -36,6 +36,12 @@ for(const width of [390,673,1280])test(`Files sections stay in the sidebar at ${
  const sidebar=page.locator('.sidebar');
  if(!await sidebar.isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
  await sidebar.getByRole('tab',{name:'Files',exact:true}).click();
+ const actions=sidebar.getByRole('group',{name:'Files creation actions'});
+ const search=sidebar.getByRole('textbox',{name:'Search files'});
+ await search.fill('no matching file');
+ await expect(actions).toBeVisible();
+ expect((await actions.boundingBox())!.y).toBeLessThan((await search.boundingBox())!.y);
+ await search.clear();
  const sections=sidebar.getByRole('group',{name:'Files sections'});
  const main=page.locator('main.main');
  const before=await main.innerText();
@@ -43,6 +49,7 @@ for(const width of [390,673,1280])test(`Files sections stay in the sidebar at ${
   const button=sections.getByRole('button',{name,exact:true});
   await button.click();
   await expect(button).toHaveAttribute('aria-pressed','true');
+  await expect(actions.getByRole('button',{name:'Add File',exact:true})).toBeVisible();
   if(name!=='Files'){
    const panel=sidebar.getByRole('region',{name:name==='Tasks'?'File tasks':`${name} in Files`,exact:true});
    await expect(panel).toBeVisible();
