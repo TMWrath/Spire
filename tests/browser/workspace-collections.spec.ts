@@ -116,6 +116,27 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  await view.getByRole('button',{name:'Add item'}).click();
  await expect(view.getByRole('checkbox',{name:'Second item'})).toBeVisible();
  await expect(view.getByRole('checkbox',{name:'First item'})).toBeChecked();
+ await view.getByLabel('List options',{exact:true}).click();
+ await view.getByLabel('List style').selectOption('plain');
+ await expect(view.getByRole('checkbox',{name:'First item'})).toHaveCount(0);
+ await view.getByLabel('Item ratings').check();
+ const rating=view.getByLabel('Rating for First item');
+ await rating.selectOption('4.5');
+ await view.getByLabel('Item hero images').check();
+ await view.getByLabel('Hero image for First item').setInputFiles({name:'cover.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aewAAAABJRU5ErkJggg==','base64')});
+ const image=view.locator('.list-item-hero');
+ await expect(image).toBeVisible();
+ await expect.poll(()=>image.evaluate((img:HTMLImageElement)=>img.naturalWidth)).toBe(1);
+ await view.getByLabel('Item hero images').uncheck();
+ await expect(image).toHaveCount(0);
+ await view.getByLabel('Item ratings').uncheck();
+ await expect(rating).toHaveCount(0);
+ await view.getByLabel('List style').selectOption('checklist');
+ await expect(view.getByRole('checkbox',{name:'First item'})).toBeChecked();
+ await view.getByLabel('Item ratings').check();
+ await expect(rating).toHaveValue('4.5');
+ await view.getByLabel('Item hero images').check();
+ await expect(image).toBeVisible();
 });
 
 test('normal file tasks live inside Files and write authoritative Markdown',async({page})=>{
