@@ -11,7 +11,7 @@ const validColor=(color?:string)=>Boolean(color&&/^#[0-9a-f]{6}$/i.test(color));
 const groupForeground=(color?:string)=>color?.toLowerCase()==='#000000'?'#ffffff':color;
 
 export function VisualSection({name,index,children,project=false,color,icon,hero,heroX=50,heroY=50,pinned=false,onPin,onEdit,progress,onTasks,onAdd,onDelete}:{name:string;index:number;children:React.ReactNode;project?:boolean;color?:string;icon?:string;hero?:string;heroX?:number;heroY?:number;pinned?:boolean;onPin?:()=>void;onEdit?:()=>void;progress?:number;onTasks?:()=>void;onAdd?:()=>void;onDelete?:()=>void}){
- const [collapsed,setCollapsed]=useState(!project);
+ const [collapsed,setCollapsed]=useState(true);
  const groupColor=validColor(color)?color!:visualGroupColors[index%visualGroupColors.length];
  const media=(path:string)=>'/api/attachment?path='+encodeURIComponent(path);
  return <section className={`visual-section${project?' project-visual-section':''}`} aria-label={(project?'Project ':'Group ')+name} style={{'--group-color':groupColor,'--group-action-border':groupColor.toLowerCase()==='#000000'?'#b5b5b5':undefined,'--group-foreground':groupForeground(groupColor),'--project-hero-x':heroX+'%','--project-hero-y':heroY+'%'} as React.CSSProperties}>

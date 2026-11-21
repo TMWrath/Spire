@@ -27,6 +27,11 @@ test('Projects is a dedicated workspace and newly created projects stay out of F
  await projects.getByRole('button',{name:'Create',exact:true}).click();
  await expect(page.locator('.project-switcher')).toHaveCount(0);
  const atlas=page.getByRole('region',{name:'Project Atlas',exact:true});
+ const expand=atlas.getByRole('button',{name:'Expand project Atlas',exact:true});
+ await expect(expand).toHaveAttribute('aria-expanded','false');
+ await expect(atlas.getByRole('toolbar',{name:'Atlas sections'})).toBeHidden();
+ await expand.click();
+ await expect(atlas.getByRole('button',{name:'Collapse project Atlas',exact:true})).toHaveAttribute('aria-expanded','true');
  await expect(atlas.getByRole('button',{name:'Select project Atlas',exact:true})).toHaveCount(0);
  await expect(page.getByText('Your workspace is empty. Create a file to begin.',{exact:true})).toHaveCount(0);
  await expect(atlas).toHaveCSS('border-left-color','rgb(36, 122, 207)');
@@ -285,6 +290,11 @@ for(const width of [390,673])test(`Project action rails scroll independently at 
  await projects.getByLabel('Project color').fill('#000000');
  await projects.getByRole('button',{name:'Create',exact:true}).click();
  const atlas=page.getByRole('region',{name:'Project Atlas',exact:true});
+ const expand=atlas.getByRole('button',{name:'Expand project Atlas',exact:true});
+ await expect(expand).toHaveAttribute('aria-expanded','false');
+ await expect(atlas.getByRole('toolbar',{name:'Atlas sections'})).toBeHidden();
+ await expand.click();
+ await expect(atlas.getByRole('button',{name:'Collapse project Atlas',exact:true})).toHaveAttribute('aria-expanded','true');
  const add=atlas.getByRole('group',{name:'Atlas creation actions'});
  const views=atlas.getByRole('toolbar',{name:'Atlas sections'});
  await expect(add.getByRole('button')).toHaveText(['Add File','Add Folder','Add Group','Add Audio Note']);

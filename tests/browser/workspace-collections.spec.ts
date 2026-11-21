@@ -19,7 +19,9 @@ async function createProject(page:any,name:string){
  const projects=page.getByRole('region',{name:'Projects',exact:true});
  await projects.getByLabel('Project name').fill(name);
  await projects.getByRole('button',{name:'Create',exact:true}).click();
- return page.getByRole('region',{name:`Project ${name}`,exact:true});
+ const project=page.getByRole('region',{name:`Project ${name}`,exact:true});
+ await project.getByRole('button',{name:`Expand project ${name}`,exact:true}).click();
+ return project;
 }
 
 test('Files has independent Add and view rows',async({page})=>{
