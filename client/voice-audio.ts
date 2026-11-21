@@ -17,7 +17,7 @@ export async function decodeVoice(blob:Blob):Promise<Float32Array> {
  if(blob.size>10_000_000)throw new Error('Choose audio smaller than 10 MB.');
  const context=new AudioContext();try{const audio=await context.decodeAudioData(await blob.arrayBuffer());if(audio.duration>MAX_VOICE_SECONDS)throw new Error('Audio is limited to 15 minutes per transcription. Split longer recordings first.');const mono=new Float32Array(audio.length);for(let ch=0;ch<audio.numberOfChannels;ch++){const source=audio.getChannelData(ch);for(let i=0;i<mono.length;i++)mono[i]+=source[i]/audio.numberOfChannels;}return resampleMono(mono,audio.sampleRate);}finally{await context.close();}
 }
-export type VoiceResult={text:string;language?:DetectedVoiceLanguage;engine?:'whistle';chunks?:{text:string;timestamp:[number,number|null]}[]};
+export type VoiceResult={text:string;language?:DetectedVoiceLanguage;engine?:'whistle';words?:{word:string;start:number;end:number;probability:number}[];chunks?:{text:string;timestamp:[number,number|null]}[]};
 export type VoiceTranscriptionOptions={language:VoiceLanguage;keywords:string[]};
 export class LocalTranscriber {
  private controller:AbortController|null=null;

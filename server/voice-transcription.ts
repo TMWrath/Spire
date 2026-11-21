@@ -21,8 +21,8 @@ export async function transcribeOnServer(bytes:Buffer,options:ServerVoiceOptions
   if(!pcm.length)throw Object.assign(new Error('The audio is empty or could not be decoded.'),{status:400});
   if(pcm.length>MAX_PCM_BYTES)throw Object.assign(new Error('Audio is limited to 15 minutes per transcription.'),{status:413});
   const samples=new Float32Array(pcm.buffer,pcm.byteOffset,Math.floor(pcm.byteLength/4));const whistle=await createWhistle({modelPath:process.env.SPIRE_WHISTLE_MODEL??'/app/voice/models/whistle.cact'});
-  try{const results:TranscriptionResult[]=[];for(let offset=0;offset<samples.length;offset+=RATE*30){const part=samples.slice(offset,Math.min(samples.length,offset+RATE*30));results.push(await whistle.transcribe(part,{language:options.language,keywords:options.keywords}));}
-   return {text:results.map(result=>result.text.trim()).filter(Boolean).join(' '),language:results.find(result=>result.language)?.language??'',engine:'whistle' as const,chunks:results.map((result,index)=>({text:result.text,timestamp:[index*30,Math.min(samples.length/RATE,(index+1)*30)]}))};
+  try{const results:TranscriptionResult[]=[];for(let offset=0;offset<samples.length;offset+=RATE*30){const part=samples.slice(offset,Math.min(samples.length,offset+RATE*30));results.push(await whistle.transcribe(part,{language:options.language,keywords:options.keywords,wordTimestamps:true}));}
+   return {text:results.map(result=>result.text.trim()).filter(Boolean).join(' '),language:results.find(result=>result.language)?.language??'',engine:'whistle' as const,words:results.flatMap((result,index)=>(result.words??[]).map(word=>({...word,start:word.start+index*30,end:word.end+index*30}))),chunks:results.map((result,index)=>({text:result.text,timestamp:[index*30,Math.min(samples.length/RATE,(index+1)*30)]}))};
   }finally{await whistle.close();}
  }finally{active=false;await rm(directory,{recursive:true,force:true});}
 }

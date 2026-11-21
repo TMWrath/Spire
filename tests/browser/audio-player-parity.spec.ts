@@ -9,7 +9,7 @@ for(const width of [390,1500])test(`Audio Notes share the custom player and reta
  for(const path of ['Attachments','Audio Notes','Writing'])expect((await page.request.post('/api/folders',{headers,data:{path}})).ok()).toBeTruthy();
  const asset='Attachments/tone.mp3';expect((await page.request.post('/api/attachments?path='+encodeURIComponent(asset),{headers:{...headers,'Content-Type':'application/octet-stream'},data:readFileSync('tests/fixtures/media/tone.mp3')})).ok()).toBeTruthy();
  const id=randomUUID(),path='Audio Notes/Player consistency.md';expect((await page.request.post('/api/mutate',{headers,data:{op:randomUUID(),id,base:0,path,content:audioNoteContent(path,asset,'Original words'),deleted:false}})).ok()).toBeTruthy();
- const open=async()=>{await page.reload();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();const recent=page.getByRole('button',{name:'Player consistency Audio Notes',exact:true});if(await recent.isVisible()){await recent.click();return;}if(width>=980)await expect(page.locator('.sidebar')).toBeVisible();else if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();const folder=page.getByRole('navigation',{name:'Files',exact:true}).getByText('Audio Notes',{exact:true});if(!await page.getByRole('button',{name:'Player consistency',exact:true}).isVisible())await folder.click();await page.getByRole('button',{name:'Player consistency',exact:true}).click();};
+ const open=async()=>{await page.reload();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();const recent=page.getByRole('button',{name:'Player consistency Audio Notes',exact:true});if(await recent.isVisible()){await recent.click();return;}if(width>=980)await expect(page.locator('.sidebar')).toBeVisible();else if(!await page.locator('.sidebar').isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();const folder=page.getByRole('navigation',{name:'Files',exact:true}).locator('[data-item-name="Audio Notes"]');if(!await page.getByRole('button',{name:'Player consistency',exact:true}).isVisible())await folder.click();await page.getByRole('button',{name:'Player consistency',exact:true}).click();};
  await open();const region=page.getByRole('region',{name:'Audio Note'});await expect(region).toBeVisible();
  const player=region.getByRole('group',{name:'Audio player for tone.mp3'});await expect(player).toBeVisible();await expect(region.locator('audio[controls]')).toHaveCount(0);
  await expect.poll(()=>player.locator('audio').evaluate((a:HTMLAudioElement)=>a.duration)).toBeGreaterThanOrEqual(2);
@@ -26,6 +26,16 @@ for(const width of [390,1500])test(`Audio Notes share the custom player and reta
  await region.getByRole('textbox',{name:'Transcript',exact:true}).fill('Edited words');
  await page.getByRole('button',{name:'Save file',exact:true}).click();
  await open();await expect(region.getByRole('textbox',{name:'Transcript',exact:true})).toHaveValue('Edited words');
+ await page.route('**/api/voice/transcribe?*',async route=>route.fulfill({json:{text:'Raw board',words:[{word:'Raw',start:0,end:0.2,probability:0.96},{word:'board',start:1.4,end:1.6,probability:0.4}]}}));
+ await region.getByRole('button',{name:'Review transcript',exact:true}).click();
+ const review=region.getByRole('region',{name:'Transcript review'});
+ await expect(review.getByRole('button',{name:'Listen: Raw',exact:false})).toHaveCount(0);
+ await review.getByRole('button',{name:'Listen: board (0:01)',exact:true}).click();
+ await expect.poll(()=>player.locator('audio').evaluate((a:HTMLAudioElement)=>a.currentTime)).toBeGreaterThanOrEqual(1.15);
+ await expect(region.getByRole('textbox',{name:'Transcript',exact:true})).toHaveValue('Edited words');
+ await review.getByText('Unedited review transcript').click();await expect(review.getByText('Raw board',{exact:true})).toBeVisible();
+ await review.getByRole('button',{name:'Close review'}).click();await expect(review).toHaveCount(0);
+ await page.unroute('**/api/voice/transcribe?*');
  // Re-transcription uses the existing engine boundary; mock only the inference response.
  let calls=0;await page.route('**/api/voice/transcribe?*',async route=>{calls++;await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({text:'New transcript from original recording',engine:'whistle'})});});
  page.once('dialog',dialog=>dialog.dismiss());await region.getByRole('button',{name:'Re-transcribe',exact:true}).click();expect(calls).toBe(0);await expect(region.getByRole('textbox',{name:'Transcript',exact:true})).toHaveValue('Edited words');
