@@ -1,0 +1,25 @@
+import {test,expect} from './fixtures';
+import {readFileSync} from 'node:fs';
+import {randomUUID} from 'node:crypto';
+import {audioNoteContent} from '../../shared/audio-notes';
+for(const width of [390,673,1280])test(`Audio Notes lists use the full-width shared player at ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:950});await page.goto('/');
+ await page.getByLabel('Username',{exact:true}).fill('audio-parity');await page.getByLabel('Password',{exact:true}).fill('audio-parity-test-password');await page.getByRole('button',{name:'Create Reliquary',exact:true}).click();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
+ const me=await(await page.request.get('/api/me')).json(),headers={Origin:'http://127.0.0.1:4179','X-CSRF-Token':me.csrf};
+ for(const path of ['Attachments','Audio Notes','Writing'])expect((await page.request.post('/api/folders',{headers,data:{path}})).ok()).toBeTruthy();
+ const asset='Attachments/tone.mp3';expect((await page.request.post('/api/attachments?path='+encodeURIComponent(asset),{headers:{...headers,'Content-Type':'application/octet-stream'},data:readFileSync('tests/fixtures/media/tone.mp3')})).ok()).toBeTruthy();
+ const id=randomUUID(),path='Audio Notes/Player consistency.md';expect((await page.request.post('/api/mutate',{headers,data:{op:randomUUID(),id,base:0,path,content:audioNoteContent(path,asset,'Original words'),deleted:false}})).ok()).toBeTruthy();
+ await page.reload();await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeVisible();
+ if(!await page.getByRole('tab',{name:'Files',exact:true}).isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+ await page.getByRole('tab',{name:'Files',exact:true}).click();
+ await page.getByRole('button',{name:'Audio Notes',exact:true}).click();
+ const list=page.getByRole('region',{name:'Audio Notes in Files',exact:true});
+ const player=list.getByRole('group',{name:'Audio player for Player consistency'});
+ await expect(player).toBeVisible();await expect(list.locator('article > *')).toHaveCount(1);
+ const overflow=await list.evaluate(e=>({width:e.clientWidth,scroll:e.scrollWidth,children:[...e.querySelectorAll('*')].filter(c=>c.getBoundingClientRect().right>e.getBoundingClientRect().right+1).map(c=>[c.tagName,c.getAttribute('class')]).slice(0,20)}));expect(overflow.scroll,JSON.stringify(overflow)).toBeLessThanOrEqual(overflow.width+1);
+ await expect.poll(()=>player.locator('audio').evaluate((a:HTMLAudioElement)=>a.duration)).toBeGreaterThan(1);
+ await player.getByRole('button',{name:'Play Player consistency',exact:true}).click();
+ await expect(player.getByRole('button',{name:'Pause Player consistency',exact:true})).toBeVisible();
+ await player.getByRole('button',{name:'More options for Player consistency'}).click();
+ for(const name of ['Open note','Edit','Delete'])await expect(page.getByRole('menuitem',{name,exact:true})).toBeVisible();
+});
