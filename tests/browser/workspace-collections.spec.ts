@@ -126,6 +126,11 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  await options.getByRole('button',{name:'List style'}).click();
  await page.getByRole('option',{name:'Plain list',exact:true}).click();
  await expect(view.getByRole('checkbox',{name:'First item'})).toHaveCount(0);
+ for(const [label,style] of [['Numbers','decimal'],['Letters','lower-alpha'],['Dashes','"–  "'],['Bullets','disc']]){
+  await options.getByRole('button',{name:'List markers'}).click();
+  await page.getByRole('option',{name:label,exact:true}).click();
+  await expect(view.locator('ol,ul').first()).toHaveCSS('list-style-type',style);
+ }
  await options.getByLabel('Item ratings').check();
  const rating=view.getByLabel('Rating for First item');
  await rating.selectOption('4.5');
