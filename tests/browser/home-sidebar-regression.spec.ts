@@ -43,6 +43,12 @@ for(const width of [390,673,1280])test(`Files sections stay in the sidebar at ${
   const button=sections.getByRole('button',{name,exact:true});
   await button.click();
   await expect(button).toHaveAttribute('aria-pressed','true');
+  if(name!=='Files'){
+   const panel=sidebar.getByRole('region',{name:name==='Tasks'?'File tasks':`${name} in Files`,exact:true});
+   await expect(panel).toBeVisible();
+   await expect(panel.getByRole('button',{name:/^Back to /i})).toHaveCount(0);
+   await expect(panel.getByText(name==='Tasks'?'Files · Tasks':`Files ${name}`,{exact:true})).toHaveCount(0);
+  }
   await expect(sidebar).toBeVisible();
   await expect(main).toHaveText(before.replace(/\s+/g,' ').trim(),{useInnerText:true});
  }
