@@ -4,3 +4,8 @@
 .file-cover-actions label{position:relative;display:inline-flex;align-items:center;gap:.45rem;min-height:32px;cursor:pointer}
 .file-cover-actions input[type=file]{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}
 .file-cover-actions label:focus-within{outline:2px solid currentColor;outline-offset:2px}
+
+.file-cover-context{background:transparent}
+.file-cover-context>.context-cover{cursor:default}
+.file-cover-context>.context-cover img{position:absolute;inset:0}
+.file-cover-context>.file-cover-actions{padding-inline:0}
