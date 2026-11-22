@@ -131,7 +131,10 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  await expect(options.locator('.list-dialog-header')).toHaveCount(0);
  const update=options.getByRole('button',{name:'Update list'});
  await expect(options.getByLabel('List item 1')).toHaveValue('First item');
+ const typography=()=>view.getByText('First item',{exact:true}).evaluate(el=>{const s=getComputedStyle(el);return [s.fontFamily,s.fontSize,s.fontWeight,s.lineHeight,s.color,s.opacity]});
+ const checklistTypography=await typography();
  await options.getByRole('button',{name:'Numbered',exact:true}).click();
+ expect(await typography()).toEqual(checklistTypography);
  await expect(page.locator('.interactive-list header')).not.toContainText(/^List/);
  await expect(page.locator('.interactive-list header h1')).toHaveCSS('text-align','center');
  await expect(page.locator('.interactive-list ol.list-markers-numbers')).toBeVisible();
