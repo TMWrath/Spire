@@ -120,7 +120,9 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  await expect(cover).toHaveCount(0);
  if(!await page.getByRole('tab',{name:'Details',exact:true}).isVisible())await page.getByRole('button',{name:'Toggle context'}).click();
  await page.getByRole('tab',{name:'Details',exact:true}).click();
- await page.getByLabel('Add cover',{exact:true}).setInputFiles({name:'cover.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0uoAAAAASUVORK5CYII=','base64')});
+ const placeholder=page.locator('label.context-cover').filter({has:page.getByLabel('Set hero image',{exact:true})});
+ await expect(placeholder.locator('svg')).toBeVisible();
+ await placeholder.getByLabel('Set hero image',{exact:true}).setInputFiles({name:'cover.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0uoAAAAASUVORK5CYII=','base64')});
  await expect(cover.getByLabel('Change cover',{exact:true})).toHaveCount(0);
  await expect.poll(()=>cover.locator('img').evaluate((img:HTMLImageElement)=>img.naturalWidth)).toBe(1);
  await expect(cover.getByRole('button',{name:'Reposition',exact:true})).toHaveCount(0);
