@@ -132,7 +132,12 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  const update=options.getByRole('button',{name:'Update list'});
  await expect(options.getByLabel('List item 1')).toHaveValue('First item');
  await options.getByRole('button',{name:'Numbered',exact:true}).click();
+ await expect(page.locator('.interactive-list header')).not.toContainText(/^List/);
+ await expect(page.locator('.interactive-list header h1')).toHaveCSS('text-align','center');
+ await expect(page.locator('.interactive-list ol.list-markers-numbers')).toBeVisible();
+ await expect(page.locator('.interactive-list ol')).toHaveCSS('list-style-type','decimal');
  await options.getByRole('switch',{name:'Item ratings'}).check();
+ await options.getByRole('switch',{name:'Item hero images'}).check();
  await update.click();
  await expect(view.locator('ol').first()).toHaveCSS('list-style-type','decimal');
  const rating=view.getByLabel('Rating for First item');
@@ -144,6 +149,15 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  await expect(view.getByRole('checkbox',{name:'First item'})).toBeChecked();
  await expect(view.getByRole('checkbox',{name:'Edited second item'})).toBeVisible();
  await expect(rating).toHaveValue('4.5');
+ await view.getByLabel('Hero image for First item',{exact:true}).setInputFiles({name:'cover.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0uoAAAAASUVORK5CYII=','base64')});
+ const frame=view.getByRole('group',{name:'Hero image position'});
+ await frame.getByRole('slider',{name:'Horizontal position'}).fill('30');
+ await frame.getByRole('slider',{name:'Vertical position'}).fill('80');
+ await expect(view.locator('.list-item-hero')).toHaveCSS('object-position','30% 80%');
+ await frame.getByRole('button',{name:'Save position'}).click();
+ await expect(frame).toBeHidden();
+ await view.getByRole('button',{name:'Reposition hero image'}).click();
+ await expect(frame.getByRole('slider',{name:'Vertical position'})).toHaveValue('80');
 });
 
 test('normal file tasks live inside Files and write authoritative Markdown',async({page})=>{
