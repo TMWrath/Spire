@@ -116,6 +116,13 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  await card.click();
  const view=page.getByRole('region',{name:'Packing list',exact:true});
  await expect(view).toBeVisible();
+ const cover=page.getByRole('region',{name:'File cover',exact:true});
+ await expect(cover).toHaveCount(0);
+ if(!await page.getByRole('tab',{name:'Details',exact:true}).isVisible())await page.getByRole('button',{name:'Toggle context'}).click();
+ await page.getByRole('tab',{name:'Details',exact:true}).click();
+ await page.getByLabel('Set hero image',{exact:true}).setInputFiles({name:'cover.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0uoAAAAASUVORK5CYII=','base64')});
+ await expect(cover.getByLabel('Change cover',{exact:true})).toHaveCount(0);
+ await expect.poll(()=>cover.locator('img').evaluate((img:HTMLImageElement)=>img.naturalWidth)).toBe(1);
  await expect(page.getByLabel('Markdown source',{exact:true})).toHaveCount(0);
  await view.getByRole('checkbox',{name:'First item'}).check();
  await view.getByLabel('New list item').fill('Second item');
