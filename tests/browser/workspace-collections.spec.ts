@@ -144,6 +144,7 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  await rating.selectOption('4.5');
  await options.getByRole('button',{name:'Cancel',exact:true}).click();
  await options.getByRole('button',{name:'Checkboxes',exact:true}).click();
+ await expect(options.locator('.list-item-row .list-row-marker')).toHaveCount(0);
  await options.getByLabel('List item 2').fill('Edited second item');
  await update.click();
  await expect(view.getByRole('checkbox',{name:'First item'})).toBeChecked();
