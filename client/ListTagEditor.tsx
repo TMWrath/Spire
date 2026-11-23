@@ -10,6 +10,6 @@ export function ListTagEditor({label,values,disabled,readOnly,onChange}:{label:s
  const [input,setInput]=useState('');
  return <div aria-label={label} role="group">
   {values.map((tag,i)=><span key={tag}>{tag}{!readOnly&&<button type="button" disabled={disabled} aria-label={`Remove ${tag}`} onClick={()=>onChange(values.filter((_,j)=>j!==i))}>×</button>}</span>)}
-  {!readOnly&&<details><summary>{label}</summary><form onSubmit={e=>{e.preventDefault();const next=normalizeListTags([...values,input]);if(disabled||next.length===values.length)return;onChange(next);setInput('');}}><input aria-label={`New tag: ${label}`} maxLength={60} value={input} onChange={e=>setInput(e.target.value)} disabled={disabled}/><button disabled={disabled||!input.trim()}>Add tag</button></form></details>}
+  {!readOnly&&<div className="list-tag-entry"><div>{label}</div><form onSubmit={e=>{e.preventDefault();const next=normalizeListTags([...values,input]);if(disabled||next.length===values.length)return;onChange(next);setInput('');}}><input aria-label={`New tag: ${label}`} maxLength={60} value={input} onChange={e=>setInput(e.target.value)} disabled={disabled}/><button disabled={disabled||!input.trim()}>Add tag</button></form></div>}
  </div>;
 }

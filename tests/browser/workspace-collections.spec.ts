@@ -108,7 +108,7 @@ test('List and item tags persist and filter independently',async({page})=>{
  await lists.getByRole('button',{name:'Create List',exact:true}).click();
  await lists.getByRole('button',{name:'Tag test',exact:true}).click();
  const view=page.getByRole('region',{name:'Tag test list',exact:true});
- const tag=async(label:string,value:string)=>{const group=view.getByRole('group',{name:label,exact:true});await group.getByText(label,{exact:true}).click();await group.getByRole('textbox').fill(value);await group.getByRole('button',{name:'Add tag',exact:true}).click();await expect(group.getByRole('button',{name:`Remove ${value}`,exact:true})).toBeVisible();};
+ const tag=async(label:string,value:string)=>{const group=view.getByRole('group',{name:label,exact:true});await expect(group.locator('details')).toHaveCount(0);await group.getByRole('textbox').fill(value);await group.getByRole('button',{name:'Add tag',exact:true}).click();await expect(group.getByRole('button',{name:`Remove ${value}`,exact:true})).toBeVisible();};
  await view.getByRole('tab',{name:'Source'}).click();
  await view.getByText('Item details',{exact:true}).first().click();
  await tag('List tags','Entertainment');
@@ -215,6 +215,8 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  await frame.getByRole('slider',{name:'Horizontal position'}).fill('30');
  await frame.getByRole('slider',{name:'Vertical position'}).fill('80');
  await expect(options.locator('.list-item-hero')).toHaveCSS('object-position','30% 80%');
+ await expect(options.locator('.list-item-hero')).toHaveCSS('object-fit','cover');
+ await expect(options.locator('.list-item-hero')).toHaveCSS('aspect-ratio','16 / 5');
  await update.click();
  await expect(view.getByRole('tabpanel',{name:'List',exact:true}).locator('.list-item-hero')).toHaveCSS('object-position','30% 80%');
  await source.click();
@@ -223,9 +225,12 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  await expect(frame.getByRole('slider',{name:'Vertical position'})).toHaveValue('80');
  for(const width of [360,673,1280]){
   await page.setViewportSize({width,height:900});
+  const rail=options.locator('.list-style-grid');
+  await expect(rail).toHaveCSS('overflow-x','auto');
+  if(width===360) expect(await rail.evaluate(el=>{el.scrollLeft=el.scrollWidth;return el.scrollLeft;})).toBeGreaterThan(0);
   await expect.poll(()=>options.evaluate(panel=>{
    const bounds=panel.getBoundingClientRect();
-   return Array.from(panel.querySelectorAll('.list-style-grid button,.list-item-row button,.list-item-row input,.list-dialog-footer button,.list-hero-framing input')).every(el=>{
+   return Array.from(panel.querySelectorAll('.list-style-grid,.list-item-row button,.list-item-row input,.list-dialog-footer button,.list-hero-framing input')).every(el=>{
     const rect=el.getBoundingClientRect();return rect.width>0&&rect.left>=bounds.left-1&&rect.right<=Math.min(bounds.right,innerWidth)+1;
    })&&panel.scrollWidth<=panel.clientWidth+1;
   })).toBe(true);
