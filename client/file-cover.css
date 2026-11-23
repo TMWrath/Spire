@@ -1,11 +1,13 @@
+:root{--spire-cover-ratio:4 / 1}
 .file-cover{min-width:0;flex:none;background:var(--panel,#202020)}
-.file-cover>img{display:block;width:100%;height:clamp(84px,19vw,220px);object-fit:cover}
+.file-cover>img{display:block;width:100%;height:auto;aspect-ratio:var(--spire-cover-ratio);object-fit:cover}
 .file-cover-actions{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;padding:.35rem .65rem}
 .file-cover-actions label{position:relative;display:inline-flex;align-items:center;gap:.45rem;min-height:32px;cursor:pointer}
 .file-cover-actions input[type=file]{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}
 .file-cover-actions label:focus-within{outline:2px solid currentColor;outline-offset:2px}
 
 .file-cover-context{background:transparent}
-.file-cover-context>.context-cover{cursor:default}
-.file-cover-context>.context-cover img{position:absolute;inset:0}
+.file-cover-context>.context-cover{cursor:default;height:auto;aspect-ratio:var(--spire-cover-ratio)}
+.context-cover.note-context-cover{height:auto;aspect-ratio:var(--spire-cover-ratio)}
+.context-cover img[alt="File hero"],.file-cover-context>.context-cover img{position:absolute;inset:0}
 .file-cover-context>.file-cover-actions{padding-inline:0}
