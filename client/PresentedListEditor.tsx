@@ -5,7 +5,7 @@ import {documentLists,replaceDocumentStructure} from './document-structures';
 
 export const settingsLine=/^<!-- spire:list-options (plain|checklist) ([01]) ([01])(?: (bullets|numbers|letters|dashes))? -->\r?$/m;
 export const markers={bullets:'bullets',numbered:'numbers',lettered:'letters',dash:'dashes',checkboxes:'bullets'} as const;
-const metadata=/((?: <!-- spire:list-(?:hero|rating) [^<>]+ -->)+)$/;
+const metadata=/((?: <!-- spire:list-(?:hero|rating|labels) [^<>]+ -->)+)$/;
 export function PresentedListEditor({note,inline,onCancel,onSave,onStylePreview}:{note:Note;inline?:boolean;onCancel?:()=>void;onStylePreview?:(style:ListBuilderStyle|null)=>void;onSave:(content:string)=>Promise<void>}){
  const [source,setSource]=useState(note.content),[generation,reset]=useState(0),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const {stored,list}=useMemo(()=>({stored:settingsLine.exec(source),list:documentLists(source)[0]}),[source]);

@@ -98,6 +98,34 @@ test('project rails provide scoped Add File, Lists, and Audio Notes views withou
  await expect(audio.getByText('No Audio Notes in this project yet.',{exact:true})).toBeVisible();
 });
 
+test('List and item tags persist and filter independently',async({page})=>{
+ await page.setViewportSize({width:673,height:900});
+ await login(page);
+ const openLists=async()=>{await page.getByRole('tab',{name:'General',exact:true}).click();await page.getByRole('group',{name:'Files sections',exact:true}).getByRole('button',{name:'Lists',exact:true}).click();};
+ await openLists();
+ const lists=page.getByRole('region',{name:'Lists in Files',exact:true});
+ await lists.getByLabel('List name',{exact:true}).fill('Tag test');
+ await lists.getByRole('button',{name:'Create List',exact:true}).click();
+ await lists.getByRole('button',{name:'Tag test',exact:true}).click();
+ const view=page.getByRole('region',{name:'Tag test list',exact:true});
+ const tag=async(label:string,value:string)=>{const group=view.getByRole('group',{name:label,exact:true});await group.getByText(label,{exact:true}).click();await group.getByRole('textbox').fill(value);await group.getByRole('button',{name:'Add tag',exact:true}).click();await expect(group.getByRole('button',{name:`Remove ${value}`,exact:true})).toBeVisible();};
+ await tag('List tags','Entertainment');
+ await tag('Tags for First item','Watched');
+ await view.getByRole('textbox',{name:'New list item',exact:true}).fill('Second item');
+ await view.getByRole('button',{name:'Add item',exact:true}).click();
+ await expect(view.getByRole('checkbox',{name:'Second item'})).toBeVisible();
+ await view.getByLabel('Filter items by tag').selectOption('watched');
+ await expect(view.getByRole('checkbox',{name:'Second item'})).toHaveCount(0);
+ await page.reload();
+ await page.getByRole('button',{name:'Tag test Lists',exact:true}).waitFor();
+ const general=page.getByRole('tab',{name:'General',exact:true});
+ if(!await general.isVisible())await page.getByRole('button',{name:'Toggle folders',exact:true}).click();
+ await openLists();
+ await lists.getByLabel('Filter lists by tag').selectOption('entertainment');
+ await lists.getByRole('button',{name:'Tag test',exact:true}).click();
+ await expect(view.getByRole('button',{name:'Remove Watched'})).toBeVisible();
+});
+
 test('Lists creates an explicit portable Markdown presentation and opens its interactive view',async({page})=>{
  await login(page);
  await page.getByRole('tab',{name:'General',exact:true}).click();

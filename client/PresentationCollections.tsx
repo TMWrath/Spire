@@ -6,6 +6,8 @@ import {filePresentation,setFilePresentation} from '../shared/file-presentations
 import {StandaloneAudioTrack} from './StandaloneAudioTrack';
 import {attachmentUrl} from './attachment-urls';
 import './presentation-collections.css';
+import {listTagLine,decodeListTags,normalizeListTags} from './list-tags';
+import {TagFilter} from './ListTagEditor';
 
 type Scope={kind:'files'}|{kind:'project';project:string};
 const label=(scope:Scope)=>scope.kind==='files'?'Files':scope.project;
@@ -13,13 +15,18 @@ const backLabel=(scope:Scope)=>scope.kind==='files'?'files':scope.project;
 
 export function ListsCollection({focusCreate=false,scope,notes,folders,onBack,onOpen,onCreate}:{focusCreate?:boolean;scope:Scope;notes:Note[];folders:string[];onBack:()=>void;onOpen:(note:Note)=>void;onCreate:(path:string,content:string)=>Promise<void>}){
  const lists=useMemo(()=>notes.filter(note=>!note.deleted&&filePresentation(note.content)==='list'),[notes]);
+ const [filter,setFilter]=useState('');
+ const labels=(note:Note)=>decodeListTags(listTagLine.exec(note.content)?.[1]);
+ const available=normalizeListTags(lists.flatMap(labels));
+ const active=available.some(tag=>tag.toLowerCase()===filter)?filter:'';
+ const shown=lists.filter(note=>!active||labels(note).some(tag=>tag.toLowerCase()===active));
  const allowedFolders=folders.filter(folder=>scope.kind==='files'?!folder.startsWith('Projects/'):folder===`Projects/${scope.project}`||folder.startsWith(`Projects/${scope.project}/`));
  const defaultFolder=scope.kind==='files'?(allowedFolders[0]??'Lists'):`Projects/${scope.project}`;
  const[name,setName]=useState(''),[folder,setFolder]=useState(defaultFolder),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const create=async(event:React.FormEvent)=>{event.preventDefault();const title=name.trim();if(!title)return;setBusy(true);setError('');try{await onCreate(`${folder}/${title}.md`,setFilePresentation(`# ${title}\n\n- [ ] First item\n`,'list'));setName('');}catch(e){setError(e instanceof Error?e.message:String(e));}finally{setBusy(false);}};
  return <section className="workspace-collection presentation-collection" role="region" aria-label={`Lists in ${label(scope)}`}>{scope.kind!=='files'&&<header className="collection-header"><button type="button" aria-label={`Back to ${backLabel(scope)}`} onClick={onBack}><ArrowLeft/></button><h2>{label(scope)} Lists</h2></header>}
   <form className="presentation-create" onSubmit={create}><label>List name<input autoFocus={focusCreate} aria-label="List name" required value={name} onChange={e=>setName(e.target.value)} placeholder="Shopping list"/></label><label>Destination<select aria-label="List destination" value={folder} onChange={e=>setFolder(e.target.value)}>{[...new Set([defaultFolder,...allowedFolders])].map(value=><option key={value}>{value}</option>)}</select></label><button className="primary" disabled={busy||!name.trim()}><ListIcon/>Create List</button></form>
-  {error&&<p role="alert">{error}</p>}<div className="presentation-file-list presentation-list-cards">{lists.map(note=><article key={note.id}><button type="button" className="presentation-list-open" aria-labelledby={`list-name-${note.id}`} aria-describedby={`list-path-${note.id}`} onClick={()=>onOpen(note)}><ListIcon aria-hidden="true"/><span><strong id={`list-name-${note.id}`}>{note.path.split('/').at(-1)?.replace(/\.md$/i,'')}</strong><small id={`list-path-${note.id}`}>{note.path}</small></span></button></article>)}</div>{!lists.length&&<p className="muted">No designated Lists in this {scope.kind==='files'?'Files scope':'project'} yet.</p>}
+  {error&&<p role="alert">{error}</p>}<TagFilter label="Filter lists by tag" tags={available} value={active} onChange={setFilter}/><div className="presentation-file-list presentation-list-cards">{shown.map(note=><article key={note.id}><button type="button" className="presentation-list-open" aria-labelledby={`list-name-${note.id}`} aria-describedby={`list-path-${note.id}`} onClick={()=>onOpen(note)}><ListIcon aria-hidden="true"/><span><strong id={`list-name-${note.id}`}>{note.path.split('/').at(-1)?.replace(/\.md$/i,'')}</strong><small id={`list-path-${note.id}`}>{note.path}</small>{labels(note).map(tag=><small key={tag}>{tag}</small>)}</span></button></article>)}</div>{!lists.length&&<p className="muted">No designated Lists in this {scope.kind==='files'?'Files scope':'project'} yet.</p>}
  </section>;
 }
 
