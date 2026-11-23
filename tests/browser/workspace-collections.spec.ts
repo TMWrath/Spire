@@ -221,6 +221,15 @@ test('Lists creates an explicit portable Markdown presentation and opens its int
  await options.getByText('Item details',{exact:true}).first().click();
  await options.getByRole('button',{name:'Reposition hero image'}).click();
  await expect(frame.getByRole('slider',{name:'Vertical position'})).toHaveValue('80');
+ for(const width of [360,673,1280]){
+  await page.setViewportSize({width,height:900});
+  await expect.poll(()=>options.evaluate(panel=>{
+   const bounds=panel.getBoundingClientRect();
+   return Array.from(panel.querySelectorAll('.list-style-grid button,.list-item-row button,.list-item-row input,.list-dialog-footer button,.list-hero-framing input')).every(el=>{
+    const rect=el.getBoundingClientRect();return rect.width>0&&rect.left>=bounds.left-1&&rect.right<=Math.min(bounds.right,innerWidth)+1;
+   })&&panel.scrollWidth<=panel.clientWidth+1;
+  })).toBe(true);
+ }
 });
 
 test('normal file tasks live inside Files and write authoritative Markdown',async({page})=>{
