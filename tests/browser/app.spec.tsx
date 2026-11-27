@@ -137,6 +137,7 @@ test('rich table cells save partial formatting, reopen visually, toggle off and 
 
 test('underline and italic work in both editor rows and table underline reopens visually',async({page})=>{
  await login(page);await create(page,'Writing/Underline.md','main words');const source=page.getByLabel('Markdown source');
+ const showEditingTools=page.getByRole('button',{name:'Show editing tools',exact:true});if(await showEditingTools.isVisible())await showEditingTools.click();
  await source.evaluate((el:HTMLTextAreaElement)=>{el.focus();el.setSelectionRange(0,4);});await page.getByRole('button',{name:'Text style',exact:true}).click();await page.getByRole('group',{name:'Text styles'}).getByRole('button',{name:'Underline',exact:true}).click();await expect(source).toHaveValue('<u>main</u> words');
  await source.evaluate((el:HTMLTextAreaElement)=>{el.focus();el.setSelectionRange(el.value.indexOf('words'),el.value.length);});await page.getByRole('button',{name:'Text style',exact:true}).click();await page.getByRole('group',{name:'Text styles'}).getByRole('button',{name:'Italic',exact:true}).click();await expect(source).toHaveValue('<u>main</u> *words*');
  await showSplit(page);await expect(page.locator('.preview u')).toHaveText('main');await expect(page.locator('.preview em')).toHaveText('words');await page.getByRole('button',{name:'Source',exact:true}).click();
