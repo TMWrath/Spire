@@ -1,0 +1,14 @@
+.project-sheets{flex:1;min-height:0;display:grid;align-items:center;justify-items:stretch;text-align:center;container-type:size}
+.project-sheets-rail{--sheet:min(78cqw,520px,calc(92cqh * 8 / 11));display:flex;gap:16px;align-items:center;overflow-x:auto;padding:6px max(0px,calc((100cqw - var(--sheet))/2));scroll-padding-inline:max(0px,calc((100cqw - var(--sheet))/2));min-width:0;scroll-snap-type:none;overscroll-behavior-inline:contain;scrollbar-width:none}
+.project-sheets-rail::-webkit-scrollbar{display:none}
+.project-sheets .project-sheet{flex:0 0 var(--sheet);position:relative;isolation:isolate;aspect-ratio:8 / 11;min-width:0;scroll-snap-align:none;display:flex;align-items:end;text-align:left;padding:clamp(12px,4cqw,24px);overflow:hidden;color:#fff;background:#24232c;border:1px solid #bfb7a859;border-radius:2px}
+.project-sheet img,.project-sheet::after{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.project-sheet img{z-index:-2;object-fit:cover;opacity:0}
+.project-sheet img[data-loaded=true]{opacity:1}
+.project-sheet::after{content:'';z-index:-1;background:linear-gradient(transparent 40%,#111115ee)}
+.project-sheet-title{max-width:100%;font:700 clamp(1rem,4cqw,2.25rem)/1.1 Georgia,serif;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+@media (prefers-reduced-motion:no-preference){.project-sheets .project-sheet{transform:scale(var(--sheet-scale,1));transition:transform 90ms ease-out}}
+.project-sheet-info{display:grid;gap:.35rem;min-width:0;width:100%;text-shadow:0 1px 4px #000}.project-sheet-description,.project-sheet-deadline{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere}.project-sheet-deadline{-webkit-line-clamp:1}.project-sheet:has(.project-sheet-info)::after{background:linear-gradient(transparent 20%,#101017ed 85%)}
+.project-sheet:focus-visible{outline:2px solid white;outline-offset:-4px}
+
+@media (hover:hover) and (pointer:fine){.project-sheets-rail{min-width:0;scroll-snap-type:none;user-select:none}}

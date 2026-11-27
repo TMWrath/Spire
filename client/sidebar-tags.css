@@ -1,0 +1,10 @@
+/* Keep hierarchy visible without boxing each tag or file. */
+#sidebar-tags details,#sidebar-tags summary,#sidebar-tags .library-file{background:transparent;border:0;border-radius:0;box-shadow:none;margin:0;padding:0}
+#sidebar-tags summary,#sidebar-tags .library-file{display:flex;align-items:center;gap:9px;min-height:40px;padding:4px 8px;text-align:start}
+#sidebar-tags summary small{margin-inline-start:auto;font-variant-numeric:tabular-nums;opacity:.65}
+#sidebar-tags .library-file{margin-inline-start:15px;width:calc(100% - 15px);border-inline-start:1px solid #7778;padding-inline-start:16px;position:relative}
+#sidebar-tags .library-file::before{content:'';position:absolute;inset-inline-start:0;top:50%;width:10px;border-top:1px solid #7778}
+#sidebar-tags summary:hover,#sidebar-tags .library-file:hover{background:#8881}
+#sidebar-journal > .library-file{display:flex;align-items:center;gap:9px;min-height:40px;width:100%;margin:0;padding:4px 8px;text-align:start;background:transparent;border:0;border-radius:0;box-shadow:none}
+#sidebar-journal > .library-file:hover{background:#8881}
+#sidebar-journal > .library-file:focus-visible,#sidebar-tags :is(summary,button):focus-visible{outline:2px solid currentColor;outline-offset:-2px}

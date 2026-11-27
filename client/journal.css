@@ -1,3 +1,5 @@
 .journal-list h2{font-size:16px;margin:8px 0 12px}.journal-list>.primary{margin-bottom:12px}.journal-list .library-file{width:100%;text-align:left}.journal-list .library-file span{overflow-wrap:anywhere}
 /* Six peer sections stay readable in the existing narrow sidebar. */
 .sidebar-tabs{overflow-x:auto;scrollbar-width:thin}.sidebar-tabs button{flex:1 0 58px}
+
+.workspace-carousel.sidebar-tabs{gap:0;overscroll-behavior-x:contain;scrollbar-width:none}.workspace-cycle{display:flex;align-items:stretch;gap:4px;padding-right:4px;flex:1 0 max-content}.workspace-cycle button{white-space:nowrap}

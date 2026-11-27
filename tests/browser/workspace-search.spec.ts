@@ -1,0 +1,36 @@
+import {test,expect} from './fixtures';
+
+test('inline search follows the selected section and opens a Wiki file',async({page})=>{
+ await page.setViewportSize({width:390,height:900});
+ await page.goto('/');
+ await page.getByLabel('Username',{exact:true}).fill('owner');
+ await page.getByLabel('Password',{exact:true}).fill('correct horse battery staple');
+ const setup=await page.getByRole('button',{name:'Create Reliquary',exact:true}).isVisible();
+ await page.getByRole('button',{name:setup?'Create Reliquary':'Sign in',exact:true}).click();
+ await page.getByRole('button',{name:'Toggle folders'}).click();
+ await page.getByRole('group',{name:'Files sections'}).getByRole('button',{name:'Wiki',exact:true}).click();
+ await page.getByRole('button',{name:'Add Wiki',exact:true}).click();
+ const rename=page.getByRole('textbox',{name:'New name',exact:true});
+ await rename.fill('Search fixture atlas');
+ await rename.press('Enter');
+ await expect(page.getByRole('button',{name:'Rename Wiki/Search fixture atlas.md',exact:true})).toBeVisible();
+ await page.reload();
+ await page.getByRole('button',{name:'Toggle folders'}).click();
+ const rail=page.getByRole('group',{name:'Files sections'});
+ await page.getByRole('searchbox',{name:'Search files'}).fill('atlas fixture');
+ await expect(page.getByText('No matches.',{exact:true})).toBeVisible();
+ await rail.getByRole('button',{name:'Wiki',exact:true}).click();
+ const input=page.getByRole('searchbox',{name:'Search wiki'});
+ await expect(input).toHaveValue('');
+ await input.fill('atlas fixture');
+ const result=page.getByRole('list',{name:'Search results'}).getByRole('button',{name:/Search fixture atlas/});
+ await expect(result).toBeVisible();
+ await expect(page.getByRole('dialog',{name:'Workspace search'})).toHaveCount(0);
+ await rail.getByRole('button',{name:'Lists',exact:true}).click();
+ await page.getByRole('searchbox',{name:'Search lists'}).fill('atlas fixture');
+ await expect(page.getByText('No matches.',{exact:true})).toBeVisible();
+ await rail.getByRole('button',{name:'Wiki',exact:true}).click();
+ await input.fill('atlas fixture');
+ await result.click();
+ await expect(page.locator('.sidebar')).not.toBeVisible();
+});

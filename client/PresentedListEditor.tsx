@@ -1,4 +1,4 @@
-import React,{useMemo,useState} from 'react';
+import React,{useMemo,useRef,useState} from 'react';
 import {attachmentUrl} from './attachment-urls';
 import {ListTagEditor} from './ListTagEditor';
 import {decodeListTags,encodeListTags,listTagLine,setListLabels} from './list-tags';
@@ -43,20 +43,22 @@ export function PresentedListEditor({note,inline,onCancel,onSave,onStylePreview,
 export const metadataPieces=(value:string)=>value.match(/ <!-- spire:list-(?:hero|rating|labels) [^<>]+ -->/g)??[];
 export const itemLabels=(pieces:string[])=>decodeListTags(pieces.find(s=>s.startsWith(' <!-- spire:list-labels '))?.slice(' <!-- spire:list-labels '.length,-4));
 function ItemOptions({text,metadata,update,heroes,ratings,busy,upload}:{text:string;metadata:string;update:(change:(metadata:string)=>string)=>void;heroes:boolean;ratings:boolean;busy:boolean;upload:(file:File)=>Promise<string|null>}){
- const [framing,setFraming]=useState(false);
+ const [framing,setFraming]=useState(false),fileInput=useRef<HTMLInputElement>(null);
  const pieces=metadataPieces(metadata),hero=pieces.map(s=>heroTag.exec(s)).find(Boolean),rating=pieces.map(s=>ratingTag.exec(s)?.[1]).find(Boolean);
  const x=Math.min(100,Number(hero?.[2]??50)),y=Math.min(100,Number(hero?.[3]??50));
  const setTag=(kind:string,value:string)=>update(current=>metadataPieces(current).filter(s=>!s.startsWith(` <!-- spire:list-${kind} `)).join('')+(value?` <!-- spire:list-${kind} ${value} -->`:''));
- return <details className="list-source-item-options"><summary>Item details</summary>
+ return <div className="list-source-item-options">
   {heroes&&hero&&<img className="list-item-hero" alt="" src={attachmentUrl(hero[1])} style={{objectPosition:`${x}% ${y}%`}}/>}
-  <ListTagEditor label={`Tags for ${text}`} values={itemLabels(pieces)} disabled={busy} readOnly={false} onChange={values=>setTag('labels',values.length?encodeListTags(values):'')}/>
-  <fieldset className="list-item-options" disabled={busy} aria-label={`Image and rating for ${text}`}>
-   {ratings&&<label>Rating <select aria-label={`Rating for ${text}`} value={rating??'none'} onChange={e=>setTag('rating',e.target.value==='none'?'':e.target.value)}><option value="none">Not rated</option>{Array.from({length:10},(_,index)=>(index+1)/2).map(value=><option key={value} value={value}>{value} / 5</option>)}</select></label>}
-   {heroes&&<><label className="list-image-upload">{hero?'Replace hero image':'Add hero image'}<input type="file" aria-label={`Hero image for ${text}`} accept="image/png,image/jpeg,image/webp,image/gif" onChange={async e=>{const file=e.target.files?.[0];e.target.value='';if(!file)return;const path=await upload(file);if(path){setTag('hero',path);setFraming(true);}}}/></label>{hero&&<><button type="button" aria-expanded={framing} onClick={()=>setFraming(!framing)}>Reposition hero image</button><button type="button" onClick={()=>{setFraming(false);setTag('hero','');}}>Remove hero image</button></>}</>}
+  <fieldset className="list-item-options" hidden={!heroes} disabled={busy} aria-label={`Image for ${text}`}>
+   {heroes&&<><button type="button" onClick={()=>fileInput.current?.click()}>{hero?'Replace hero image':'Add hero image'}</button><input hidden ref={fileInput} type="file" aria-label={`Hero image for ${text}`} accept="image/png,image/jpeg,image/webp,image/gif" onChange={async e=>{const file=e.target.files?.[0];e.target.value='';if(!file)return;const path=await upload(file);if(path){setTag('hero',path);setFraming(true);}}}/>{hero&&<><button type="button" aria-expanded={framing} onClick={()=>setFraming(!framing)}>Reposition hero image</button><button type="button" onClick={()=>{setFraming(false);setTag('hero','');}}>Remove hero image</button></>}</>}
   </fieldset>
   {heroes&&hero&&framing&&<fieldset className="list-hero-framing" disabled={busy}><legend>Hero image position</legend>
    <label>Horizontal position<input type="range" min="0" max="100" value={x} onChange={e=>setTag('hero',`${hero[1]} ${e.target.value} ${y}`)}/></label>
    <label>Vertical position<input type="range" min="0" max="100" value={y} onChange={e=>setTag('hero',`${hero[1]} ${x} ${e.target.value}`)}/></label>
   </fieldset>}
- </details>;
+  <ListTagEditor label="Tags" values={itemLabels(pieces)} disabled={busy} readOnly={false} onChange={values=>setTag('labels',values.length?encodeListTags(values):'')}/>
+  <fieldset className="list-item-options" hidden={!ratings} disabled={busy} aria-label={`Rating options for ${text}`}>
+   {ratings&&<label>Rating <select aria-label={`Rating for ${text}`} value={rating??'none'} onChange={e=>setTag('rating',e.target.value==='none'?'':e.target.value)}><option value="none">Not rated</option>{Array.from({length:10},(_,index)=>(index+1)/2).map(value=><option key={value} value={value}>{value} / 5</option>)}</select></label>}
+  </fieldset>
+ </div>;
 }

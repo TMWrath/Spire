@@ -1,6 +1,7 @@
 import {test,expect} from './fixtures';
 
-async function openHome(page:import('@playwright/test').Page,username:string){
+async function openHome(page:import('@playwright/test').Page,username:string,existing=true){
+ if(existing)await page.addInitScript(()=>{if(localStorage.getItem('spire-home-widgets')===null)localStorage.setItem('spire-home-widgets',JSON.stringify(['actions','deadlines','journal','note','audio']));});
  await page.goto('/');
  await page.getByLabel('Username',{exact:true}).fill(username);
  await page.getByLabel('Password',{exact:true}).fill('disposable-home-dashboard-password');
@@ -9,6 +10,11 @@ async function openHome(page:import('@playwright/test').Page,username:string){
 }
 
 test.describe('Home dashboard',()=>{
+ test('fresh Home has no optional widgets',async({page})=>{
+  await openHome(page,'home-empty-default',false);
+  await expect(page.locator('.home-widget')).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Add widget',exact:true})).toBeVisible();
+ });
  test('desktop keeps navigation and uses the full remaining canvas',async({page})=>{
   await page.setViewportSize({width:1280,height:900});
   await openHome(page,'home-desktop-canvas');

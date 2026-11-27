@@ -13,7 +13,7 @@ export class Engine{
  cache:Cache=blank();status='Opening server workspace';listeners=listeners;authRequired=false;connected=true;
  readonly cacheKey='server';readonly remote=false;readonly manualLocal=false;
  emit(){for(const listener of this.listeners)listener();}
- async raw(url:string,options:RequestInit={}){return fetch('/api'+url,{...options,signal:AbortSignal.timeout(25000)});}
+ async raw(url:string,options:RequestInit={}){return fetch('/api'+url,{...options,signal:options.signal??AbortSignal.timeout(25000)});}
  async request(url:string,options:RequestInit={},csrf?:string){const headers=new Headers(options.headers);if(!(options.body instanceof Blob)&&!headers.has('Content-Type'))headers.set('Content-Type','application/json');if(csrf)headers.set('X-CSRF-Token',csrf);const response=await this.raw(url,{...options,headers});if(!response.ok){const body=await response.json().catch(()=>({error:response.statusText}));throw new ApiError(response.status,body.error,body.details);}return response.json();}
  async init(){try{this.cache.identity=await this.request('/me');this.authRequired=false;await this.sync();}catch(error){if(error instanceof ApiError&&error.status===401){this.cache=blank();this.authRequired=true;this.status='Sign in required';this.emit();return;}throw error;}}
  async login(identity:Identity){this.cache.identity=identity;this.authRequired=false;await this.sync();}

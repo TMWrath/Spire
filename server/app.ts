@@ -74,6 +74,12 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
  app.get('/api/snapshot',(_req,res)=>res.json(workspaceSnapshot(store)));
  app.put('/api/visual-groups',(req,res)=>{const body=z.object({directory:z.string().max(240),groups:visualGroupsSchema}).parse(req.body);res.json(store.saveVisualGroups(body.directory,body.groups));});
  app.get('/api/project-tasks',(_req,res)=>{store.migrateProjectFiles();res.json(store.projectTaskBoards());});
+ app.get('/api/project-overview/:project/background',(req,res)=>{
+  const {background}=store.getProjectOverview(String(req.params.project));
+  const image=/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/.exec(background);
+  if(!image){res.status(204).end();return;}
+  res.type(image[1]).send(Buffer.from(image[2],'base64'));
+ });
  app.get('/api/project-overview/:project',(req,res)=>res.json(store.getProjectOverview(String(req.params.project))));
  app.put('/api/project-overview/:project',(req,res)=>res.json(store.saveProjectOverview(String(req.params.project),req.body)));
  app.delete('/api/project-overview/:project',(req,res)=>{const revision=z.number().int().nonnegative().parse(req.body?.revision);res.json(store.trashProjectOverview(String(req.params.project),revision));});
@@ -87,7 +93,7 @@ export function createApp(root:string,origin:string,options:{contentDirectory?:s
  app.delete('/api/folders',(req,res)=>{const body=z.discriminatedUnion('mode',[z.object({path:safePath,mode:z.literal('empty')}),z.object({path:safePath,mode:z.literal('trash')}),z.object({path:safePath,mode:z.literal('reassign'),destination:safePath})]).parse(req.body);res.json(store.deleteFolder(body.path,body.mode==='empty'?{mode:'empty'}:body.mode==='trash'?{mode:'trash'}:{mode:'reassign',destination:body.destination},res.locals.device.id));});
  app.post('/api/folders/rename',(req,res)=>{const body=z.object({path:safePath,name:safePath}).parse(req.body);res.json(store.moveFolder(body.path,body.path.split('/').slice(0,-1).join('/'),res.locals.device.id,body.name));});
  app.get('/api/events',(req,res)=>{const after=z.coerce.number().int().nonnegative().parse(req.query.after??0);res.json(store.state.events.filter(e=>e.seq>after));});
- app.get('/api/search',(req,res)=>{const q=z.string().max(300).parse(req.query.q??'').toLowerCase();res.json(Object.values(store.state.notes).filter(n=>!n.deleted&&(n.path+'\n'+n.content).toLowerCase().includes(q)).map(n=>({id:n.id,path:n.path})));});
+ app.get('/api/search',(req,res)=>{const q=z.string().max(300).parse(req.query.q??'').toLowerCase();res.json(Object.values(store.state.notes).filter(n=>!n.deleted&&q.trim().split(/\s+/).every(term=>(n.path+'\n'+n.content).toLowerCase().includes(term))).map(n=>({id:n.id,path:n.path})));});
 
  app.post('/api/mutate',(req,res)=>res.json(store.mutate(req.body,res.locals.device.id)));
  app.post('/api/restore/:id',(req,res)=>{const b=z.object({base:z.number().int(),rev:z.number().int(),op:z.string().uuid()}).parse(req.body);const n=store.state.notes[String(req.params.id)];if(!n)throw new HttpError(404,'Note not found');const revision=[...n.history,n].find(h=>h.rev===b.rev);if(!revision)throw new HttpError(404,'Revision not found');res.json(store.mutate({...revision,id:n.id,base:b.base,op:b.op,deleted:false},res.locals.device.id));});

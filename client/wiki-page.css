@@ -1,0 +1,49 @@
+.wiki-attribute-editor fieldset{min-width:0;margin-block:.5rem}.wiki-attributes dd p{margin:0}.wiki-attributes dd ul{margin:0;padding-inline-start:1.25rem}.wiki-infobox{margin:0;padding:.5rem 0}.wiki-infobox>div,.wiki-infobox-editor>div{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:.75rem;padding:.5rem 0}.wiki-infobox dt{font-weight:700;text-transform:uppercase}.wiki-infobox dd{margin:0}.wiki-infobox dt,.wiki-infobox dd{overflow-wrap:anywhere}.wiki-infobox-editor>div{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}.wiki-infobox-editor input{width:100%;min-width:0}
+.wiki-page{container-type:inline-size;width:min(100%,72rem);min-width:0;margin-inline:auto;padding:var(--page-gutter);box-sizing:border-box;color:var(--text-primary);background:var(--surface-app)}
+.wiki-page h1{font-size:clamp(1.5rem,4vw,2.6rem);font-weight:700;overflow-wrap:anywhere;margin:.2em 0}
+.wiki-page h1 svg,.wiki-page aside h2 svg{vertical-align:middle;margin-right:.4em}
+.wiki-crumb,.wiki-header,.wiki-actions,.wiki-tags{display:flex;align-items:center;flex-wrap:wrap;gap:.6rem}
+.wiki-crumb,.wiki-header{margin-bottom:.8rem}
+/* The app toolbar has a fixed height; the Wiki header must fit wrapped tags. */
+.wiki-page > .wiki-header{height:auto}
+.wiki-header .presented-list-tabs{margin-left:auto}
+.wiki-header:has(> .wiki-tags){border-bottom:0}
+.wiki-tags{flex-basis:100%;border-top:1px solid var(--line-subtle);padding-top:.6rem}
+.wiki-tags span{border:1px solid var(--line-subtle);border-radius:999px;padding:.2rem .6rem;color:var(--text-secondary)}
+.wiki-page .file-cover{border-radius:10px;overflow:hidden;margin-bottom:.8rem}
+.wiki-grid{display:grid;grid-template-columns:minmax(0,1fr)}
+.wiki-grid>*{min-width:0}
+.wiki-section,.wiki-grid details{margin-bottom:.7rem;scroll-margin-block:1rem}
+.wiki-section .preview{padding:0;overflow-wrap:anywhere}
+.wiki-section .preview :is(h1,h2){border-bottom:1px solid var(--line-subtle);padding-bottom:.35rem}
+.wiki-grid details,.wiki-widgets fieldset{min-width:0;border:1px solid var(--line-subtle);border-radius:var(--control-radius);background:var(--surface-panel);padding:.65rem;margin:0 0 .65rem}
+.wiki-grid summary{cursor:pointer;font-weight:600}
+
+.wiki-widgets label,.wiki-widgets textarea{display:block}
+.wiki-widgets textarea,.wiki-widgets input{box-sizing:border-box;width:100%;margin:.3rem 0;padding:.55rem}
+.wiki-widgets textarea{min-height:7rem;resize:vertical;font-family:inherit}
+.wiki-widget-body{margin-top:.4rem}
+.wiki-widgets .wiki-markdown-input{font-family:monospace}
+.wiki-widgets .wiki-fold-setting{display:flex;align-items:center;gap:.4rem;width:max-content;max-width:100%;margin-bottom:.5rem}
+.wiki-widgets .wiki-fold-setting input{width:auto;margin:0}
+.wiki-section-footer{display:flex;justify-content:flex-end;margin-top:.75rem}
+.wiki-context-index{display:grid;gap:.35rem;padding:.65rem}
+.wiki-context-index h2{display:flex;align-items:center;gap:.4rem;margin:0 0 .25rem}
+.wiki-mini-editor{min-width:0;position:relative}
+.wiki-mini-editor .document-writing-surface{min-height:6rem;padding:.65rem;overflow-wrap:anywhere}
+.wiki-mini-editor .markdown-toolbar{position:static}
+.wiki-widgets select{box-sizing:border-box;max-width:100%;min-height:36px;margin:.3rem 0;padding:.35rem .6rem;border:1px solid var(--line-subtle);background:var(--surface-panel);color:inherit;font:inherit;color-scheme:dark}
+.wiki-widgets .wiki-section-label{width:auto;margin:0;padding:.25rem .45rem;font:inherit}
+.wiki-widgets button.wiki-section-label{border-color:transparent;background:transparent}
+.wiki-widgets button.wiki-section-label:hover{background:var(--surface-hover)}
+.wiki-widgets .table-editor-inline{width:100%;min-width:0;max-width:100%;max-height:none;overflow:visible;box-shadow:none;box-sizing:border-box}
+.table-editor-inline .table-grid{--wiki-row-height:5rem;grid-auto-rows:var(--wiki-row-height);max-height:calc(4 * var(--wiki-row-height) + 7px);box-sizing:border-box;align-content:start;overflow:auto}
+.table-editor-inline .table-grid label{min-width:0;min-height:0;overflow:auto}
+
+.wiki-page .wiki-subsection { margin-inline-start: clamp(.65rem, 2vw, 1.5rem); }
+.wiki-context-index ul{margin:0;padding-inline-start:1.25rem;list-style:disc}.wiki-context-index ul ul{list-style:circle}.wiki-context-index li>div{display:flex;align-items:center;gap:.2rem}.wiki-context-index a{display:inline-flex;align-items:center;min-height:36px;color:inherit;text-align:start;overflow-wrap:anywhere}.wiki-context-index a[aria-current],.wiki-context-index a:hover{text-decoration:underline}.wiki-context-index button{display:grid;place-items:center;min-width:36px;min-height:36px;padding:0;border:0;background:transparent}.wiki-context-index button[aria-expanded=true] svg{transform:rotate(90deg)}
+.wiki-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr));gap:.75rem}
+.wiki-gallery>div{min-width:0;overflow:hidden;padding:.45rem;border:1px solid var(--border,currentColor);border-radius:.75rem;background:var(--panel,transparent)}
+.wiki-gallery>div p{margin:0}.wiki-gallery img{border-radius:.45rem}.wiki-gallery-editor output{display:block;overflow-wrap:anywhere}
+.wiki-gallery img{display:block;width:100%;aspect-ratio:4/3;object-fit:contain}
+.wiki-gallery-editor select{max-width:100%}

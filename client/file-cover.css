@@ -1,13 +1,18 @@
 :root{--spire-cover-ratio:4 / 1}
 .file-cover{min-width:0;flex:none;background:var(--panel,#202020)}
 .file-cover>img{display:block;width:100%;height:auto;aspect-ratio:var(--spire-cover-ratio);object-fit:cover}
-.file-cover-actions{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;padding:.35rem .65rem}
-.file-cover-actions label{position:relative;display:inline-flex;align-items:center;gap:.45rem;min-height:32px;cursor:pointer}
-.file-cover-actions input[type=file]{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}
-.file-cover-actions label:focus-within{outline:2px solid currentColor;outline-offset:2px}
 
 .file-cover-context{background:transparent}
 .file-cover-context>.context-cover{cursor:default;height:auto;aspect-ratio:var(--spire-cover-ratio)}
-.context-cover.note-context-cover{height:auto;aspect-ratio:var(--spire-cover-ratio)}
-.context-cover img[alt="File hero"],.file-cover-context>.context-cover img{position:absolute;inset:0}
-.file-cover-context>.file-cover-actions{padding-inline:0}
+.file-cover-context {container-type:inline-size;display:grid;gap:.5rem}
+.file-cover-context>.context-cover img{position:absolute;inset:0}
+.file-cover-actions,.file-cover-position{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.375rem}
+.file-cover-actions label,.file-cover-actions button,.file-cover-position button{min-width:0;min-height:38px;padding:.375rem;text-align:center;font-size:.8rem;overflow-wrap:anywhere}
+.file-cover-actions label{position:relative;display:grid;place-items:center;border:1px solid #383838;border-radius:3px;background:#1a1a1a;cursor:pointer}
+.file-cover-actions label:only-child,.file-cover-actions button:last-child,.file-cover-position label{grid-column:1/-1}
+.file-cover-actions button:last-child{color:#f1aaaa}
+.file-cover-actions input[type=file]{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}
+.file-cover-actions label:focus-within{outline:2px solid currentColor;outline-offset:2px}
+.file-cover-position label{display:grid;gap:.25rem;font-size:.8rem}
+.file-cover-position input{width:100%;min-width:0;margin:0;min-height:28px}
+@container (min-width:300px){.file-cover-actions{grid-template-columns:repeat(3,minmax(0,1fr))}.file-cover-actions button:last-child{grid-column:auto}}
