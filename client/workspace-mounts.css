@@ -147,6 +147,22 @@
 .sidebar nav>details>details>details>details>details>summary,.mount-tree nav>details>details>details>details>details>summary{--tree-inset:88px}
 .sidebar nav>details>details>details>details>details>.tree-file-row,.mount-tree nav>details>details>details>details>details>.tree-file-row{--tree-inset:110px}
 
+/* Only children of an actual folder get edges. Inset the child box so the
+ * gutter recurses with the DOM, while the action rail keeps its right edge. */
+:is(.sidebar,.mount-tree) nav details[data-folder] > :is(details[data-folder],.tree-file-row){
+ position:relative;margin-left:22px!important;width:calc(100% - 22px)!important;
+}
+:is(.sidebar,.mount-tree) nav details[data-folder] > .tree-file-row,
+:is(.sidebar,.mount-tree) nav details[data-folder] > details[data-folder] > summary{padding-left:0!important}
+:is(.sidebar,.mount-tree) nav details[data-folder] > .tree-file-row::before,
+:is(.sidebar,.mount-tree) nav details[data-folder] > details[data-folder] > summary::before{
+ content:'';position:absolute;pointer-events:none;left:-16px;top:0;height:50%;width:8px;
+ border-left:1px solid #777;border-bottom:1px solid #777;box-sizing:border-box;
+}
+:is(.sidebar,.mount-tree) nav details[data-folder] > :is(details[data-folder],.tree-file-row):not(:last-child)::after{
+ content:'';position:absolute;pointer-events:none;left:-16px;inset-block:0;border-left:1px solid #777;
+}
+
 /* Selection paints the complete row, including its action columns. */
 .sidebar nav summary.selected-folder,
 .mount-tree nav summary.selected-folder,
